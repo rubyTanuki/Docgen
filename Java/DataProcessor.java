@@ -12,7 +12,7 @@ import static java.util.Collections.singletonList;
  * A complex class to test the limits of the Docgen parser.
  */
 @Deprecated
-public class DataProcessor<T> implements Runnable {
+public class DataProcessor<T> implements Runnable  {
 
     // Edge Case: Constants and Generics
     private static final int MAX_RETRIES = 5;
