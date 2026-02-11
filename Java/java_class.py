@@ -10,6 +10,7 @@ class Class:
     ACCESS_MODIFIERS = {"public", "protected", "private"}
     def __init__(self, tree: Tree, package: str):
         
+        # parse class details
         self.modifiers_txt = ""
         self.modifiers_list = []
         self.body_node = None

@@ -5,8 +5,9 @@ from queries import PACKAGE_QUERY
 from java_method import Method
 from java_class import Class
 from member_registry import MemberRegistry
+from file import File
 
-class File:
+class JavaFile(File):
     def __init__(self, file: str):
         parser = Parser()
         parser.language = JAVA_LANGUAGE
@@ -28,8 +29,9 @@ class File:
         print(self.classes)
         print("ALL METHODS: " + str(MemberRegistry.methods.keys()))
         for c in self.classes:
-            for m in c:
-                m.resolve_dependencies(self.imports)
+            for m_list in c:
+                for m in m_list:
+                    m.resolve_dependencies(self.imports)
         
         
         
