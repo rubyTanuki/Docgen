@@ -1,6 +1,5 @@
 from tree_sitter import Node, Query, QueryCursor
 
-from member_registry import MemberRegistry
 
 class Method:
     
@@ -16,14 +15,8 @@ class Method:
         self.body: str
         self.signature: str
         
-    def _parse_modifiers(self, mod_string):
-        pass
-        
     def resolve_dependencies(self, imports: list[str] = []):
         pass
-    
-    def get_tuple(self) -> tuple[str,str]:
-        return ("", "")
     
     def __str__(self) -> str:
         return self.signature.strip()

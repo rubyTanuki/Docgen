@@ -5,18 +5,39 @@ from language import JAVA_LANGUAGE
 
 from member_registry import MemberRegistry
 
-class Method:
+from Languages.Agnostic.Method import Method
+
+class JavaMethod(Method):
     
     _DEP_QUERY = Query(JAVA_LANGUAGE, DEPENDENCY_QUERY)
     ACCESS_MODIFIERS = {"public", "protected", "private"}
     def __init__(self, method_node: Node, class_name: str):
-        self.method_node = method_node
-        self.class_name = class_name
-        self.dependencies = []
+        
+        # init class variables
+        self.method_node: Node = method_node
+        self.class_name: str = class_name
+        self.dependencies: list[str] = []
+        self.identifier: str
+        self.name: str
+        self.return_type: str
+        self.modifiers_str: str
+        self.modifiers_list: list[str]
+        self.is_abstract: bool
+        self.is_final: bool
+        self.is_static: bool
+        self.is_synchronized: bool
+        self.marker_annotation: str
+        self.type_parameters: list[str]
+        self.parameters: list[str]
+        self.body_node: Node
+        self.body: str
+        self.signature: str
+        self.description: str
+        self.context_needed: bool = False
         
         # identifier
-        name_node = method_node.child_by_field_name('name')
-        self.identifier = name_node.text.decode('utf-8') if name_node else "<init>"
+        identifier_node = method_node.child_by_field_name('name')
+        self.identifier: str = identifier_node.text.decode('utf-8') if identifier_node else "<init>"
         self.name = f"{class_name}.{self.identifier}"
         
         # return type
@@ -28,15 +49,40 @@ class Method:
         else:
             self.return_type = "void"
         
-        # modifiers
-        mod_node = None
+        # modifiers and type parameters
+        self.modifiers_str = ""
+        self.type_parameters = []
         for child in method_node.children:
             if child.type == 'modifiers':
-                mod_node = child
+                self.modifiers_str = child.text.decode('utf-8')
+                self.modifiers_list = self.modifiers_str.split()
                 break
-        self.modifiers_str = mod_node.text.decode('utf-8') if mod_node else ""
-        self._parse_modifiers(self.modifiers_str)
+            if child.type == 'type_parameters':
+                for grandchild in child.children:
+                    if grandchild.type == "type_parameter":
+                        self.type_parameters.append(grandchild.text.decode('utf-8'))
         
+        # parse modifiers
+        self.access_level = "package-private"
+        self.is_final = False
+        self.is_static = False
+        self.is_abstract = False
+        self.is_synchronized = False
+        self.marker_annotation = ""
+        for mod in self.modifiers_list:
+            if mod[0] == '@':
+                self.marker_annotation = mod
+            if mod in self.ACCESS_MODIFIERS:
+                self.access_level = mod
+            match mod:
+                case "final":
+                    self.is_final = True
+                case "abstract":
+                    self.is_abstract = True
+                case "static":
+                    self.is_static = True
+                case "synchronized":
+                    self.is_synchronized = True
         
         # parameters
         params_node = method_node.child_by_field_name('parameters')
@@ -58,37 +104,29 @@ class Method:
             
         # signature
         param_str = ", ".join(self.parameters)
-        self.signature = (f"{self.modifiers_str} {self.return_type} {self.identifier}({param_str})")
+        self.signature = f"{self.return_type} {self.identifier}"
+        if self.type_parameters:
+            self.signature += f"<{', '.join(self.type_parameters)}>"
+        self.signature += f"({param_str})"
+        parts = [
+            self.marker_annotation,                                                 # @Override
+            self.access_level if self.access_level!='package-private' else None,    # public
+            "abstract" if self.is_abstract else None,                               # abstract
+            "static" if self.is_static else None,                                   # static
+            "final" if self.is_final else None,                                     # final
+            "synchronized" if self.is_synchronized else None,                       # synchronized
+            self.signature,                                                         # void MyMethod<T>()
+        ]
+        self.signature = " ".join(filter(None, parts))
         
         MemberRegistry.add_method(self)
     
-    def _parse_modifiers(self, mod_string):
-        self.access_level = "package-private"
-        self.is_final = False
-        self.is_static = False
-        self.is_abstract = False
-        
-        for mod in mod_string.split():
-            if mod in self.ACCESS_MODIFIERS:
-                self.access_level = mod
-            if mod == "final":
-                self.is_final = True
-            if mod == "abstract":
-                self.is_abstract = True
-            if mod == "static":
-                self.is_static = True
-        
-    def resolve_dependencies(self, imports: list[str] = []):
-        # query = Query(JAVA_LANGUAGE, DEPENDENCY_QUERY)
-        # query_cursor = QueryCursor(query)
-        # captures = query_cursor.captures(self.method_node)
-        # dependency_names = [c.text.decode('utf-8') for c in captures["dependencies"]] if "dependencies" in captures else []
-        body_node = self.method_node.child_by_field_name('body')
-        if not body_node: 
+    def resolve_dependencies(self, imports: list[str] = []) -> None:
+        if not self.body_node: 
             return
         
         query_cursor = QueryCursor(self._DEP_QUERY)
-        captures = query_cursor.captures(body_node)
+        captures = query_cursor.captures(self.body_node)
         
         # Use a set to avoid duplicates (e.g., calling println 5 times)
         dependency_names = set()
@@ -98,9 +136,8 @@ class Method:
         
         if not dependency_names:
             return
-
-        # print("DEPENDENCIES: " + str(dependency_names))
         
+        # try to find the dependencies in the member_registry
         for name in dependency_names:
             # try local first
             local_fullname = self.class_name + "." + name
@@ -124,15 +161,11 @@ class Method:
                 continue
             
             # wasnt resolved, so just return all that we have
-            for dependency in MemberRegistry.methods_by_name[name]:
-                self.dependencies.append(dependency)
+            self.dependencies.extend(MemberRegistry.methods_by_name[name])
             # if MemberRegistry.methods_by_name[name] != []:
             #     print(f"FAILED TO RESOLVE DEPENDENCY: defaulting to all {name} methods in registry")
             # else:
             #     print(f"FAILED TO RESOLVE DEPENDENCY: no {name} methods in registry (check imports)")
-    
-    def get_tuple(self) -> (str, str):
-        return (self.class_name, self.identifier)
     
     def __str__(self) -> str:
         return self.signature.strip()
