@@ -1,12 +1,13 @@
 from tree_sitter import Tree, Query, QueryCursor
 
 from language import JAVA_LANGUAGE
-from java_method import Method
-from java_field import Field
+from java_method import JavaMethod
+from java_field import JavaField
+from Languages.Agnostic.Class import Class
 
 from collections import defaultdict
 
-class Class:
+class JavaClass(Class):
     ACCESS_MODIFIERS = {"public", "protected", "private"}
     def __init__(self, tree: Tree, package: str):
         
@@ -87,21 +88,24 @@ class Class:
         self.signature = " ".join(filter(None, parts))
             
         # extract and build methods, fields, and enums
-        self.methods = defaultdict(list[Method])
+        self.methods = defaultdict(list[JavaMethod])
         self.fields = {}
         for child in self.body_node.children:
             if child.type == "method_declaration" or child.type == "constructor_declaration":
-                method = Method(child, self.name)
+                method = JavaMethod(child, self.name)
                 self.methods[method.identifier].append(method)
             if child.type == "field_declaration":
-                field = Field(child, self.name)
+                field = JavaField(child, self.name)
                 self.fields[field.identifier] = field
             if child.type == "enum_declaration":
                 pass
             
         
-    def get_methods(self) -> list[Method]:
-        return list(self.methods.values())
+    def get_methods(self) -> list[JavaMethod]:
+        all_methods = []
+        for m_list in self.methods.values():
+            all_methods.extend(m_list)
+        return all_methods
     
     def get_fields(self):
         return list(self.fields.values())
