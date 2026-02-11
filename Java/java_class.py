@@ -4,6 +4,8 @@ from language import JAVA_LANGUAGE
 from java_method import Method
 from java_field import Field
 
+from collections import defaultdict
+
 class Class:
     ACCESS_MODIFIERS = {"public", "protected", "private"}
     def __init__(self, tree: Tree, package: str):
@@ -16,34 +18,31 @@ class Class:
         self.interfaces: list[str] = []
         self.type_parameters = []
         for child in tree.children:
-            if child.type == "modifiers":
-                self.modifiers_txt = child.text.decode('utf-8')
-                self.modifiers_list = self.modifiers_txt.split()
-                continue
-            if child.type == "class_body":
-                self.body_node = child
-                self.body = child.text.decode('utf-8')
-                continue
-            if child.type == "superclass":
-                for grandchild in child.children:
-                    if grandchild.type in {"type_identifier", "scoped_type_identifier", "generic_type"}:
-                        self.superclass = grandchild.text.decode('utf-8')
-                continue
-            if child.type == "super_interfaces":
-                type_list_node = None
-                for grandchild in child.children:
-                        if grandchild.type == "type_list":
-                            type_list_node = grandchild
-                            break
-                if type_list_node:
-                    for i_node in type_list_node.children:
-                        if i_node.type in {"type_identifier", "scoped_type_identifier", "generic_type"}:
-                            self.interfaces.append(i_node.text.decode('utf-8'))
-                continue
-            if child.type == "type_parameters":
-                for grandchild in child.children:
-                    if grandchild.type == "type_parameter":
-                        self.type_parameters.append(grandchild.text.decode('utf-8'))
+            match child.type:
+                case "modifiers":
+                    self.modifiers_txt = child.text.decode('utf-8')
+                    self.modifiers_list = self.modifiers_txt.split()
+                case "class_body":
+                    self.body_node = child
+                    self.body = child.text.decode('utf-8')
+                case "superclass":
+                    for grandchild in child.children:
+                        if grandchild.type in {"type_identifier", "scoped_type_identifier", "generic_type"}:
+                            self.superclass = grandchild.text.decode('utf-8')
+                case "super_interfaces":
+                    type_list_node = None
+                    for grandchild in child.children:
+                            if grandchild.type == "type_list":
+                                type_list_node = grandchild
+                                break
+                    if type_list_node:
+                        for i_node in type_list_node.children:
+                            if i_node.type in {"type_identifier", "scoped_type_identifier", "generic_type"}:
+                                self.interfaces.append(i_node.text.decode('utf-8'))
+                case "type_parameters":
+                    for grandchild in child.children:
+                        if grandchild.type == "type_parameter":
+                            self.type_parameters.append(grandchild.text.decode('utf-8'))
         
         identifier_node = tree.child_by_field_name('name')
         self.identifier = identifier_node.text.decode('utf-8')
@@ -86,16 +85,18 @@ class Class:
         
         self.signature = " ".join(filter(None, parts))
             
-        # extract and build methods and fields
-        self.methods = {}
+        # extract and build methods, fields, and enums
+        self.methods = defaultdict(list[Method])
         self.fields = {}
         for child in self.body_node.children:
-            if child.type == "method_declaration":
+            if child.type == "method_declaration" or child.type == "constructor_declaration":
                 method = Method(child, self.name)
-                self.methods[method.identifier] = method
+                self.methods[method.identifier].append(method)
             if child.type == "field_declaration":
                 field = Field(child, self.name)
                 self.fields[field.identifier] = field
+            if child.type == "enum_declaration":
+                pass
             
         
     def get_methods(self) -> list[Method]:
