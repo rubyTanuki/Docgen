@@ -1,8 +1,8 @@
-from java_file import File
+from java_file import JavaFile
 
 file_path = "Java/DataProcessor.java"
 java = open(file_path, "rb").read()
 
-file = File(java)
+file = JavaFile(java)
 
 
