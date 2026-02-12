@@ -1,11 +1,22 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "Docgen"
+name = "toongen"
 version = "0.1.0"
-dependencies = []
+description = "AST scraper for LLM RAG"
+dependencies = [
+    "tree-sitter"
+]
+
+[project.scripts]
+toongen = "cli:main"
+
+[tool.setuptools]
+py-modules = ["cli", "member_registry", "toons", "language", "queries"]
 
 [tool.setuptools.packages.find]
 where = ["."]
+# Optional: explicitly include the Languages folder if you are having issues
+include = ["Languages*"]

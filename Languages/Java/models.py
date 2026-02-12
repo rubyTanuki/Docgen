@@ -67,13 +67,6 @@ class JavaFile(BaseFile):
         for java_class in self.classes:
             java_class.resolve_dependencies()
 
-    def __iter__(self):
-        return iter(self.classes)
-
-    def __str__(self):
-        return f"File: {self.package+'.'+self.filename if self.package else self.filename}" + "\n\t".join([str(c) for c in self.classes])
-
-
 
 class JavaClass(BaseClass):
     
@@ -176,14 +169,16 @@ class JavaClass(BaseClass):
         for mod in self.modifiers_list:
             if mod in self.ACCESS_MODIFIERS:
                 self.access_level = mod
-            if mod == "final":
+            elif mod == "final":
                 self.is_final = True
-            if mod == "abstract":
+            elif mod == "abstract":
                 self.is_abstract = True
-            if mod == "static":
+            elif mod == "static":
                 self.is_static = True
-            if mod[0] == "@":
+            elif mod[0] == "@":
                 self.marker_annotation = mod
+            else:
+                self.marker_annotation += mod
                 
         # build final class signature string
         self.signature = f"class {self.identifier}"
@@ -483,22 +478,22 @@ class JavaMethod(BaseMethod):
             # try local first
             local_fullname = self.class_name + "." + name
             if local_fullname in MemberRegistry.methods.keys():
-                self.dependencies.append(MemberRegistry.methods[local_fullname])
-                print("RESOLVED DEPENDENCY: to " + str(MemberRegistry.methods[local_fullname]) + f" (fullname {local_fullname} in registry)")
+                self.dependencies.extend(MemberRegistry.methods[local_fullname])
+                # print("RESOLVED DEPENDENCY: to " + str(MemberRegistry.methods[local_fullname]) + f" (fullname {local_fullname} in registry)")
                 continue
             
             # then imports
             for i in imports:
                import_fullname = i + "." + name
                if import_fullname in MemberRegistry.methods.keys():
-                   self.dependencies.append(MemberRegistry.methods[import_fullname])
-                   print("RESOLVED DEPENDENCY: to " + str(MemberRegistry.methods[import_fullname]) + f" (imported fullname {import_fullname} in registry)")
+                   self.dependencies.extend(MemberRegistry.methods[import_fullname])
+                #    print("RESOLVED DEPENDENCY: to " + str(MemberRegistry.methods[import_fullname]) + f" (imported fullname {import_fullname} in registry)")
                    continue
             
             # if there is only one method called [name] in registry
             if len(MemberRegistry.methods_by_name[name]) == 1:
                 self.dependencies.append(MemberRegistry.methods_by_name[name][0])
-                print("RESOLVED DEPENDENCY: to " + str(MemberRegistry.methods_by_name[name][0]) + f" (only one {name} in registry)")
+                # print("RESOLVED DEPENDENCY: to " + str(MemberRegistry.methods_by_name[name][0]) + f" (only one {name} in registry)")
                 continue
             
             # wasnt resolved, so just return all that we have

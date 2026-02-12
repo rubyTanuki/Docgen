@@ -31,7 +31,10 @@ class BaseFile(ABC):
         return self.classes
 
     def __str__(self) -> str:
-        return f"File: {self.filename} ({self.package})\n" + "\n".join([str(c) for c in self.classes])
+        filename = self.filename
+        if self.package:
+            filename = f"{self.package}.{filename}"
+        return f"\n{filename}\n    Imports:\n\t{"\n\t".join([imp for imp in self.imports])}\n" + "\n".join([str(c) for c in self.classes])
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.filename}>"
@@ -43,6 +46,19 @@ class BaseFile(ABC):
         
         for method in self.methods:
             method.resolve_dependencies()
+    
+    def __json__(self):
+        return {
+            "filename": self.filename,
+            "package": self.package,
+            "imports": self.imports,
+            "classes": [c.__json__() for c in self.classes],
+            "methods": [m.__json__() for m in self.methods],
+            "fields": [f.__json__() for f in self.fields]
+        }
+    def __skeleton__(self):
+        obj = {cls.signature: cls.__skeleton__() for cls in self.classes}
+        return {k: v for k, v in obj.items() if v}
 
 
 class BaseField(ABC):
@@ -68,6 +84,16 @@ class BaseField(ABC):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.name}>"
+    
+    def __json__(self):
+        return {
+            "identifier": self.identifier,
+            "name": self.name,
+            "type": self.type,
+            "signature": self.signature
+        }
+    def __skeleton__(self):
+        return self.signature
 
 
 class BaseMethod(ABC):
@@ -102,6 +128,20 @@ class BaseMethod(ABC):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.name}>"
+    
+    def __json__(self):
+        return {
+            "class_name": self.class_name,
+            "identifier": self.identifier,
+            "name": self.name,
+            "return_type": self.return_type,
+            "parameters": self.parameters,
+            "signature": self.signature,
+            # "body": self.body,
+            "dependencies": [str(d) for d in self.dependencies]
+        }
+    def __skeleton__(self):
+        return self.signature
 
 
 class BaseClass(ABC):
@@ -109,7 +149,7 @@ class BaseClass(ABC):
     Abstract representation of a Class or Interface.
     Container for Methods and Fields.
     """
-    def __init__(self, identifier: str, name: str, body: str, child_classes: List["BaseClass"] = None,):
+    def __init__(self, identifier: str, name: str, body: str, child_classes: List["BaseClass"] = [],):
         self.identifier = identifier
         self.name = name
         self.child_classes: List["BaseClass"] = child_classes
@@ -163,6 +203,23 @@ class BaseClass(ABC):
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.name}>"
     
+    def __json__(self):
+        return {
+            "identifier": self.identifier,
+            "name": self.name,
+            "signature": self.signature,
+            "fields": [f.__json__() for f in self.get_fields()],
+            "methods": [m.__json__() for m in self.get_methods()],
+            # "body": self.body,
+            "child_classes": [c.__json__() for c in self.child_classes],
+        }
+    def __skeleton__(self):
+        obj = {
+            "fields": [f.__skeleton__() for f in self.get_fields()],
+            "methods": [m.__skeleton__() for m in self.get_methods()],
+            "child_classes": [c.__skeleton__() for c in self.child_classes],
+        }
+        return {k: v for k, v in obj.items() if v}
 
 class BaseEnum(BaseClass):
     """
@@ -183,3 +240,21 @@ class BaseEnum(BaseClass):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.name}>"
+    
+    def __json__(self):
+        return {
+            "identifier": self.identifier,
+            "name": self.name,
+            "signature": self.signature,
+            # "body": self.body,
+            "child_classes": [c.__json__() for c in self.child_classes],
+            "constants": self.constants
+        }
+    def __skeleton__(self):
+        obj = {
+            "signature": self.signature,
+            "constants": self.constants,
+            "child_classes": [c.__skeleton__() for c in self.child_classes],
+        }
+        return {k: v for k, v in obj.items() if v}
+        
