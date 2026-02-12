@@ -5,7 +5,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/Languages/Java/models.py",
+            "program": "${workspaceFolder}/Docgen.py",
             "console": "integratedTerminal",
             "env": {"PYTHONPATH": "${workspaceFolder}"}
         }

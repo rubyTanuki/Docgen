@@ -35,6 +35,14 @@ class BaseFile(ABC):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.filename}>"
+    
+    @abstractmethod
+    def resolve_dependencies(self):
+        for cls in self.classes:
+            cls.resolve_dependencies()
+        
+        for method in self.methods:
+            method.resolve_dependencies()
 
 
 class BaseField(ABC):
@@ -85,6 +93,10 @@ class BaseMethod(ABC):
         """
         pass
 
+    @abstractmethod
+    def resolve_dependencies(self):
+        pass
+
     def __str__(self) -> str:
         return self.signature
 
@@ -122,6 +134,11 @@ class BaseClass(ABC):
         for m_list in self.methods.values():
             all_methods.extend(m_list)
         return all_methods
+
+    @abstractmethod
+    def resolve_dependencies(self):
+        for method in self.get_methods():
+            method.resolve_dependencies()
 
     def get_fields(self) -> List[BaseField]:
         """Return a list of all fields."""
