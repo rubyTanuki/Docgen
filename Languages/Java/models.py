@@ -2,11 +2,11 @@ import os
 from collections import defaultdict
 from tree_sitter import Node, Query, QueryCursor, Language, Parser
 
-from queries import DEPENDENCY_QUERY
-from language import JAVA_LANGUAGE
+from Languages.Java.queries import DEPENDENCY_QUERY
+from Languages.Java.language import JAVA_LANGUAGE
 
 from member_registry import MemberRegistry
-from Languages.Agnostic import BaseFile, BaseClass, BaseMethod, BaseField, BaseEnum
+from Languages.Agnostic import BaseFile, BaseClass, BaseMethod, BaseField, BaseEnum, BaseParser
 
 
 class JavaFile(BaseFile):
@@ -14,7 +14,6 @@ class JavaFile(BaseFile):
         super().__init__(filename, package, imports)
         self.classes = classes
         
-        self._resolve_all_dependencies()
 
     @classmethod
     def from_source(cls, filename: str, source_code: bytes) -> "JavaFile":
@@ -60,20 +59,19 @@ class JavaFile(BaseFile):
             source = f.read()
         return cls.from_source(os.path.basename(filepath), source)
 
-    def _resolve_all_dependencies(self):
+    def resolve_dependencies(self):
         """
         Passes the file's imports to every method in every class 
         so they can resolve their dependencies.
         """
         for java_class in self.classes:
-            for method in java_class.get_methods():
-                method.resolve_dependencies(self.imports)
+            java_class.resolve_dependencies()
 
     def __iter__(self):
         return iter(self.classes)
 
     def __str__(self):
-        return f"File: {self.filename} ({self.package})\n" + "\n".join([str(c) for c in self.classes])
+        return f"File: {self.package+'.'+self.filename if self.package else self.filename}" + "\n\t".join([str(c) for c in self.classes])
 
 
 
@@ -212,6 +210,9 @@ class JavaClass(BaseClass):
             all_methods.extend(m_list)
         return all_methods
     
+    def resolve_dependencies(self):
+        return super().resolve_dependencies()
+
     def get_fields(self):
         return list(self.fields.values())
     
@@ -610,13 +611,5 @@ class JavaEnum(BaseEnum):
             
         self.signature = base_sig
     
-if __name__ == "__main__":
-    file_path = "TestProject/DataProcessor.java"
-    if os.path.exists(file_path):
-        with open(file_path, "rb") as f:
-            java_bytes = f.read()
-        
-        file = JavaFile.from_source("DataProcessor.java", java_bytes)
-        print(file)
-    else:
-        print(f"File not found: {file_path}")
+    def resolve_dependencies(self):
+        super.resolve_dependences()

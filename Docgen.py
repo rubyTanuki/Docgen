@@ -1,15 +1,9 @@
-import tree_sitter_python as tspython
-import tree_sitter_java as tsjava
-from tree_sitter import Language, Parser
+from Languages.Java import JavaParser
 
-parser = Parser()
+if __name__ == "__main__":
+    file_path = "Languages/Java/TestFiles/MRILib"
 
-JAVA_LANGUAGE = Language(tsjava.language())
-parser.language = JAVA_LANGUAGE
-
-java_code = b"""
-class Test { 
-    void run() { System.out.println("Hello"); } 
-}
-"""
-tree = parser.parse(java_code)
+    parser = JavaParser(file_path)
+    parser.parse()
+    for file in parser.files:
+        print(file)
