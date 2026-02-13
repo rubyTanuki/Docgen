@@ -7,14 +7,16 @@ name = "toongen"
 version = "0.1.0"
 description = "AST scraper for LLM RAG"
 dependencies = [
-    "tree-sitter"
+    "tree-sitter",
+    "tree-sitter-java",
+    "toons"
 ]
 
 [project.scripts]
 toongen = "cli:main"
 
 [tool.setuptools]
-py-modules = ["cli", "member_registry", "toons", "language", "queries"]
+py-modules = ["cli", "member_registry", "language", "queries"]
 
 [tool.setuptools.packages.find]
 where = ["."]

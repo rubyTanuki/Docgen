@@ -1,11 +1,11 @@
 import argparse
 import os
 import sys
+import time  # <-- Added time module
 from pathlib import Path
 
 import toons
 from Languages.Java import JavaParser
-# You can import CSharpParser, etc., here later
 
 def main():
     # 1. Setup the CLI Arguments
@@ -52,6 +52,9 @@ def main():
 
     print(f"🚀 Scanning {args.lang.upper()} project at: {target_path.absolute()}")
 
+    # --- START TIMER ---
+    start_time = time.perf_counter()
+
     # 4. Route to the correct parser
     if args.lang.lower() == "java":
         parser = JavaParser(str(target_path))
@@ -80,7 +83,11 @@ def main():
     with open(target_path / "_skeleton.toon", "w") as file:
         file.write(skeleton_string)
 
-    print(f"✅ Success! Master files saved to {target_path.absolute()}")
+    # --- END TIMER ---
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+
+    print(f"✅ Success! Master files saved in {elapsed_time:.3f} seconds.")
 
 if __name__ == "__main__":
     main()
