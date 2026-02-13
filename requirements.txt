@@ -1,14 +1,3 @@
-click==8.3.1
-markdown-it-py==4.0.0
-mdurl==0.1.2
-Pygments==2.19.2
-rich==14.3.2
-shellingham==1.5.4
--e git+https://github.com/rubyTanuki/Docgen.git@0efbd2a012c78e6b26b36f94e01746901f4ffdbc#egg=toongen
 toons==0.5.2
 tree-sitter==0.25.2
-tree-sitter-c-sharp==0.23.1
 tree-sitter-java==0.23.5
-tree-sitter-python==0.25.0
-typer==0.21.1
-typing_extensions==4.15.0
