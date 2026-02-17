@@ -100,14 +100,22 @@ if __name__ == "__main__":
         raise ValueError("API key not found. Set the GEMINI_API_KEY environment variable.")
 
     llm = GeminiClient(api_key=GEMINI_API_KEY)
-    for i in range(1):
-        start_time = time.perf_counter()
-        response =  llm.generate_description(class_obj, [])
-        end_time = time.perf_counter()
-        elapsed_time = end_time - start_time
+    
+    start_time = time.perf_counter()
+    class_obj.resolve_descriptions(llm, file.imports)
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    print(f"Generated descriptions in {elapsed_time:.4f} seconds.")
+    
+    
+    # for i in range(1):
+    #     start_time = time.perf_counter()
+    #     response =  llm.generate_description(class_obj, [])
+    #     end_time = time.perf_counter()
+    #     elapsed_time = end_time - start_time
 
-        print(response)
-        print(f"responded in {elapsed_time:.4f} seconds.")
+    #     print(response)
+    #     print(f"responded in {elapsed_time:.4f} seconds.")
     
     
     

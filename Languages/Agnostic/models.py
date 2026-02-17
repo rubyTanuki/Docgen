@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
+import json
+
 class BaseFile(ABC):
     """
     Abstract representation of a source code file.
@@ -21,6 +23,10 @@ class BaseFile(ABC):
         """Triggers dependency resolution for all children."""
         for cls in self.classes:
             cls.resolve_dependencies(self.imports)
+    
+    def resolve_descriptions(self, llm: "LLMClient"):
+        for cls in classes:
+            cls.resolve_descriptions(llm, self.imports)
 
     def __json__(self):
         return {
@@ -58,11 +64,27 @@ class BaseClass(ABC):
         """Factory method to parse an AST node."""
         pass
 
-    def resolve_dependencies(self, imports: List[str]):
+    def resolve_dependencies(self, imports: List[str] = []):
         """Passes context to methods to link dependencies."""
         for method in self.methods.values():
             method.resolve_dependencies(imports)
-        pass
+    
+    def resolve_descriptions(self, llm: "LLMClient", imports: List[str] = []):
+        response = llm.generate_description(self, imports)
+        # return response
+        # deserialize
+        response_obj = json.loads(response)
+        # extract class level description, confidence, needs_context
+        self.description = response_obj["description"]
+        self.confidence = response_obj["confidence"]
+        self.needs_context = response_obj["needs_context"]
+        # extract method level descriptions
+        for method_obj in response_obj["methods"]:
+            method = self.methods[method_obj["umid"]]
+            method.description = method_obj["description"]
+            method.confidence = method_obj["confidence"]
+            method.needs_context = method_obj["needs_context"]
+        # determine which methods need second pass
 
     def __json__(self):
         return {

@@ -39,6 +39,10 @@ class BaseParser(ABC):
             # or you might need to pass self.files/imports here depending on your impl
             file.resolve_dependencies()
 
+    def resolve_descriptions(self, llm: "LLMClient"):
+        for file in self.files:
+            file.resolve_descriptions(llm)
+
     def generate_distributed_context(self, output_filename="_context.toon"):
         """
         Groups files by their directory and writes a skeleton .toon file

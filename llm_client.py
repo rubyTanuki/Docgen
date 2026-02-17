@@ -5,14 +5,14 @@ from google.genai import types
 from pydantic import BaseModel, Field
 
 class MethodDescription(BaseModel):
-    signature: str = Field(description="Signature of the method")
+    umid: str = Field(description="umid of the method")
     description: str = Field(description="Description of the method")
     confidence: int = Field(description="Confidence in analysis based only on provided code")
     needs_context: int = Field(description="Dependency on external/unknown state (0=Pure, 100=Dependent on external logic)")
     needs_description: bool = Field(description="True if the method is complex enough to warrant a description (ignore simple getters/setters)")
 
 class DescriptionResult(BaseModel):
-    signature: str = Field(description="Signature of the class")
+    ucid: str = Field(description="ucid of the class")
     description: str = Field(description="Description of the class")
     confidence: int = Field(description="Confidence in analysis based only on provided code")
     needs_context: int = Field(description="Dependency on external/unknown state (0=Pure, 100=Dependent on external logic)")
@@ -46,16 +46,10 @@ Analyze the provided code and generate a JSON response.
         # Prepare the User Content
         input_data = {
             "code": class_obj.body,
-            "signature": class_obj.signature,
+            "ucid": class_obj.ucid,
             "imports": imports,
+            "method_umids": [method.umid for method in class_obj.methods.values()]
         }
-        
-        # config = types.GenerateContentConfig(
-        #     temperature=0.2,
-        #     max_output_tokens=1024,
-        #     system_instruction=system_instruction,
-        #     response_mime_type="application/json"
-        # )
 
         try: 
             interaction =  self.client.interactions.create(
