@@ -5,7 +5,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/Docgen.py",
+            "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "env": {"PYTHONPATH": "${workspaceFolder}"}
         }

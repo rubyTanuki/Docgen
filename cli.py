@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-import time  # <-- Added time module
+import time
 from pathlib import Path
 
 import toons
@@ -10,18 +10,16 @@ from Languages.Java import JavaParser
 def main():
     # 1. Setup the CLI Arguments
     cli = argparse.ArgumentParser(
-        prog="docgen",
+        prog="toongen",
         description="AST scraper for LLM RAG context and documentation generation."
     )
 
-    # Positional argument (now optional, defaults to current directory)
+    # Optional flags
     cli.add_argument("path", type=str, nargs="?", default=".", 
                      help="Path to the project directory to scan (defaults to current directory)")
-    
-    # Optional flags
-    cli.add_argument("-l", "--lang", type=str, default="java", choices=["java", "csharp", "python", "js"], 
+    cli.add_argument("-l", "--lang", type=str, default="java", choices=["java"], 
                      help="Target language to parse (default: java)")
-    cli.add_argument("--no-dist", action="store_true", 
+    cli.add_argument("--no-dist", "--root", action="store_true", 
                      help="Disable generating distributed context files in subdirectories")
     cli.add_argument("--clean", action="store_true", 
                      help="Remove all generated .toon context and skeleton files in the directory and exit")
@@ -87,7 +85,7 @@ def main():
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time
 
-    print(f"✅ Success! Master files saved in {elapsed_time:.3f} seconds.")
+    print(f"✅ Success! Master files saved in {elapsed_time:.4f} seconds.")
 
 if __name__ == "__main__":
     main()

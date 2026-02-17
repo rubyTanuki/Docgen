@@ -1,3 +1,5 @@
+keygen==0.0.3
+python-dotenv==1.2.1
 toons==0.5.2
 tree-sitter==0.25.2
 tree-sitter-java==0.23.5
