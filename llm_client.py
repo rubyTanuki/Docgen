@@ -3,6 +3,7 @@ import json
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
+import time
 
 class MethodDescription(BaseModel):
     umid: str = Field(description="umid of the method")
@@ -23,7 +24,7 @@ class GeminiClient:
         self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
         
-        self.semaphore = asyncio.Semaphore(100)
+        self.semaphore = asyncio.Semaphore(200)
 
     async def generate_description(self, class_obj: "BaseClass", imports: list[str]) -> dict:
         # Define the system prompt (static instructions)
@@ -49,9 +50,51 @@ Analyze the provided code and generate a JSON response.
             "method_umids": [method.umid for method in class_obj.methods.values()]
         }
         print(f"Generating Description for {class_obj.ucid}...")
-        try: 
-            async with self.semaphore:
-                # 3. Use client.aio for async execution and bundle config
+        start_time = time.perf_counter()
+        
+        max_retries = 3
+        base_delay = 2
+        
+        async with self.semaphore:
+            for attempt in range(max_retries):
+                try: 
+                    response = await self.client.aio.models.generate_content(
+                        model=self.model_name,
+                        contents=json.dumps(input_data),
+                        config=types.GenerateContentConfig(
+                            system_instruction=system_instruction,
+                            response_mime_type="application/json",
+                            response_json_schema=DescriptionResult.model_json_schema(),
+                            temperature=0.2,
+                            max_output_tokens=8192
+                        )
+                    )
+                    end_time = time.perf_counter()
+                    elapsed_time = end_time - start_time
+                    print(f"✅ Generated Description for {class_obj.ucid} in {elapsed_time:.4f} seconds.")
+                    return response.parsed
+                    
+                except Exception as e:
+                    error_str = str(e)
+                    # If it's a 503 Unavailable or 429 Too Many Requests, retry
+                    if "503" in error_str or "429" in error_str:
+                        if attempt < max_retries - 1:
+                            # Exponential backoff (2s, 4s, 8s...)
+                            sleep_time = base_delay * (2 ** attempt)
+                            print(f"⏳ Server busy (503/429) on {class_obj.ucid}. Retrying in {sleep_time}s...")
+                            await asyncio.sleep(sleep_time)
+                            continue 
+                            
+                    # If it's a different error (or we ran out of retries), fail gracefully
+                    return {
+                        "ucid": class_obj.ucid,
+                        "error": error_str,
+                        "status": "error"
+                    }
+        
+        # try: 
+        #     async with self.semaphore:
+        #         # 3. Use client.aio for async execution and bundle config
                 response = await self.client.aio.models.generate_content(
                     model=self.model_name,
                     contents=json.dumps(input_data),
@@ -64,13 +107,14 @@ Analyze the provided code and generate a JSON response.
                     )
                 )
             
-            # The JSON string is safely retrieved via .text
-            print(f"✅ Generated Description for {class_obj.ucid}")
-            return response.parsed
+        #     end_time = time.perf_counter()
+        #     elapsed_time = end_time - start_time
+        #     print(f"✅ Generated Description for {class_obj.ucid} in {elapsed_time:.4f} seconds.")
+        #     return response.parsed
             
-        except Exception as e:
-            return {
-                "ucid": class_obj.ucid,
-                "error": str(e),
-                "status": "error"
-            }
+        # except Exception as e:
+        #     return {
+        #         "ucid": class_obj.ucid,
+        #         "error": str(e),
+        #         "status": "error"
+        #     }

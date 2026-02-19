@@ -4,7 +4,7 @@
         classes[1]:
             - ucid: MRILib.BotValues
                 signature: public class BotValues
-                description: "Stores robot-specific configuration values including motor directions, wheel dimensions, gear ratios, and zero power behaviors."
+                description: "Stores robot-specific configuration values including motor directions, wheel dimensions, and gear ratios, along with constants for motor tick calculations and zero power behaviors."
                 fields[16]{name,field_type}:
                     LEFTDIR,DcMotor.Direction
                     RIGHTDIR,DcMotor.Direction
@@ -39,15 +39,15 @@
                         line: 9
                         signature: public @Override void runOpMode()
                         body_hash: 8721562a
-                        description: "Initializes the robot, starts multi-threaded operation, and enters a loop that continuously updates the robot's drive system and arm state machine based on gamepad inputs, while also displaying telemetry data. The method handles robot movement, heading resets, arm state transitions, and telemetry updates. It stops multi-threaded operation upon exiting the loop."
-                        dependencies[19]: (candidate)MRILib.statemachine.BotState#update(),(candidate)MRILib.statemachine.ArmFSM#setState(ArmState),(candidate)MRILib.motion.PID#update(double),"(candidate)MRILib.motion.PID#update(double,double)",(candidate)MRILib.motion.HeadingPID#update(double),#init(),MRILib.statemachine.BotState#toString(),MRILib.managers.Bot#getPosition(),(candidate)MRILib.managers.Bot#update(),(candidate)MRILib.statemachine.ArmFSM#update(),(candidate)MRILib.motion.PIDController#update(),"MRILib.managers.Bot#driveFieldXYW(double,double,double)",MRILib.managers.Bot#getX(),MRILib.managers.ArmBotFF#stopMultiThread(),(candidate)MRILib.util.Bpad#update(Gamepad),MRILib.managers.Bot#getY(),MRILib.managers.Bot#getHeading(),(candidate)MRILib.statemachine.ArmFSM#setState(String),(candidate)MRILib.statemachine.DriveFSM#update()
-                        unresolved_dependencies[8]: addData,waitForStart,resetHeading,resetYaw,max,addLine,opModeIsActive,startMultiThread
+                        description: "Initializes the robot, starts multi-threaded operation, and enters a loop that continuously updates the robot's drive system and arm state machine based on gamepad inputs, while also displaying telemetry data. The loop handles robot movement, heading resets, arm state changes, and telemetry updates, and terminates when the op mode is no longer active, stopping the robot's multi-threaded operations."
+                        dependencies[19]: MRILib.statemachine.BotState#toString(),(candidate)MRILib.statemachine.BotState#update(),"MRILib.managers.Bot#driveFieldXYW(double,double,double)",MRILib.managers.Bot#getHeading(),(candidate)MRILib.managers.Bot#update(),(candidate)MRILib.motion.HeadingPID#update(double),(candidate)MRILib.util.Bpad#update(Gamepad),(candidate)MRILib.statemachine.ArmFSM#setState(ArmState),(candidate)MRILib.statemachine.DriveFSM#update(),MRILib.managers.Bot#getX(),MRILib.managers.Bot#getY(),MRILib.managers.ArmBotFF#stopMultiThread(),"(candidate)MRILib.motion.PID#update(double,double)",(candidate)MRILib.motion.PID#update(double),(candidate)MRILib.statemachine.ArmFSM#setState(String),(candidate)MRILib.statemachine.ArmFSM#update(),(candidate)MRILib.motion.PIDController#update(),#init(),MRILib.managers.Bot#getPosition()
+                        unresolved_dependencies[8]: resetYaw,addData,startMultiThread,addLine,opModeIsActive,waitForStart,max,resetHeading
                     - umid: A_TeleOp#init()
                         return_type: void
                         line: 54
                         signature: public void init()
                         body_hash: 865f0fa7
-                        description: "Initializes the ArmBotFF instance with the provided hardware map and telemetry, sets the motor run mode to RUN_WITHOUT_ENCODER, enables brake mode, and initializes the ArmFSM with the robot instance and gamepad inputs."
+                        description: "Initializes the ArmBotFF instance with the provided hardware map and telemetry, sets the motor run mode to RUN_WITHOUT_ENCODER, enables brake mode, and initializes the ArmFSM with the robot instance and gamepad controllers."
                         dependencies[2]: MRILib.managers.Bot#enableBrakeMode(boolean),MRILib.managers.Bot#setMode(DcMotor.RunMode)
                         unresolved_dependencies[0]:
                 child_classes[0]:
@@ -56,7 +56,7 @@
         classes[1]:
             - ucid: MRILib.opmodes.AutonExample
                 signature: "public @Autonomous(name = \"AutonExample\") class AutonExample extends LinearOpMode"
-                description: "An autonomous OpMode that controls the robot's movement and arm actions to autonomously collect and drop game elements, utilizing PID controllers for precise motion and a state machine for arm control."
+                description: "An autonomous OpMode class that controls the robot's actions, including movement, arm manipulation, and object detection, to execute a predefined sequence of tasks."
                 fields[6]{name,field_type}:
                     bot,Bot
                     pid,PIDController
@@ -70,16 +70,16 @@
                         line: 32
                         signature: public @Override void runOpMode()
                         body_hash: 0ee9a361
-                        description: "Initializes the robot's hardware, PID controllers, and state machines, then executes a predefined sequence of movements and arm actions for autonomous operation, including moving to specific waypoints, dropping game elements, and collecting ground samples, while continuously updating robot status and telemetry."
-                        dependencies[38]: "(candidate)MRILib.motion.PIDController#moveTo(double,double,double)",(candidate)MRILib.statemachine.BotState#start(),(candidate)MRILib.statemachine.BotState#update(),(candidate)MRILib.statemachine.ArmFSM#setState(ArmState),(candidate)MRILib.motion.PID#update(double),"(candidate)MRILib.motion.PID#update(double,double)",(candidate)MRILib.motion.HeadingPID#update(double),MRILib.motion.PIDController#setTurnPID(PID),(candidate)MRILib.motion.PIDController#start(),MRILib.managers.Bot#getPosition(),(candidate)MRILib.managers.Bot#update(),(candidate)MRILib.managers.Bot#setPosition(Pose2D),(candidate)MRILib.statemachine.ArmFSM#update(),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)",(candidate)MRILib.motion.PIDController#update(),"(candidate)MRILib.statemachine.DriveFSM#waitForSeconds(double,Runnable)",(candidate)MRILib.statemachine.DriveFSM#waitForSeconds(double),(candidate)MRILib.statemachine.DriveFSM#start(),MRILib.managers.Bot#getX(),"MRILib.motion.PIDController#setPID(PID,PID)","(candidate)MRILib.statemachine.DriveFSM#moveTo(double,double,double)","(candidate)MRILib.statemachine.DriveFSM#moveTo(double,double,double,Runnable,double)",(candidate)MRILib.motion.PID#start(),(candidate)MRILib.util.Bpad#update(Gamepad),MRILib.managers.Bot#getY(),MRILib.managers.Bot#getHeading(),MRILib.motion.PIDController#getCurrentRadians(),"(candidate)MRILib.statemachine.DriveFSM#moveTo(double,double,double,double)",(candidate)MRILib.statemachine.ArmFSM#setState(String),MRILib.managers.Bot#setMode(DcMotor.RunMode),"(candidate)MRILib.statemachine.DriveFSM#moveTo(double,double,double,Runnable)",MRILib.motion.PIDController#getTargetRadians(),MRILib.motion.PIDController#getTargetX(),MRILib.managers.Bot#enableBrakeMode(boolean),(candidate)MRILib.statemachine.DriveFSM#moveTo(Pose2D),MRILib.motion.PIDController#getTargetY(),(candidate)MRILib.statemachine.ArmFSM#start(),(candidate)MRILib.statemachine.DriveFSM#update()
-                        unresolved_dependencies[4]: addData,waitForStart,addLine,opModeIsActive
+                        description: "Initializes the robot's hardware and state, then executes a sequence of autonomous actions including moving to specific locations, dropping objects, picking up samples, and updating telemetry. The method manages the robot's drive system (DriveFSM) and arm (asm) states, utilizing PID controllers for precise movement. It also includes commented-out code for AprilTag detection and localization. The main loop continuously updates the robot's systems and displays relevant information on the driver's hub."
+                        dependencies[38]: (candidate)MRILib.statemachine.DriveFSM#moveTo(Pose2D),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)",MRILib.motion.PIDController#getTargetRadians(),MRILib.managers.Bot#setMode(DcMotor.RunMode),(candidate)MRILib.statemachine.BotState#update(),(candidate)MRILib.statemachine.DriveFSM#waitForSeconds(double),"(candidate)MRILib.statemachine.DriveFSM#moveTo(double,double,double,Runnable)","(candidate)MRILib.statemachine.DriveFSM#moveTo(double,double,double,double)","(candidate)MRILib.motion.PIDController#moveTo(double,double,double)",MRILib.motion.PIDController#getTargetY(),(candidate)MRILib.motion.PIDController#start(),MRILib.managers.Bot#getHeading(),(candidate)MRILib.managers.Bot#update(),(candidate)MRILib.motion.HeadingPID#update(double),"(candidate)MRILib.statemachine.DriveFSM#moveTo(double,double,double)",MRILib.motion.PIDController#setTurnPID(PID),MRILib.managers.Bot#enableBrakeMode(boolean),"(candidate)MRILib.statemachine.DriveFSM#moveTo(double,double,double,Runnable,double)",MRILib.motion.PIDController#getCurrentRadians(),(candidate)MRILib.statemachine.BotState#start(),(candidate)MRILib.util.Bpad#update(Gamepad),(candidate)MRILib.statemachine.DriveFSM#update(),(candidate)MRILib.statemachine.ArmFSM#setState(ArmState),"MRILib.motion.PIDController#setPID(PID,PID)",MRILib.managers.Bot#getY(),MRILib.managers.Bot#getX(),(candidate)MRILib.statemachine.DriveFSM#start(),"(candidate)MRILib.motion.PID#update(double,double)",(candidate)MRILib.motion.PID#update(double),"(candidate)MRILib.statemachine.DriveFSM#waitForSeconds(double,Runnable)",(candidate)MRILib.statemachine.ArmFSM#start(),MRILib.motion.PIDController#getTargetX(),(candidate)MRILib.statemachine.ArmFSM#setState(String),(candidate)MRILib.statemachine.ArmFSM#update(),(candidate)MRILib.motion.PID#start(),(candidate)MRILib.motion.PIDController#update(),(candidate)MRILib.managers.Bot#setPosition(Pose2D),MRILib.managers.Bot#getPosition()
+                        unresolved_dependencies[4]: waitForStart,addLine,opModeIsActive,addData
                 child_classes[0]:
     - ufid: ServoZero.java
         imports[2]: MRILib.util,java.util
         classes[1]:
             - ucid: MRILib.opmodes.ServoZero
                 signature: "public @TeleOp(name = \"Servo Zero\") class ServoZero extends OpMode"
-                description: A mecanum drive robot control program that allows for individual servo control and position adjustment via gamepad input.
+                description: A mecanum robot control class that allows for individual servo control and telemetry display.
                 fields[8]{name,field_type}:
                     gpad,Bpad
                     elbow,Servo
@@ -103,8 +103,8 @@
                         line: 30
                         signature: public void loop()
                         body_hash: 6c57eff5
-                        description: "Continuously monitors gamepad input to adjust the selected servo's target position, cycling through servos using D-pad controls and incrementing/decrementing positions with A/Y buttons, then applies the new positions to the servos upon trigger activation, while also updating telemetry with current servo states."
-                        dependencies[12]: (candidate)MRILib.managers.Bot#update(),(candidate)MRILib.statemachine.BotState#update(),MRILib.util.Bpad#get(String),(candidate)MRILib.motion.PID#update(double),(candidate)MRILib.managers.Bot#setPosition(Pose2D),(candidate)MRILib.statemachine.ArmFSM#update(),(candidate)MRILib.util.Bpad#update(Gamepad),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)","(candidate)MRILib.motion.PID#update(double,double)",(candidate)MRILib.motion.PIDController#update(),(candidate)MRILib.motion.HeadingPID#update(double),(candidate)MRILib.statemachine.DriveFSM#update()
+                        description: "Continuously monitors gamepad input to adjust the selected servo's target position, updates servo positions based on trigger input, and displays current servo positions and the active servo index via telemetry."
+                        dependencies[12]: (candidate)MRILib.motion.PID#update(double),(candidate)MRILib.statemachine.DriveFSM#update(),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)",MRILib.util.Bpad#get(String),(candidate)MRILib.managers.Bot#update(),(candidate)MRILib.statemachine.ArmFSM#update(),(candidate)MRILib.motion.HeadingPID#update(double),(candidate)MRILib.statemachine.BotState#update(),(candidate)MRILib.motion.PIDController#update(),"(candidate)MRILib.motion.PID#update(double,double)",(candidate)MRILib.managers.Bot#setPosition(Pose2D),(candidate)MRILib.util.Bpad#update(Gamepad)
                         unresolved_dependencies[2]: addData,length
                 child_classes[0]:
     - ufid: Bpad.java
@@ -112,7 +112,7 @@
         classes[1]:
             - ucid: MRILib.util.Bpad
                 signature: public class Bpad
-                description: "Represents a gamepad input state, tracking current and previous button states, trigger values, and analog stick positions."
+                description: "Represents a gamepad input state, tracking current and previous button states, trigger values, and stick positions."
                 fields[7]{name,field_type}:
                     map,"HashMap<String, Boolean>"
                     left_stick_x,double
@@ -127,7 +127,7 @@
                         line: 15
                         signature: public boolean get(String button)
                         body_hash: 94bfbfca
-                        description: Retrieves the current boolean state of a specified button or input. Returns false if the input is not tracked or is currently inactive.
+                        description: Retrieves the current boolean state of a specified button. Returns false if the button state is not tracked.
                         dependencies[1]: #get(String)
                         unresolved_dependencies[1]: containsKey
                     - umid: MRILib.util.Bpad#update(Gamepad)
@@ -135,7 +135,7 @@
                         line: 19
                         signature: public void update(Gamepad gpad)
                         body_hash: 91ab5b7c
-                        description: "Updates the internal state of the Bpad object based on the provided Gamepad object. It copies analog stick and trigger values, and tracks the current and previous states of all buttons, triggers, and stick buttons to detect changes (e.g., presses, releases, double presses)."
+                        description: "Updates the gamepad's state based on the provided Gamepad object. It copies analog stick and trigger values, and tracks the current and previous states of all buttons and triggers to detect changes (e.g., double presses)."
                         dependencies[1]: #get(String)
                         unresolved_dependencies[1]: put
                 child_classes[0]:
@@ -165,7 +165,7 @@
         classes[1]:
             - ucid: MRILib.statemachine.BotState
                 signature: public abstract class BotState
-                description: "Represents a single state within a finite state machine (FSM), characterized by a name and lifecycle methods (start, update, end) that can be overridden by subclasses to define state-specific behavior."
+                description: "Represents a single state within a finite state machine (FSM), characterized by a name and lifecycle methods (start, update, end) that can be overridden for custom behavior."
                 fields[1]{name,field_type}:
                     name,String
                 methods[6]:
@@ -190,7 +190,7 @@
                         line: 40
                         signature: package-private void start()
                         body_hash: 44136fa3
-                        description: "Lifecycle method called once when the state becomes active; intended for initialization logic, with a default no-op implementation."
+                        description: Lifecycle method called once when the state becomes active; intended for initialization logic.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.BotState#update()
@@ -198,7 +198,7 @@
                         line: 47
                         signature: package-private void update()
                         body_hash: 44136fa3
-                        description: "Lifecycle method called repeatedly while the state is active; intended for the main state logic and transition checks, with a default no-op implementation."
+                        description: Lifecycle method called repeatedly while the state is active; intended for main logic and transition checks.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.BotState#end()
@@ -206,7 +206,7 @@
                         line: 54
                         signature: package-private void end()
                         body_hash: 44136fa3
-                        description: "Lifecycle method called once when the state is about to be deactivated; intended for cleanup logic, with a default no-op implementation."
+                        description: Lifecycle method called once when the state is about to be deactivated; intended for cleanup logic.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.BotState#toString()
@@ -214,7 +214,7 @@
                         line: 61
                         signature: public @Override String toString()
                         body_hash: 9403f937
-                        description: "Returns the name of the state as its string representation, useful for logging and debugging."
+                        description: Returns the name of the state as its string representation.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                 child_classes[0]:
@@ -223,7 +223,7 @@
         classes[3]:
             - ucid: MRILib.statemachine.ArmFSM
                 signature: public class ArmFSM
-                description: "Manages the state transitions and actions for a robot arm using a finite state machine (FSM) pattern, supporting both autonomous and tele-operated modes."
+                description: "Manages the state transitions and actions for a robot arm using a Finite State Machine (FSM) pattern, handling both autonomous and tele-operated modes."
                 fields[6]{name,field_type}:
                     bot,ArmBotEasy
                     currentState,ArmState
@@ -237,16 +237,16 @@
                         line: 68
                         signature: public ArmFSM(ArmBotEasy bot)
                         body_hash: 1e259f0c
-                        description: "Constructor for Autonomous mode, initializing the FSM, loading states, and setting the default state without gamepad input."
-                        dependencies[2]: #init(),MRILib.statemachine.ArmState#getState(String)
+                        description: "Constructor for autonomous mode, initializing the FSM, loading states, and setting the default state without gamepad input."
+                        dependencies[2]: MRILib.statemachine.ArmState#getState(String),#init()
                         unresolved_dependencies[0]:
                     - umid: "MRILib.statemachine.ArmFSM#ArmFSM(ArmBotEasy,Gamepad,Gamepad)"
                         return_type: <constructor>
                         line: 82
                         signature: "public ArmFSM(ArmBotEasy bot, Gamepad gpad1, Gamepad gpad2)"
                         body_hash: 70f1e9f1
-                        description: "Constructor for TeleOp mode, initializing the FSM, loading states, setting the default state, and storing references to the provided gamepads."
-                        dependencies[2]: #init(),MRILib.statemachine.ArmState#getState(String)
+                        description: "Constructor for tele-operation mode, initializing the FSM, loading states, setting the default state, and storing references to the provided gamepads."
+                        dependencies[2]: MRILib.statemachine.ArmState#getState(String),#init()
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.ArmFSM#start()
                         return_type: void
@@ -261,7 +261,7 @@
                         line: 102
                         signature: public void update()
                         body_hash: 507f6ae0
-                        description: Executes the update logic for the current state and checks for any pending conditional actions.
+                        description: Executes the main update logic for the current state and checks for any conditional actions or state transitions.
                         dependencies[2]: #checkConditionals(),#update()
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.ArmFSM#end()
@@ -269,7 +269,7 @@
                         line: 110
                         signature: public void end()
                         body_hash: 3c389052
-                        description: Executes the termination logic for the currently active arm state.
+                        description: Executes the cleanup logic for the currently active arm state before transitioning to a new state or ending.
                         dependencies[1]: #end()
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.ArmFSM#setState(String)
@@ -278,14 +278,14 @@
                         signature: public void setState(String name)
                         body_hash: 40a62949
                         description: "Sets the current state of the FSM to a new state identified by its name, transitioning from the previous state."
-                        dependencies[3]: (candidate)#setState(String),MRILib.statemachine.ArmState#getState(String),(candidate)#setState(ArmState)
+                        dependencies[3]: (candidate)#setState(ArmState),MRILib.statemachine.ArmState#getState(String),(candidate)#setState(String)
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.ArmFSM#setState(ArmState)
                         return_type: void
                         line: 130
                         signature: public void setState(ArmState state)
                         body_hash: ae8a8e19
-                        description: "Sets the current state of the FSM to the provided ArmState instance, handling the transition by ending the current state and starting the new one."
+                        description: "Sets the current state of the FSM to the provided ArmState instance, handling the end of the previous state and the start of the new one."
                         dependencies[2]: #start(),#end()
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.ArmFSM#transition()
@@ -293,15 +293,15 @@
                         line: 144
                         signature: public void transition()
                         body_hash: 58c40077
-                        description: Evaluates the transition conditions defined within the current state and initiates a state change if any condition is met.
-                        dependencies[3]: (candidate)#setState(String),MRILib.statemachine.ArmState#getTransitions(),(candidate)#setState(ArmState)
-                        unresolved_dependencies[2]: getOrDefault,keySet
+                        description: Evaluates the transition conditions defined within the current state and initiates a state change if a condition is met.
+                        dependencies[3]: (candidate)#setState(ArmState),MRILib.statemachine.ArmState#getTransitions(),(candidate)#setState(String)
+                        unresolved_dependencies[2]: keySet,getOrDefault
                     - umid: "MRILib.statemachine.ArmFSM#addConditional(Supplier<Boolean>,Runnable)"
                         return_type: void
                         line: 164
                         signature: "public void addConditional(Supplier<Boolean> condition, Runnable command)"
                         body_hash: d108c146
-                        description: "Adds a one-time conditional action to a list, which will be checked each loop and executed only when its associated condition becomes true."
+                        description: "Adds a one-time conditional action to be executed when a specific condition is met, ensuring the action runs only once."
                         dependencies[0]:
                         unresolved_dependencies[1]: add
                     - umid: MRILib.statemachine.ArmFSM#checkConditionals()
@@ -309,21 +309,21 @@
                         line: 174
                         signature: public void checkConditionals()
                         body_hash: "000881d2"
-                        description: "Iterates through a list of conditional actions, executing the command for any condition that evaluates to true and removing it from the list."
+                        description: "Iterates through all registered conditional actions, executing the command for any condition that is currently met and removing it from the list."
                         dependencies[3]: (candidate)MRILib.managers.PivotArmController#run(),(candidate)MRILib.statemachine.DriveFSM#run(Runnable),MRILib.util.Bpad#get(String)
-                        unresolved_dependencies[5]: equals,remove,getMessage,size,println
+                        unresolved_dependencies[5]: println,remove,size,equals,getMessage
                     - umid: MRILib.statemachine.ArmFSM#init()
                         return_type: void
                         line: 208
                         signature: private void init()
                         body_hash: d6efe397
-                        description: "Initializes all the necessary ArmState instances, defining their start, update, end logic, and transitions."
+                        description: "Initializes all defined ArmState objects, registering them for use within the FSM and setting up their initial logic and transitions."
                         dependencies[1]: #transition()
                         unresolved_dependencies[0]:
                 child_classes[0]:
             - ucid: MRILib.statemachine.ArmState
                 signature: package-private class ArmState extends BotState
-                description: "Represents a state within an ArmStateMachine, managing transitions and storing state instances statically. It provides constructors for creating named or default states and methods for managing transitions to other states."
+                description: "Represents a state within an ArmStateMachine, managing transitions and static storage of state instances."
                 fields[2]{name,field_type}:
                     states,"HashMap<String, ArmState>"
                     transitions,"HashMap<String, Boolean>"
@@ -333,7 +333,7 @@
                         line: 283
                         signature: public static ArmState getState(String s)
                         body_hash: 69067e8f
-                        description: "Retrieves a statically stored ArmState instance by its name, returning the \"DEFAULT\" state if the requested state is not found."
+                        description: "Retrieves a statically stored ArmState instance by its registered name, returning the \"DEFAULT\" state if the requested name is not found."
                         dependencies[1]: MRILib.util.Bpad#get(String)
                         unresolved_dependencies[1]: getOrDefault
                     - umid: MRILib.statemachine.ArmState#clearSavedStates()
@@ -349,7 +349,7 @@
                         line: 300
                         signature: public ArmState()
                         body_hash: 1107fb26
-                        description: "Initializes a new ArmState, names it \"DEFAULT\", and stores it in the static map of states."
+                        description: "Initializes a new ArmState with the name \"DEFAULT\" and registers it in the static states map."
                         dependencies[0]:
                         unresolved_dependencies[1]: put
                     - umid: MRILib.statemachine.ArmState#ArmState(String)
@@ -357,7 +357,7 @@
                         line: 308
                         signature: public ArmState(String name)
                         body_hash: fddd7c4f
-                        description: Initializes a new ArmState with a specified name and stores it in the static map of states.
+                        description: Initializes a new ArmState with a specified name and registers it in the static states map.
                         dependencies[0]:
                         unresolved_dependencies[1]: put
                     - umid: "MRILib.statemachine.ArmState#ArmState(String,boolean)"
@@ -365,7 +365,7 @@
                         line: 317
                         signature: "public ArmState(String name, boolean save)"
                         body_hash: "09d675bf"
-                        description: "Initializes a new ArmState with a specified name, optionally storing it in the static map based on the save flag."
+                        description: "Initializes a new ArmState with a specified name, optionally registering it in the static states map based on the save parameter."
                         dependencies[0]:
                         unresolved_dependencies[1]: put
                     - umid: MRILib.statemachine.ArmState#setDefault(String)
@@ -373,9 +373,9 @@
                         line: 326
                         signature: public void setDefault(String stateName)
                         body_hash: afd10a75
-                        description: "Sets an existing, named state as the default fallback state, which will be returned by `getState(String)` if a requested state is not found."
+                        description: "Sets an existing, registered ArmState as the default fallback state, which is returned by `getState(String)` when a requested state is not found."
                         dependencies[1]: MRILib.util.Bpad#get(String)
-                        unresolved_dependencies[2]: containsKey,put
+                        unresolved_dependencies[2]: put,containsKey
                     - umid: "MRILib.statemachine.ArmState#setTransition(String,boolean)"
                         return_type: void
                         line: 343
@@ -405,7 +405,7 @@
                         line: 375
                         signature: "public Conditional(Supplier<Boolean> condition, Runnable command)"
                         body_hash: 0f34ebcb
-                        description: Initializes a new Conditional object with the specified condition and command.
+                        description: Initializes a new instance of the Conditional class with the specified condition and command.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                 child_classes[0]:
@@ -414,7 +414,7 @@
         classes[1]:
             - ucid: MRILib.statemachine.DriveFSM
                 signature: public class DriveFSM
-                description: "A state machine for controlling robot drive movements, managing a sequence of states including moving to specific poses and waiting for durations, with support for parallel commands and timeouts."
+                description: "Manages a sequence of autonomous driving states (BotState) for a robot, controlling movement and execution of parallel commands."
                 fields[7]{name,field_type}:
                     bot,Bot
                     pid,PIDController
@@ -437,7 +437,7 @@
                         line: 82
                         signature: public void start()
                         body_hash: 3bf89c2a
-                        description: Executes the start logic of the currently active state in the state machine.
+                        description: Executes the start logic of the currently active state in the sequence.
                         dependencies[2]: #start(),MRILib.util.Bpad#get(String)
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.DriveFSM#update()
@@ -445,7 +445,7 @@
                         line: 90
                         signature: public void update()
                         body_hash: d3cf1da4
-                        description: Executes the update logic of the currently active state in the state machine on each loop iteration.
+                        description: Executes the update logic of the currently active state in the sequence.
                         dependencies[2]: #update(),MRILib.util.Bpad#get(String)
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.DriveFSM#end()
@@ -453,15 +453,15 @@
                         line: 98
                         signature: public void end()
                         body_hash: 58bb22f9
-                        description: "Executes the end logic of the currently active state, typically before transitioning to a new state."
-                        dependencies[2]: MRILib.util.Bpad#get(String),#end()
+                        description: Executes the end logic of the currently active state in the sequence.
+                        dependencies[2]: #end(),MRILib.util.Bpad#get(String)
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.DriveFSM#nextState()
                         return_type: void
                         line: 106
                         signature: public void nextState()
                         body_hash: cb25e7cd
-                        description: "Transitions the state machine to the next state in the sequence, calling the end logic of the current state and the start logic of the next state."
+                        description: "Transitions the FSM to the next state in the sequence by ending the current state, incrementing the state index, and starting the new state."
                         dependencies[2]: #start(),#end()
                         unresolved_dependencies[1]: size
                     - umid: "MRILib.statemachine.DriveFSM#moveTo(double,double,double,Runnable,double)"
@@ -469,16 +469,16 @@
                         line: 132
                         signature: "public void moveTo(double x, double y, double theta, Runnable command, double timeout)"
                         body_hash: a06cf2b3
-                        description: "Adds a new state to the sequence that commands the robot to move to a target pose (x, y, theta), optionally executing a parallel command, and with a specified timeout."
-                        dependencies[13]: MRILib.managers.Bot#getHeading(),MRILib.util.Mathf#angleWrap(double),MRILib.managers.Bot#getPosition(),MRILib.managers.Bot#getX(),"(candidate)#moveTo(double,double,double,Runnable,double)","(candidate)#moveTo(double,double,double)",(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)",#update(),#run(Runnable),"(candidate)#moveTo(double,double,double,Runnable)",MRILib.managers.Bot#getY(),#nextState()
+                        description: "Adds a new state to the sequence that commands the robot to move to a target pose (x, y, theta) while optionally executing a parallel command and respecting a timeout."
+                        dependencies[13]: "(candidate)#moveTo(double,double,double,Runnable)","(candidate)#moveTo(double,double,double)","(candidate)#moveTo(double,double,double,Runnable,double)",#nextState(),MRILib.managers.Bot#getHeading(),#update(),MRILib.managers.Bot#getX(),MRILib.managers.Bot#getY(),#run(Runnable),(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)",MRILib.util.Mathf#angleWrap(double),MRILib.managers.Bot#getPosition()
                         unresolved_dependencies[4]: seconds,sqrt,abs,add
                     - umid: "MRILib.statemachine.DriveFSM#moveTo(double,double,double,Runnable)"
                         return_type: void
                         line: 195
                         signature: "public void moveTo(double x, double y, double theta, Runnable command)"
                         body_hash: 7949d4a6
-                        description: Adds a moveTo state with a default timeout of 5 seconds and a specified parallel command.
-                        dependencies[5]: "(candidate)#moveTo(double,double,double,Runnable,double)","(candidate)#moveTo(double,double,double)",(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)","(candidate)#moveTo(double,double,double,Runnable)"
+                        description: Adds a moveTo state with a default timeout of 5 seconds and a parallel command.
+                        dependencies[5]: "(candidate)#moveTo(double,double,double,Runnable)","(candidate)#moveTo(double,double,double)","(candidate)#moveTo(double,double,double,Runnable,double)",(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)"
                         unresolved_dependencies[0]:
                     - umid: "MRILib.statemachine.DriveFSM#moveTo(double,double,double,double)"
                         return_type: void
@@ -486,7 +486,7 @@
                         signature: "public void moveTo(double x, double y, double theta, double timeout)"
                         body_hash: f3dec43b
                         description: Adds a moveTo state with a specified timeout and no parallel command.
-                        dependencies[5]: "(candidate)#moveTo(double,double,double,Runnable,double)","(candidate)#moveTo(double,double,double)",(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)","(candidate)#moveTo(double,double,double,Runnable)"
+                        dependencies[5]: "(candidate)#moveTo(double,double,double,Runnable)","(candidate)#moveTo(double,double,double)","(candidate)#moveTo(double,double,double,Runnable,double)",(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)"
                         unresolved_dependencies[0]:
                     - umid: "MRILib.statemachine.DriveFSM#moveTo(double,double,double)"
                         return_type: void
@@ -494,30 +494,30 @@
                         signature: "public void moveTo(double x, double y, double theta)"
                         body_hash: "07e742a2"
                         description: Adds a moveTo state with a default timeout of 5 seconds and no parallel command.
-                        dependencies[5]: "(candidate)#moveTo(double,double,double,Runnable,double)","(candidate)#moveTo(double,double,double)",(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)","(candidate)#moveTo(double,double,double,Runnable)"
+                        dependencies[5]: "(candidate)#moveTo(double,double,double,Runnable)","(candidate)#moveTo(double,double,double)","(candidate)#moveTo(double,double,double,Runnable,double)",(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)"
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.DriveFSM#moveTo(Pose2D)
                         return_type: void
                         line: 221
                         signature: public void moveTo(Pose2D pose)
                         body_hash: f88c9b49
-                        description: "Adds a moveTo state using a Pose2D object, with default timeout and no parallel command."
-                        dependencies[8]: MRILib.managers.Bot#getHeading(),MRILib.managers.Bot#getX(),"(candidate)#moveTo(double,double,double,Runnable,double)","(candidate)#moveTo(double,double,double)",(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)","(candidate)#moveTo(double,double,double,Runnable)",MRILib.managers.Bot#getY()
+                        description: Adds a moveTo state using a Pose2D object with a default timeout of 5 seconds and no parallel command.
+                        dependencies[8]: "(candidate)#moveTo(double,double,double,Runnable)","(candidate)#moveTo(double,double,double)","(candidate)#moveTo(double,double,double,Runnable,double)",MRILib.managers.Bot#getHeading(),MRILib.managers.Bot#getY(),MRILib.managers.Bot#getX(),(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)"
                         unresolved_dependencies[0]:
                     - umid: "MRILib.statemachine.DriveFSM#waitForSeconds(double,Runnable)"
                         return_type: void
                         line: 233
                         signature: "public void waitForSeconds(double seconds, Runnable command)"
                         body_hash: 5cd46521
-                        description: "Adds a new state to the sequence that waits for a specified duration while holding the last known position, optionally executing a parallel command."
-                        dependencies[8]: "(candidate)#moveTo(double,double,double,Runnable,double)","(candidate)#moveTo(double,double,double)",(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)",#update(),#run(Runnable),"(candidate)#moveTo(double,double,double,Runnable)",#nextState()
+                        description: "Adds a state to the sequence that waits for a specified duration while holding the last known position, optionally executing a parallel command."
+                        dependencies[8]: "(candidate)#moveTo(double,double,double,Runnable)","(candidate)#moveTo(double,double,double)","(candidate)#moveTo(double,double,double,Runnable,double)",#nextState(),#update(),#run(Runnable),(candidate)#moveTo(Pose2D),"(candidate)#moveTo(double,double,double,double)"
                         unresolved_dependencies[2]: seconds,add
                     - umid: MRILib.statemachine.DriveFSM#waitForSeconds(double)
                         return_type: void
                         line: 266
                         signature: public void waitForSeconds(double seconds)
                         body_hash: 47cbb226
-                        description: Adds a wait step with a specified duration and no parallel command.
+                        description: Adds a wait state with a specified duration and no parallel command.
                         dependencies[2]: (candidate)#waitForSeconds(double),"(candidate)#waitForSeconds(double,Runnable)"
                         unresolved_dependencies[0]:
                     - umid: MRILib.statemachine.DriveFSM#run(Runnable)
@@ -525,7 +525,7 @@
                         line: 273
                         signature: public void run(Runnable command)
                         body_hash: c8bcf9ba
-                        description: "Adds a state that immediately executes a given command without any waiting period, effectively a 0-second wait."
+                        description: Adds a state that immediately executes a given command (equivalent to a 0-second wait).
                         dependencies[2]: (candidate)#waitForSeconds(double),"(candidate)#waitForSeconds(double,Runnable)"
                         unresolved_dependencies[0]:
                 child_classes[0]:
@@ -534,7 +534,7 @@
         classes[1]:
             - ucid: MRILib.managers.ArmBotEasy
                 signature: public class ArmBotEasy extends Bot
-                description: "Manages the arm mechanism of the robot, including slide and pivot motors, and claw servos. Initializes and controls these components for robotic arm movement and manipulation."
+                description: "Manages the arm mechanism of the robot, including slide and pivot motors, and claw servos. Provides methods for initialization, control, and state retrieval of arm components."
                 fields[9]{name,field_type}:
                     slide,DcMotorEx
                     pivot,DcMotorEx
@@ -551,7 +551,7 @@
                         line: 40
                         signature: public ArmBotEasy(HardwareMap hm)
                         body_hash: 94836ac3
-                        description: "Constructs an ArmBotEasy instance, initializing base bot functionalities and specific arm motors (slide, pivot) and servos (claw, claw_pitch, claw_roll) using the provided HardwareMap."
+                        description: Initializes the ArmBotEasy by calling the superclass constructor and then initializing its specific motors and servos using the provided HardwareMap.
                         dependencies[2]: #initServos(HardwareMap),#initMotors(HardwareMap)
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotEasy#initMotors(HardwareMap)
@@ -559,15 +559,15 @@
                         line: 54
                         signature: private void initMotors(HardwareMap hm)
                         body_hash: afc9b3e4
-                        description: "Initializes the slide and pivot DC motors by retrieving them from the HardwareMap, setting their direction, resetting their encoders, and configuring them to run using encoder feedback."
-                        dependencies[2]: MRILib.managers.Bot#setMode(DcMotor.RunMode),MRILib.util.Bpad#get(String)
+                        description: "Initializes the slide and pivot DC motors by retrieving them from the HardwareMap, resetting their encoders, setting their directions, and configuring them to run using encoder feedback."
+                        dependencies[2]: MRILib.util.Bpad#get(String),MRILib.managers.Bot#setMode(DcMotor.RunMode)
                         unresolved_dependencies[2]: setDirection,getCurrentPosition
                     - umid: MRILib.managers.ArmBotEasy#initServos(HardwareMap)
                         return_type: void
                         line: 87
                         signature: private void initServos(HardwareMap hm)
                         body_hash: "080a03f5"
-                        description: "Initializes the claw, claw_pitch, and claw_roll servos by retrieving them from the HardwareMap."
+                        description: "Initializes the claw, claw pitch, and claw roll servos by retrieving them from the HardwareMap."
                         dependencies[1]: MRILib.util.Bpad#get(String)
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotEasy#setArmMode(DcMotor.RunMode)
@@ -575,7 +575,7 @@
                         line: 100
                         signature: public void setArmMode(DcMotor.RunMode mode)
                         body_hash: ae2e0c9a
-                        description: "Sets the operational mode (e.g., RUN_USING_ENCODER, RUN_TO_POSITION) for both the slide and pivot motors simultaneously."
+                        description: Sets the operating mode for both the slide and pivot motors simultaneously to the specified DcMotor.RunMode.
                         dependencies[1]: MRILib.managers.Bot#setMode(DcMotor.RunMode)
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotEasy#resetEncoders()
@@ -583,15 +583,15 @@
                         line: 112
                         signature: public @Override void resetEncoders()
                         body_hash: "05e7d7b7"
-                        description: "Resets the encoders for the slide and pivot motors to zero while preserving their current operational modes, and updates the stored encoder positions."
-                        dependencies[3]: MRILib.managers.Bot#setMode(DcMotor.RunMode),#updateEncoders(),#resetEncoders()
+                        description: "Resets the encoders for the slide and pivot motors to zero while preserving their current run modes, and updates the stored encoder positions."
+                        dependencies[3]: #updateEncoders(),#resetEncoders(),MRILib.managers.Bot#setMode(DcMotor.RunMode)
                         unresolved_dependencies[1]: getMode
                     - umid: MRILib.managers.ArmBotEasy#updateEncoders()
                         return_type: void
                         line: 141
                         signature: public @Override void updateEncoders()
                         body_hash: 0c7ee22a
-                        description: "Updates the stored current and previous encoder positions for the slide and pivot motors, reflecting their latest readings."
+                        description: "Updates the current and previous encoder positions for the slide and pivot motors, reflecting their latest readings."
                         dependencies[1]: #updateEncoders()
                         unresolved_dependencies[1]: getCurrentPosition
                     - umid: MRILib.managers.ArmBotEasy#getSlideMotor()
@@ -615,7 +615,7 @@
                         line: 174
                         signature: public int getSlidePos()
                         body_hash: "076a418e"
-                        description: Retrieves the last updated encoder position of the slide motor.
+                        description: Retrieves the last recorded encoder position of the slide motor.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotEasy#getPivotPos()
@@ -623,7 +623,7 @@
                         line: 181
                         signature: public int getPivotPos()
                         body_hash: 0d4eff94
-                        description: Retrieves the last updated encoder position of the pivot motor.
+                        description: Retrieves the last recorded encoder position of the pivot motor.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotEasy#getClawPitch()
@@ -679,7 +679,7 @@
                         line: 227
                         signature: public void setClawPitch(double pos)
                         body_hash: "98169896"
-                        description: Sets the target position for the claw pitch servo.
+                        description: Sets the target position for the claw pitch servo to the specified value.
                         dependencies[2]: (candidate)MRILib.managers.Bot#setPosition(Pose2D),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)"
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotEasy#setClawRoll(double)
@@ -687,7 +687,7 @@
                         line: 235
                         signature: public void setClawRoll(double pos)
                         body_hash: a114d2e9
-                        description: Sets the target position for the claw roll servo.
+                        description: Sets the target position for the claw roll servo to the specified value.
                         dependencies[2]: (candidate)MRILib.managers.Bot#setPosition(Pose2D),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)"
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotEasy#setClaw(double)
@@ -695,7 +695,7 @@
                         line: 243
                         signature: public void setClaw(double pos)
                         body_hash: 4bc88527
-                        description: Sets the target position for the main claw grip servo.
+                        description: Sets the target position for the main claw grip servo to the specified value.
                         dependencies[2]: (candidate)MRILib.managers.Bot#setPosition(Pose2D),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)"
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotEasy#setPivot(int)
@@ -703,23 +703,23 @@
                         line: 253
                         signature: public void setPivot(int target)
                         body_hash: f40176ba
-                        description: "Sets the pivot motor to run to a specific target encoder position, switching its mode to RUN_TO_POSITION and setting a default velocity."
+                        description: Sets the pivot motor to move to a specific target encoder position using RUN_TO_POSITION mode with a default velocity.
                         dependencies[1]: MRILib.managers.Bot#setMode(DcMotor.RunMode)
-                        unresolved_dependencies[2]: setTargetPosition,setVelocity
+                        unresolved_dependencies[2]: setVelocity,setTargetPosition
                     - umid: MRILib.managers.ArmBotEasy#setSlides(int)
                         return_type: void
                         line: 266
                         signature: public void setSlides(int target)
                         body_hash: 517cc452
-                        description: "Sets the slide motor to run to a specific target encoder position, switching its mode to RUN_TO_POSITION and setting a default velocity."
+                        description: Sets the slide motor to move to a specific target encoder position using RUN_TO_POSITION mode with a default velocity.
                         dependencies[1]: MRILib.managers.Bot#setMode(DcMotor.RunMode)
-                        unresolved_dependencies[2]: setTargetPosition,setVelocity
+                        unresolved_dependencies[2]: setVelocity,setTargetPosition
                     - umid: "MRILib.managers.ArmBotEasy#setArm(int,int)"
                         return_type: void
                         line: 280
                         signature: "public void setArm(int pivotTarget, int slideTarget)"
                         body_hash: 8303de74
-                        description: Convenience method to simultaneously set target positions for both the pivot and slide motors.
+                        description: Sets both the pivot and slide motors to move to their respective target encoder positions simultaneously.
                         dependencies[2]: #setPivot(int),#setSlides(int)
                         unresolved_dependencies[0]:
                 child_classes[0]:
@@ -728,7 +728,7 @@
         classes[2]:
             - ucid: MRILib.managers.ArmBotFF
                 signature: public class ArmBotFF extends Bot
-                description: "Manages the robotic arm's motors (slide and pivot) and servos (claw, pitch, roll), including initialization, state updates, and control. It also manages a background thread for arm control logic."
+                description: "Manages the robot's arm and claw mechanisms, including linear slide, pivot motor, and multiple servos, with concurrent control via a dedicated thread."
                 fields[11]{name,field_type}:
                     slide,DcMotorEx
                     pivot,DcMotorEx
@@ -748,7 +748,7 @@
                         signature: "public ArmBotFF(HardwareMap hm, org.firstinspires.ftc.robotcore.external.Telemetry telemetry)"
                         body_hash: 7db9e9e1
                         description: "Initializes the ArmBotFF by setting up motors and servos, creating and starting the PivotArmController thread."
-                        dependencies[7]: #initServos(HardwareMap),(candidate)MRILib.statemachine.DriveFSM#start(),(candidate)MRILib.statemachine.BotState#start(),(candidate)MRILib.motion.PID#start(),(candidate)MRILib.statemachine.ArmFSM#start(),(candidate)MRILib.motion.PIDController#start(),#initMotors(HardwareMap)
+                        dependencies[7]: (candidate)MRILib.motion.PIDController#start(),(candidate)MRILib.statemachine.ArmFSM#start(),#initMotors(HardwareMap),#initServos(HardwareMap),(candidate)MRILib.motion.PID#start(),(candidate)MRILib.statemachine.DriveFSM#start(),(candidate)MRILib.statemachine.BotState#start()
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#initMotors(HardwareMap)
                         return_type: void
@@ -756,7 +756,7 @@
                         signature: private void initMotors(HardwareMap hm)
                         body_hash: 2f5a9b90
                         description: "Initializes the slide and pivot DcMotorEx instances, configuring their modes, directions, zero power behavior, and resetting encoders."
-                        dependencies[4]: MRILib.managers.Bot#setMode(DcMotor.RunMode),#updateEncoders(),MRILib.util.Bpad#get(String),#resetPrevEncoders()
+                        dependencies[4]: #updateEncoders(),MRILib.managers.Bot#setMode(DcMotor.RunMode),MRILib.util.Bpad#get(String),#resetPrevEncoders()
                         unresolved_dependencies[2]: setDirection,setZeroPowerBehavior
                     - umid: MRILib.managers.ArmBotFF#initServos(HardwareMap)
                         return_type: void
@@ -771,7 +771,7 @@
                         line: 121
                         signature: public void setArmMode(DcMotor.RunMode mode)
                         body_hash: ae2e0c9a
-                        description: "Sets the operational mode (e.g., RUN_TO_POSITION, RUN_WITHOUT_ENCODER) for both the slide and pivot motors."
+                        description: Sets the specified DcMotor.RunMode for both the slide and pivot motors.
                         dependencies[1]: MRILib.managers.Bot#setMode(DcMotor.RunMode)
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#resetEncoders()
@@ -780,14 +780,14 @@
                         signature: public @Override void resetEncoders()
                         body_hash: 5b61009e
                         description: "Resets encoders for both drive train (via superclass) and arm motors, preserving their current run modes, and updates internal position trackers."
-                        dependencies[4]: MRILib.managers.Bot#setMode(DcMotor.RunMode),#updateEncoders(),#resetEncoders(),#resetPrevEncoders()
+                        dependencies[4]: #updateEncoders(),#resetEncoders(),MRILib.managers.Bot#setMode(DcMotor.RunMode),#resetPrevEncoders()
                         unresolved_dependencies[1]: getMode
                     - umid: MRILib.managers.ArmBotFF#resetPrevEncoders()
                         return_type: void
                         line: 156
                         signature: public void resetPrevEncoders()
                         body_hash: 7dec2d7a
-                        description: Resets the internal tracking variables for the previous encoder positions of the slide and pivot motors to zero.
+                        description: Resets the internal tracking variables for previous encoder positions of the slide and pivot motors to zero.
                         dependencies[1]: #resetPrevEncoders()
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#updateControllerState()
@@ -795,15 +795,15 @@
                         line: 167
                         signature: public void updateControllerState()
                         body_hash: "04849239"
-                        description: "Updates the PivotArmController with the current pivot motor's position and velocity, intended to be called after updating encoder positions."
-                        dependencies[4]: "(candidate)MRILib.managers.PivotArmController#updateCurrentState(double,double)","(candidate)MRILib.managers.PivotArmController#updateCurrentState(double,double,double)",#getPivotVelocity(),"(candidate)MRILib.managers.PivotArmController#updateCurrentState(int,double)"
+                        description: "Updates the PivotArmController with the current pivot motor position and velocity, intended to be called after updateEncoders()."
+                        dependencies[4]: "(candidate)MRILib.managers.PivotArmController#updateCurrentState(double,double)","(candidate)MRILib.managers.PivotArmController#updateCurrentState(double,double,double)","(candidate)MRILib.managers.PivotArmController#updateCurrentState(int,double)",#getPivotVelocity()
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#updateEncoders()
                         return_type: void
                         line: 179
                         signature: public @Override void updateEncoders()
                         body_hash: 3d3f8c2d
-                        description: Updates the current and previous encoder positions for drive train (via superclass) and arm motors.
+                        description: Updates the current and previous encoder positions for both drive train (via superclass) and arm motors.
                         dependencies[1]: #updateEncoders()
                         unresolved_dependencies[1]: getCurrentPosition
                     - umid: MRILib.managers.ArmBotFF#getSlideMotor()
@@ -811,7 +811,7 @@
                         line: 195
                         signature: public DcMotorEx getSlideMotor()
                         body_hash: 1696b7c0
-                        description: Retrieves the DcMotorEx instance for the slide.
+                        description: Retrieves the DcMotorEx instance for the linear slide.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#getPivotMotor()
@@ -819,7 +819,7 @@
                         line: 197
                         signature: public DcMotorEx getPivotMotor()
                         body_hash: db645d36
-                        description: Retrieves the DcMotorEx instance for the pivot.
+                        description: Retrieves the DcMotorEx instance for the pivot motor.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#getSlidePos()
@@ -859,7 +859,7 @@
                         line: 209
                         signature: public Servo getClawPitch()
                         body_hash: 6d933d73
-                        description: Retrieves the Servo instance for the claw pitch.
+                        description: Retrieves the Servo instance controlling the claw's pitch.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#getClawRoll()
@@ -867,7 +867,7 @@
                         line: 211
                         signature: public Servo getClawRoll()
                         body_hash: 1e07723a
-                        description: Retrieves the Servo instance for the claw roll.
+                        description: Retrieves the Servo instance controlling the claw's roll.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#getClaw()
@@ -875,7 +875,7 @@
                         line: 213
                         signature: public Servo getClaw()
                         body_hash: 5a1c58ad
-                        description: Retrieves the Servo instance for the claw grip.
+                        description: Retrieves the Servo instance controlling the claw's grip.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#getClawPitchPos()
@@ -883,7 +883,7 @@
                         line: 215
                         signature: public double getClawPitchPos()
                         body_hash: 0cf49ab7
-                        description: Retrieves the current position of the claw pitch servo.
+                        description: "Retrieves the current position of the claw pitch servo, ranging from 0.0 to 1.0."
                         dependencies[1]: MRILib.managers.Bot#getPosition()
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#getClawRollPos()
@@ -891,7 +891,7 @@
                         line: 217
                         signature: public double getClawRollPos()
                         body_hash: 3cd8852b
-                        description: Retrieves the current position of the claw roll servo.
+                        description: "Retrieves the current position of the claw roll servo, ranging from 0.0 to 1.0."
                         dependencies[1]: MRILib.managers.Bot#getPosition()
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#getClawPos()
@@ -899,7 +899,7 @@
                         line: 219
                         signature: public double getClawPos()
                         body_hash: 5c3ca1fc
-                        description: Retrieves the current position of the claw grip servo.
+                        description: "Retrieves the current position of the claw grip servo, ranging from 0.0 to 1.0."
                         dependencies[1]: MRILib.managers.Bot#getPosition()
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.ArmBotFF#setClawPitch(double)
@@ -909,7 +909,7 @@
                         body_hash: fdebe002
                         description: "Sets the target position for the claw pitch servo, clamping the value between 0.0 and 1.0."
                         dependencies[2]: (candidate)MRILib.managers.Bot#setPosition(Pose2D),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)"
-                        unresolved_dependencies[2]: max,min
+                        unresolved_dependencies[2]: min,max
                     - umid: MRILib.managers.ArmBotFF#setClawRoll(double)
                         return_type: void
                         line: 235
@@ -917,7 +917,7 @@
                         body_hash: e84fad52
                         description: "Sets the target position for the claw roll servo, clamping the value between 0.0 and 1.0."
                         dependencies[2]: (candidate)MRILib.managers.Bot#setPosition(Pose2D),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)"
-                        unresolved_dependencies[2]: max,min
+                        unresolved_dependencies[2]: min,max
                     - umid: MRILib.managers.ArmBotFF#setClaw(double)
                         return_type: void
                         line: 242
@@ -925,21 +925,21 @@
                         body_hash: 42fe103e
                         description: "Sets the target position for the claw grip servo, clamping the value between 0.0 and 1.0."
                         dependencies[2]: (candidate)MRILib.managers.Bot#setPosition(Pose2D),"(candidate)MRILib.managers.Bot#setPosition(double,double,double)"
-                        unresolved_dependencies[2]: max,min
+                        unresolved_dependencies[2]: min,max
                     - umid: MRILib.managers.ArmBotFF#setPivot(int)
                         return_type: void
                         line: 251
                         signature: public void setPivot(int target)
                         body_hash: c47bd838
-                        description: Sets the pivot motor to run to a specific encoder position using RUN_TO_POSITION mode and a predefined velocity.
+                        description: Sets the pivot motor to run to a target encoder position by switching to RUN_TO_POSITION mode and setting a predefined velocity.
                         dependencies[1]: MRILib.managers.Bot#setMode(DcMotor.RunMode)
-                        unresolved_dependencies[2]: setTargetPosition,setVelocity
+                        unresolved_dependencies[2]: setVelocity,setTargetPosition
                     - umid: MRILib.managers.ArmBotFF#setPivotPower(double)
                         return_type: void
                         line: 263
                         signature: public void setPivotPower(double pow)
                         body_hash: "06bed01e"
-                        description: Sets the pivot motor power directly using RUN_WITHOUT_ENCODER mode.
+                        description: Sets the pivot motor power directly by switching to RUN_WITHOUT_ENCODER mode.
                         dependencies[1]: MRILib.managers.Bot#setMode(DcMotor.RunMode)
                         unresolved_dependencies[1]: setPower
                     - umid: MRILib.managers.ArmBotFF#setSlides(int)
@@ -947,9 +947,9 @@
                         line: 273
                         signature: public void setSlides(int target)
                         body_hash: 1cbfec4e
-                        description: Sets the slide motor to run to a specific encoder position using RUN_TO_POSITION mode and a predefined velocity.
+                        description: Sets the slide motor to run to a target encoder position by switching to RUN_TO_POSITION mode and setting a predefined velocity.
                         dependencies[1]: MRILib.managers.Bot#setMode(DcMotor.RunMode)
-                        unresolved_dependencies[2]: setTargetPosition,setVelocity
+                        unresolved_dependencies[2]: setVelocity,setTargetPosition
                     - umid: "MRILib.managers.ArmBotFF#setArm(int,int)"
                         return_type: void
                         line: 284
@@ -965,7 +965,7 @@
                         body_hash: 0ce6aa6e
                         description: Safely stops the background PivotArmController thread by signaling it to stop and then joining the thread with a timeout.
                         dependencies[1]: (candidate)MRILib.managers.PivotArmController#stop()
-                        unresolved_dependencies[5]: join,interrupt,isAlive,currentThread,println
+                        unresolved_dependencies[5]: println,join,currentThread,interrupt,isAlive
                 child_classes[0]:
             - ucid: MRILib.managers.PivotArmController
                 signature: package-private class PivotArmController
@@ -989,15 +989,15 @@
                         line: 332
                         signature: public @Override void run()
                         body_hash: "0628de31"
-                        description: Continuously executes the arm control logic in a loop while the controller is running and the thread is not interrupted; includes a delay to regulate loop speed and ensures the motor stops upon interruption or completion.
+                        description: "Continuously executes the arm control loop while the thread is running and not interrupted, processing state updates and applying control signals to the robot's pivot motor. Includes a delay to regulate loop frequency and handles thread interruption for graceful shutdown, ensuring the motor is stopped upon termination."
                         dependencies[1]: MRILib.managers.ArmBotFF#setPivotPower(double)
-                        unresolved_dependencies[4]: interrupt,currentThread,sleep,isInterrupted
+                        unresolved_dependencies[4]: isInterrupted,currentThread,interrupt,sleep
                     - umid: MRILib.managers.PivotArmController#stop()
                         return_type: void
                         line: 352
                         signature: public @Override void stop()
                         body_hash: 498e1b66
-                        description: "Sets the running flag to false, signaling the `run` method to terminate its loop."
+                        description: Signals the control loop to terminate by setting the running flag to false.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: "MRILib.managers.PivotArmController#updateCurrentState(int,double)"
@@ -1005,7 +1005,7 @@
                         line: 359
                         signature: "public @Override synchronized void updateCurrentState(int currentPos, double currentVel)"
                         body_hash: 5097658b
-                        description: "Updates the controller's internal state with the current position and velocity of the pivot arm, ensuring thread safety for shared data."
+                        description: Updates the controller's internal state with the current position and velocity of the pivot arm. This method is synchronized to ensure thread-safe access to shared state variables.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: "MRILib.managers.PivotArmController#calculateFeedforward(int,double)"
@@ -1013,7 +1013,7 @@
                         line: 366
                         signature: "private double calculateFeedforward(int position, double velocity)"
                         body_hash: a1c2596e
-                        description: "Calculates a feedforward control output based on the provided position and velocity, intended for compensating gravity, velocity, and static friction (currently a placeholder returning 0)."
+                        description: Calculates a feedforward control signal based on the provided position and velocity of the pivot arm. Currently returns a placeholder value and requires implementation of actual feedforward logic.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                 child_classes[0]:
@@ -1022,7 +1022,7 @@
         classes[1]:
             - ucid: MRILib.managers.Bot
                 signature: public class Bot
-                description: "Represents the robot's physical components and provides methods for control and state retrieval, including drive motors, IMU, odometry, and voltage sensing."
+                description: "Represents the robot's physical components and provides methods for their control and state retrieval, including drive motors, IMU, odometry, and voltage sensor."
                 fields[18]{name,field_type}:
                     frontLeft,DcMotorEx
                     backLeft,DcMotorEx
@@ -1049,38 +1049,38 @@
                         signature: public Bot(HardwareMap hm)
                         body_hash: 6950ded5
                         description: "Constructs a Bot instance, initializing drive motors, IMU, odometry, and voltage sensor using default hardware map names."
-                        dependencies[8]: (candidate)#initIMU(HardwareMap),#getOdoPosition(),(candidate)#initOdo(HardwareMap),"(candidate)#initIMU(HardwareMap,String)","(candidate)#initOdo(HardwareMap,String)","(candidate)#initMotors(HardwareMap,String,String,String,String)",#update(),(candidate)#initMotors(HardwareMap)
-                        unresolved_dependencies[2]: iterator,next
+                        dependencies[8]: #getOdoPosition(),"(candidate)#initIMU(HardwareMap,String)",#update(),(candidate)#initIMU(HardwareMap),"(candidate)#initMotors(HardwareMap,String,String,String,String)",(candidate)#initMotors(HardwareMap),(candidate)#initOdo(HardwareMap),"(candidate)#initOdo(HardwareMap,String)"
+                        unresolved_dependencies[2]: next,iterator
                     - umid: MRILib.managers.Bot#initMotors(HardwareMap)
                         return_type: void
                         line: 120
                         signature: private void initMotors(HardwareMap hm)
                         body_hash: 23373a5c
-                        description: Initializes the drive motors using default hardware map names and calls the overloaded version with specific names.
-                        dependencies[2]: "(candidate)#initMotors(HardwareMap,String,String,String,String)",(candidate)#initMotors(HardwareMap)
+                        description: Initializes the drive motors using default hardwareMap names.
+                        dependencies[2]: (candidate)#initMotors(HardwareMap),"(candidate)#initMotors(HardwareMap,String,String,String,String)"
                         unresolved_dependencies[0]:
                     - umid: "MRILib.managers.Bot#initMotors(HardwareMap,String,String,String,String)"
                         return_type: void
                         line: 135
                         signature: "private void initMotors(HardwareMap hm, String fl, String fr, String bl, String br)"
                         body_hash: def70451
-                        description: Initializes the drive motors with specified hardware map names and sets their directions based on BotValues constants.
-                        dependencies[4]: #updateEncoders(),#setDirections(),#resetEncoders(),MRILib.util.Bpad#get(String)
+                        description: Initializes the drive motors with specified hardwareMap names and sets their directions based on BotValues.
+                        dependencies[4]: #updateEncoders(),#resetEncoders(),#setDirections(),MRILib.util.Bpad#get(String)
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#initIMU(HardwareMap)
                         return_type: void
                         line: 158
                         signature: public void initIMU(HardwareMap hm)
                         body_hash: 5f7880f2
-                        description: Initializes the Control Hub's IMU using the default hardware map name 'imu' and calls the overloaded version.
-                        dependencies[2]: (candidate)#initIMU(HardwareMap),"(candidate)#initIMU(HardwareMap,String)"
+                        description: Initializes the Control Hub's IMU using the default hardwareMap name.
+                        dependencies[2]: "(candidate)#initIMU(HardwareMap,String)",(candidate)#initIMU(HardwareMap)
                         unresolved_dependencies[0]:
                     - umid: "MRILib.managers.Bot#initIMU(HardwareMap,String)"
                         return_type: void
                         line: 169
                         signature: "public void initIMU(HardwareMap hm, String name)"
                         body_hash: "27753e39"
-                        description: Initializes the Control Hub's IMU with a specified hardware map name and orientation parameters defined in BotValues.
+                        description: Initializes the Control Hub's IMU with a specified hardwareMap name and orientation parameters defined in BotValues.
                         dependencies[1]: MRILib.util.Bpad#get(String)
                         unresolved_dependencies[2]: resetYaw,initialize
                     - umid: MRILib.managers.Bot#initOdo(HardwareMap)
@@ -1088,23 +1088,23 @@
                         line: 190
                         signature: public void initOdo(HardwareMap hm)
                         body_hash: 9fd76935
-                        description: Initializes the GoBilda Pinpoint Odometry Computer using the default hardware map name 'odo' and calls the overloaded version.
-                        dependencies[2]: "(candidate)#initOdo(HardwareMap,String)",(candidate)#initOdo(HardwareMap)
+                        description: Initializes the GoBilda Pinpoint Odometry Computer using the default hardwareMap name.
+                        dependencies[2]: (candidate)#initOdo(HardwareMap),"(candidate)#initOdo(HardwareMap,String)"
                         unresolved_dependencies[0]:
                     - umid: "MRILib.managers.Bot#initOdo(HardwareMap,String)"
                         return_type: void
                         line: 202
                         signature: "public void initOdo(HardwareMap hm, String name)"
                         body_hash: 0e088b29
-                        description: "Initializes the GoBilda Pinpoint Odometry Computer with a specified hardware map name, setting parameters like offsets, resolution, and encoder directions."
+                        description: "Initializes the GoBilda Pinpoint Odometry Computer with a specified hardwareMap name, setting parameters like offsets, resolution, and encoder directions, then resets its pose."
                         dependencies[1]: MRILib.util.Bpad#get(String)
-                        unresolved_dependencies[4]: setOffsets,setEncoderResolution,setEncoderDirections,resetPosAndIMU
+                        unresolved_dependencies[4]: setOffsets,setEncoderDirections,resetPosAndIMU,setEncoderResolution
                     - umid: MRILib.managers.Bot#update()
                         return_type: void
                         line: 222
                         signature: public void update()
                         body_hash: cc66fe34
-                        description: "Updates the robot's state by reading data from the odometry device, updating current and last positions, and updating drive motor encoder readings."
+                        description: "Updates the robot's state by reading odometry data, updating current and last positions, and reading drive motor encoder values."
                         dependencies[3]: #updateEncoders(),#update(),#getOdoPosition()
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#updateEncoders()
@@ -1120,7 +1120,7 @@
                         line: 254
                         signature: public DcMotorEx getFL()
                         body_hash: "07250809"
-                        description: Returns the front left drive motor instance.
+                        description: Gets the front left drive motor instance.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getFR()
@@ -1128,7 +1128,7 @@
                         line: 256
                         signature: public DcMotorEx getFR()
                         body_hash: 97b625d9
-                        description: Returns the front right drive motor instance.
+                        description: Gets the front right drive motor instance.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getBL()
@@ -1136,7 +1136,7 @@
                         line: 258
                         signature: public DcMotorEx getBL()
                         body_hash: e558fa63
-                        description: Returns the back left drive motor instance.
+                        description: Gets the back left drive motor instance.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getBR()
@@ -1144,7 +1144,7 @@
                         line: 260
                         signature: public DcMotorEx getBR()
                         body_hash: 430696eb
-                        description: Returns the back right drive motor instance.
+                        description: Gets the back right drive motor instance.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getFLPos()
@@ -1152,7 +1152,7 @@
                         line: 263
                         signature: public int getFLPos()
                         body_hash: d5fe9e17
-                        description: Returns the last read encoder position of the front left motor.
+                        description: Gets the last read encoder position of the front left motor.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getFRPos()
@@ -1160,7 +1160,7 @@
                         line: 265
                         signature: public int getFRPos()
                         body_hash: fd5e383c
-                        description: Returns the last read encoder position of the front right motor.
+                        description: Gets the last read encoder position of the front right motor.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getBLPos()
@@ -1168,7 +1168,7 @@
                         line: 267
                         signature: public int getBLPos()
                         body_hash: 2d7c717d
-                        description: Returns the last read encoder position of the back left motor.
+                        description: Gets the last read encoder position of the back left motor.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getBRPos()
@@ -1176,7 +1176,7 @@
                         line: 269
                         signature: public int getBRPos()
                         body_hash: c32ffcde
-                        description: Returns the last read encoder position of the back right motor.
+                        description: Gets the last read encoder position of the back right motor.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getFLPosPrev()
@@ -1184,7 +1184,7 @@
                         line: 272
                         signature: public int getFLPosPrev()
                         body_hash: f3eb2ae6
-                        description: Returns the encoder position of the front left motor from the previous updateEncoders() call.
+                        description: Gets the encoder position of the front left motor from the previous updateEncoders() call.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getFRPosPrev()
@@ -1192,7 +1192,7 @@
                         line: 274
                         signature: public int getFRPosPrev()
                         body_hash: 673fb4d9
-                        description: Returns the encoder position of the front right motor from the previous updateEncoders() call.
+                        description: Gets the encoder position of the front right motor from the previous updateEncoders() call.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getBLPosPrev()
@@ -1200,7 +1200,7 @@
                         line: 276
                         signature: public int getBLPosPrev()
                         body_hash: 3f99484e
-                        description: Returns the encoder position of the back left motor from the previous updateEncoders() call.
+                        description: Gets the encoder position of the back left motor from the previous updateEncoders() call.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getBRPosPrev()
@@ -1208,7 +1208,7 @@
                         line: 278
                         signature: public int getBRPosPrev()
                         body_hash: 4040a16a
-                        description: Returns the encoder position of the back right motor from the previous updateEncoders() call.
+                        description: Gets the encoder position of the back right motor from the previous updateEncoders() call.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getIMUHeading()
@@ -1240,7 +1240,7 @@
                         line: 304
                         signature: public Pose2D getLastPosition()
                         body_hash: 32b8041e
-                        description: "Gets the robot's position and heading from the previous update cycle, useful for calculating displacement or velocity."
+                        description: "Gets the robot's position and heading from the previous update cycle, useful for calculating displacement."
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getOdoPosition()
@@ -1248,7 +1248,7 @@
                         line: 314
                         signature: private Pose2D getOdoPosition()
                         body_hash: 761995dc
-                        description: "Gets the raw position directly from the GoBilda Pinpoint driver, potentially not synchronized with the main update() cycle."
+                        description: "Gets the raw position directly from the GoBilda Pinpoint driver, which may not be synchronized with the main update() cycle."
                         dependencies[1]: #getPosition()
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#getX()
@@ -1288,8 +1288,8 @@
                         line: 369
                         signature: "public void setPosition(double x, double y, double heading)"
                         body_hash: ee7fa6bd
-                        description: Sets the robot's current position and heading in the odometry system using individual coordinate values.
-                        dependencies[2]: "(candidate)#setPosition(double,double,double)",(candidate)#setPosition(Pose2D)
+                        description: Sets the robot's current position and heading in the odometry system using individual coordinates.
+                        dependencies[2]: (candidate)#setPosition(Pose2D),"(candidate)#setPosition(double,double,double)"
                         unresolved_dependencies[1]: toRadians
                     - umid: MRILib.managers.Bot#setPosition(Pose2D)
                         return_type: void
@@ -1297,14 +1297,14 @@
                         signature: public void setPosition(Pose2D pos)
                         body_hash: 3f087ad6
                         description: Overrides the current position tracked by the GoBilda Pinpoint Odometry Computer and immediately updates internal state.
-                        dependencies[4]: #update(),"(candidate)#setPosition(double,double,double)",#getOdoPosition(),(candidate)#setPosition(Pose2D)
+                        dependencies[4]: (candidate)#setPosition(Pose2D),#update(),"(candidate)#setPosition(double,double,double)",#getOdoPosition()
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.Bot#setDirections()
                         return_type: void
                         line: 390
                         signature: public void setDirections()
                         body_hash: 424c8333
-                        description: "Sets the direction of the drive motors based on the constants defined in BotValues (LEFTDIR, RIGHTDIR) to ensure forward motion consistency."
+                        description: Sets the direction of the drive motors based on the constants defined in BotValues to ensure positive power corresponds to forward motion.
                         dependencies[0]:
                         unresolved_dependencies[1]: setDirection
                     - umid: MRILib.managers.Bot#setMode(DcMotor.RunMode)
@@ -1320,7 +1320,7 @@
                         line: 414
                         signature: public void resetEncoders()
                         body_hash: 25d4c89a
-                        description: "Resets the drive motor encoders to 0, preserves the current RunMode, and resets internal position tracking variables."
+                        description: "Resets the drive motor encoders to 0, resets stored previous encoder values, and reapplies the original run mode."
                         dependencies[3]: #updateEncoders(),#setMode(DcMotor.RunMode),#resetPrevEncoders()
                         unresolved_dependencies[1]: getMode
                     - umid: MRILib.managers.Bot#resetPrevEncoders()
@@ -1336,7 +1336,7 @@
                         line: 452
                         signature: public void enableBrakeMode(boolean enabled)
                         body_hash: fca18f74
-                        description: "Enables or disables the 'brake' zero power behavior for all drive motors, switching between BRAKE and FLOAT modes from BotValues."
+                        description: "Enables or disables the \"brake\" zero power behavior for all drive motors, switching between brake and float modes based on the input."
                         dependencies[0]:
                         unresolved_dependencies[1]: setZeroPowerBehavior
                     - umid: "MRILib.managers.Bot#driveXYW(double,double,double)"
@@ -1344,7 +1344,7 @@
                         line: 472
                         signature: "public void driveXYW(double rx, double ry, double rw)"
                         body_hash: fb220268
-                        description: "Drives the robot using robot-centric Cartesian coordinates (x, y) and rotation (w), calculating and applying Mecanum wheel powers with voltage compensation."
+                        description: "Drives the robot using robot-centric Cartesian coordinates (x, y) and rotation (w), calculating and applying Mecanum wheel powers, normalized and voltage-compensated."
                         dependencies[1]: #getVoltage()
                         unresolved_dependencies[3]: max,setPower,abs
                     - umid: "MRILib.managers.Bot#driveFieldXYW(double,double,double)"
@@ -1352,8 +1352,8 @@
                         line: 513
                         signature: "public void driveFieldXYW(double fx, double fy, double fw)"
                         body_hash: 1f88c7f5
-                        description: "Drives the robot using field-centric coordinates (fx, fy) and robot-centric rotation (fw) by rotating the movement vector based on the robot's current heading before calling driveXYW."
-                        dependencies[2]: "#driveXYW(double,double,double)",#getHeading()
+                        description: "Drives the robot using field-centric Cartesian coordinates (x, y) and robot-centric rotation (w) by rotating the movement vector based on the robot's current heading before calling driveXYW."
+                        dependencies[2]: #getHeading(),"#driveXYW(double,double,double)"
                         unresolved_dependencies[3]: sin,cos,toRadians
                 child_classes[0]:
     - ufid: PivotArmController.java
@@ -1405,15 +1405,15 @@
                         line: 66
                         signature: public @Override void run()
                         body_hash: 9c55e3d9
-                        description: "Enters a continuous loop to control the pivot arm based on the current mode (HOLD_POSITION, RUN_TO_POSITION, RUN_WITH_POWER), calculating and applying motor power using feedforward and PID feedback control, and compensating for gravity. It updates the arm's state and waits for the next loop iteration."
-                        dependencies[11]: (candidate)MRILib.managers.Bot#update(),#calculateFeedForward(),(candidate)MRILib.statemachine.BotState#update(),(candidate)MRILib.motion.PID#update(double),(candidate)MRILib.statemachine.ArmFSM#update(),#setMotorPower(double),(candidate)MRILib.util.Bpad#update(Gamepad),"(candidate)MRILib.motion.PID#update(double,double)",(candidate)MRILib.motion.PIDController#update(),(candidate)MRILib.motion.HeadingPID#update(double),(candidate)MRILib.statemachine.DriveFSM#update()
-                        unresolved_dependencies[7]: seconds,signum,nanoTime,max,abs,min,toDegrees
+                        description: "Enters a continuous loop to control the pivot arm based on the current mode (HOLD_POSITION, RUN_TO_POSITION, RUN_WITH_POWER), calculating and applying motor power using feedforward and PID feedback, and managing loop timing. It continuously updates arm physics parameters based on slide position and applies calculated power to the motor, ensuring timely execution of control loops."
+                        dependencies[11]: (candidate)MRILib.motion.PID#update(double),(candidate)MRILib.statemachine.DriveFSM#update(),#setMotorPower(double),(candidate)MRILib.managers.Bot#update(),(candidate)MRILib.statemachine.ArmFSM#update(),(candidate)MRILib.motion.HeadingPID#update(double),#calculateFeedForward(),(candidate)MRILib.statemachine.BotState#update(),(candidate)MRILib.motion.PIDController#update(),"(candidate)MRILib.motion.PID#update(double,double)",(candidate)MRILib.util.Bpad#update(Gamepad)
+                        unresolved_dependencies[7]: seconds,abs,toDegrees,signum,min,max,nanoTime
                     - umid: MRILib.managers.PivotArmController#setMotorPower(double)
                         return_type: double
                         line: 129
                         signature: public double setMotorPower(double power)
                         body_hash: f17c0ce4
-                        description: "Applies the calculated power to the pivot motor, scaling it based on the robot's current voltage and clipping the output to a safe range of -0.9 to 1.0. It returns the actual applied power value."
+                        description: "Applies the calculated power to the pivot arm motor, clamping the output within a safe range and adjusting for the robot's current voltage. It scales the power based on the robot's voltage to ensure consistent motor performance across different battery levels."
                         dependencies[2]: MRILib.managers.Bot#getVoltage(),MRILib.managers.ArmBotFF#setPivotPower(double)
                         unresolved_dependencies[1]: clip
                     - umid: MRILib.managers.PivotArmController#calculateFeedForward()
@@ -1421,7 +1421,7 @@
                         line: 140
                         signature: private double calculateFeedForward()
                         body_hash: b8767c6d
-                        description: "Calculates the feedforward compensation for gravity based on the arm's current angle, mass, and offsets, applying adjustments based on the arm's position relative to the target."
+                        description: "Calculates the feedforward component of the motor power, primarily compensating for gravity based on the arm's current angle, mass distribution, and arm mount offset. It applies specific multipliers to gravity compensation based on the arm's angular position relative to the target and its absolute orientation."
                         dependencies[0]:
                         unresolved_dependencies[3]: sin,cos,toDegrees
                     - umid: "MRILib.managers.PivotArmController#updateCurrentState(double,double,double)"
@@ -1429,16 +1429,16 @@
                         line: 149
                         signature: "public synchronized double updateCurrentState(double armPos, double velocity, double slidePosition)"
                         body_hash: 2ae7266e
-                        description: "Synchronously updates the internal state of the pivot arm, including its current angular position (converted from ticks to radians), angular velocity, and slide position. It also updates previous state values for velocity calculations."
+                        description: "Synchronously updates the internal state of the pivot arm, including its angular position, angular velocity, and slide position, converting raw encoder values to radians and millimeters. It also updates the arm's center of mass calculation based on the new slide position."
                         dependencies[0]:
-                        unresolved_dependencies[2]: toRadians,toDegrees
+                        unresolved_dependencies[2]: toDegrees,toRadians
                     - umid: "MRILib.managers.PivotArmController#updateCurrentState(double,double)"
                         return_type: void
                         line: 158
                         signature: "public synchronized void updateCurrentState(double armPos, double velocity)"
                         body_hash: 9a09ed10
-                        description: "Synchronously updates the current arm position and velocity, defaulting the slide position to 0."
-                        dependencies[3]: "(candidate)#updateCurrentState(int,double)","(candidate)#updateCurrentState(double,double)","(candidate)#updateCurrentState(double,double,double)"
+                        description: "Synchronously updates the pivot arm's angular position and velocity, defaulting the slide position to zero."
+                        dependencies[3]: "(candidate)#updateCurrentState(int,double)","(candidate)#updateCurrentState(double,double,double)","(candidate)#updateCurrentState(double,double)"
                         unresolved_dependencies[0]:
                     - umid: MRILib.managers.PivotArmController#setPivotMode(PivotMode)
                         return_type: void
@@ -1453,7 +1453,7 @@
                         line: 165
                         signature: public synchronized void setInputPower(double input)
                         body_hash: f3ea9bf8
-                        description: "Synchronously sets the input power value, used when the pivot mode is set to RUN_WITH_POWER."
+                        description: Synchronously sets the input power for the RUN_WITH_POWER mode.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: "MRILib.managers.PivotArmController#setTargetTheta(double,AngleUnit)"
@@ -1461,7 +1461,7 @@
                         line: 169
                         signature: "public void setTargetTheta(double theta, AngleUnit unit)"
                         body_hash: e1e56250
-                        description: "Sets the target angle for the pivot arm, converting the input angle to radians if necessary based on the provided unit, and updates the PID controller's target."
+                        description: "Sets the target angle for the pivot arm, converting the input angle to radians if necessary, and updates the PID controller's target."
                         dependencies[1]: MRILib.motion.PID#setTarget(double)
                         unresolved_dependencies[1]: toRadians
                     - umid: MRILib.managers.PivotArmController#setTargetTheta(double)
@@ -1494,7 +1494,7 @@
         classes[1]:
             - ucid: MRILib.motion.HeadingPID
                 signature: public class HeadingPID extends PID
-                description: "A PID controller specifically designed for angular or heading control, utilizing angle wrapping for accurate error calculation and incorporating standard PID terms with anti-windup for the integral component."
+                description: "A PID controller specifically designed for angular or heading control, utilizing angle wrapping for accurate error calculation and incorporating anti-windup for the integral term."
                 fields[0]:
                 methods[2]:
                     - umid: "MRILib.motion.HeadingPID#HeadingPID(double,double,double)"
@@ -1502,7 +1502,7 @@
                         line: 30
                         signature: "public HeadingPID(double p, double i, double d)"
                         body_hash: e40d3f0c
-                        description: "Constructs a new HeadingPID controller, initializing proportional, integral, and derivative gains by calling the superclass PID constructor."
+                        description: "Constructs a new HeadingPID controller, initializing proportional (kP), integral (kI), and derivative (kD) gains by calling the superclass PID constructor."
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.motion.HeadingPID#update(double)
@@ -1510,7 +1510,7 @@
                         line: 45
                         signature: public @Override double update(double current)
                         body_hash: ae33b352
-                        description: "Updates the PID controller's state and calculates the control output for angular/heading values. It computes the shortest angular error using Mathf.angleWrap, manages integral anti-windup by limiting the error sum, calculates the derivative of the wrapped error, and combines these terms to produce the final output. It also handles potential division-by-zero issues with deltaTime and updates internal state (lastTime, lastError) for the next iteration."
+                        description: "Updates the PID controller's output based on the current angular measurement. It calculates the shortest angular error using Mathf.angleWrap, applies anti-windup to the integral term by limiting accumulation based on error magnitude, and computes the derivative of the wrapped error. The final output is a weighted sum of the proportional, integral, and derivative terms, with state variables (lastTime, lastError) updated for the next iteration."
                         dependencies[1]: MRILib.util.Mathf#angleWrap(double)
                         unresolved_dependencies[2]: seconds,abs
                 child_classes[0]:
@@ -1519,7 +1519,7 @@
         classes[1]:
             - ucid: MRILib.motion.PID
                 signature: public class PID
-                description: "Implements a Proportional-Integral-Derivative (PID) controller to regulate a system's output based on a target value and current measurements, featuring configurable gains (kP, kI, kD), integral anti-windup mechanisms (iLimit and errorSumTotal), and state management for time-based calculations."
+                description: Implements a Proportional-Integral-Derivative (PID) controller with anti-windup mechanisms for controlling a system based on a target value and current measurements.
                 fields[10]{name,field_type}:
                     kP,double
                     kI,double
@@ -1537,7 +1537,7 @@
                         line: 64
                         signature: "public PID(double p, double i, double d)"
                         body_hash: 46d83bc4
-                        description: "Constructs a new PID controller instance, initializing proportional (kP), integral (kI), and derivative (kD) gains, and starting the internal ElapsedTime timer."
+                        description: "Constructs a new PID controller instance, initializing proportional (kP), integral (kI), and derivative (kD) gains, and starting the internal timer."
                         dependencies[1]: #start()
                         unresolved_dependencies[0]:
                     - umid: MRILib.motion.PID#start()
@@ -1545,7 +1545,7 @@
                         line: 80
                         signature: public void start()
                         body_hash: 7f493ebc
-                        description: "Resets the PID controller's internal state by zeroing the integral error sum, the last calculated error, and the last update time, and also resets the internal timer."
+                        description: "Resets the PID controller's internal state, including the integral error sum, last error, last time, and the timer, preparing it for a new control sequence."
                         dependencies[0]:
                         unresolved_dependencies[1]: reset
                     - umid: MRILib.motion.PID#update(double)
@@ -1553,15 +1553,15 @@
                         line: 95
                         signature: public double update(double current)
                         body_hash: a3218234
-                        description: "Calculates the PID control output based on the current measured value. It computes the error, elapsed time, integral term (with anti-windup), and derivative term, then combines them using the PID gains (kP, kI, kD) to produce an output value. Updates internal state (lastTime, lastError) for the next iteration."
+                        description: "Calculates the PID control output based on the current measured value. It computes the proportional, integral (with anti-windup), and derivative terms using the target value, current measurement, and internal state, then updates the state for the next iteration."
                         dependencies[0]:
-                        unresolved_dependencies[4]: max,min,seconds,abs
+                        unresolved_dependencies[4]: min,max,seconds,abs
                     - umid: "MRILib.motion.PID#update(double,double)"
                         return_type: double
                         line: 144
                         signature: "public double update(double current1, double current2)"
                         body_hash: 81d4fc2b
-                        description: Selects the input value (current1 or current2) that is closer to the target value and then calls the single-argument update method with the selected value to calculate the PID control output.
+                        description: Selects the input measurement (current1 or current2) that is closer to the target value and then calls the primary update method with the selected measurement to calculate the PID control output.
                         dependencies[2]: "(candidate)#update(double,double)",(candidate)#update(double)
                         unresolved_dependencies[1]: abs
                     - umid: MRILib.motion.PID#setTarget(double)
@@ -1569,7 +1569,7 @@
                         line: 160
                         signature: public void setTarget(double target)
                         body_hash: 8177b5a6
-                        description: Sets the target value (setpoint) for the PID controller.
+                        description: Sets the desired target value (setpoint) for the PID controller.
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.motion.PID#setILimit(double)
@@ -1577,7 +1577,7 @@
                         line: 173
                         signature: public void setILimit(double limit)
                         body_hash: e5218fba
-                        description: "Sets the integral limit (iLimit), which defines the maximum absolute error for which the integral term will accumulate. Ensures the provided limit is non-negative."
+                        description: "Sets the integral limit (I-Zone), which defines the maximum absolute error for which the integral term will accumulate, ensuring the limit is non-negative."
                         dependencies[0]:
                         unresolved_dependencies[1]: abs
                     - umid: MRILib.motion.PID#setIntegralSumLimit(double)
@@ -1585,7 +1585,7 @@
                         line: 184
                         signature: public void setIntegralSumLimit(double limit)
                         body_hash: 5f021979
-                        description: "Sets the maximum absolute value that the accumulated integral error sum (errorSum) is allowed to reach, acting as a clamp to prevent integral windup. Ensures the provided limit is non-negative."
+                        description: "Sets the clamping limit for the integral sum, ensuring the absolute value of the accumulated integral error does not exceed this non-negative limit."
                         dependencies[0]:
                         unresolved_dependencies[1]: abs
                 child_classes[0]:
@@ -1594,7 +1594,7 @@
         classes[1]:
             - ucid: MRILib.motion.PIDController
                 signature: public class PIDController
-                description: "Manages PID controllers for field-centric robot movement, calculating and applying corrective outputs to achieve target positions and headings."
+                description: "Manages PID controllers for field-centric robot movement, enabling precise control over X, Y, and rotational (Theta) axes by integrating with a Bot hardware interface and Telemetry for debugging."
                 fields[13]{name,field_type}:
                     bot,Bot
                     telemetry,Telemetry
@@ -1615,7 +1615,7 @@
                         line: 76
                         signature: "public PIDController(Bot bot, Telemetry telemetry)"
                         body_hash: d8e2e5a5
-                        description: "Constructs a PIDController, initializing it with a Bot for hardware access and Telemetry for debugging, setting default speed suppliers."
+                        description: "Constructs a PIDController, initializing the Bot and Telemetry interfaces, and setting default suppliers for maximum translational and angular speeds."
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: "MRILib.motion.PIDController#setPID(PID,PID)"
@@ -1631,7 +1631,7 @@
                         line: 103
                         signature: public void setTurnPID(PID theta)
                         body_hash: 428a5b6e
-                        description: "Assigns the PID controller for rotational (heading) movement, recommending HeadingPID for angle wrapping."
+                        description: "Assigns the PID controller for rotational (Theta/heading) movement, recommending HeadingPID for angle wrapping."
                         dependencies[0]:
                         unresolved_dependencies[0]:
                     - umid: MRILib.motion.PIDController#start()
@@ -1639,16 +1639,16 @@
                         line: 112
                         signature: public void start()
                         body_hash: 6c27764f
-                        description: "Initializes and resets the state of all assigned PID controllers (X, Y, Theta), setting the Theta PID's target to the current targetRadians."
-                        dependencies[2]: #start(),MRILib.motion.PID#setTarget(double)
+                        description: "Initializes the PID controllers by resetting their internal states (integral sum, last error) and setting the initial target for the Theta PID based on the last `moveTo` call."
+                        dependencies[2]: MRILib.motion.PID#setTarget(double),#start()
                         unresolved_dependencies[0]:
                     - umid: MRILib.motion.PIDController#update()
                         return_type: void
                         line: 133
                         signature: public void update()
                         body_hash: 0e83e88d
-                        description: "Calculates PID outputs for X, Y, and Theta based on current robot pose and targets, retrieves dynamic speed limits, scales and normalizes translational outputs, and commands the robot's movement via `bot.driveFieldXYW`."
-                        dependencies[7]: MRILib.managers.Bot#getHeading(),MRILib.managers.Bot#getPosition(),MRILib.managers.Bot#getX(),MRILib.util.Bpad#get(String),#update(),"MRILib.managers.Bot#driveFieldXYW(double,double,double)",MRILib.managers.Bot#getY()
+                        description: "Calculates PID outputs for X, Y, and Theta based on current robot pose and targets, retrieves dynamic speed limits, scales and normalizes translational outputs, and commands the robot to drive using field-centric X, Y, and rotational velocities."
+                        dependencies[7]: MRILib.util.Bpad#get(String),MRILib.managers.Bot#getHeading(),#update(),MRILib.managers.Bot#getX(),MRILib.managers.Bot#getY(),"MRILib.managers.Bot#driveFieldXYW(double,double,double)",MRILib.managers.Bot#getPosition()
                         unresolved_dependencies[3]: clip,sqrt,toRadians
                     - umid: "MRILib.motion.PIDController#moveTo(double,double,double)"
                         return_type: void
@@ -1663,7 +1663,7 @@
                         line: 226
                         signature: public void setMaxSpeed(double s)
                         body_hash: cf502dab
-                        description: "Sets a constant maximum translational speed limit for the robot, clipped to the range [0.0, 1.0], by providing a supplier that returns this value."
+                        description: "Sets a constant maximum translational speed limit for the robot, ensuring the value is clipped between 0.0 and 1.0."
                         dependencies[0]:
                         unresolved_dependencies[1]: clip
                     - umid: MRILib.motion.PIDController#setMaxAngSpeed(double)
@@ -1671,7 +1671,7 @@
                         line: 236
                         signature: public void setMaxAngSpeed(double s)
                         body_hash: 16d49490
-                        description: "Sets a constant maximum angular speed limit for the robot, clipped to the range [0.0, 1.0], by providing a supplier that returns this value."
+                        description: "Sets a constant maximum angular (rotational) speed limit for the robot, ensuring the value is clipped between 0.0 and 1.0."
                         dependencies[0]:
                         unresolved_dependencies[1]: clip
                     - umid: MRILib.motion.PIDController#getTargetX()
@@ -1703,7 +1703,7 @@
                         line: 274
                         signature: public double getTargetDegrees()
                         body_hash: 90a32b95
-                        description: "Retrieves the currently set target heading in degrees, converted from the internal radian representation."
+                        description: Retrieves the currently set target heading in degrees by converting the internal radian value.
                         dependencies[0]:
                         unresolved_dependencies[1]: toDegrees
                     - umid: MRILib.motion.PIDController#getCurrentDegrees()

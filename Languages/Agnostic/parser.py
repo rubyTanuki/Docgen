@@ -6,6 +6,7 @@ from collections import defaultdict
 import toons
 import asyncio
 
+
 class BaseParser(ABC):
     def __init__(self, project_dir: str, llm=None):
         self.llm = llm
@@ -41,7 +42,8 @@ class BaseParser(ABC):
         print("✅ Resolved Dependencies")
         print("Generating Descriptions...\n")
         # 4. Resolve Descriptions
-        coroutine_list = [file.resolve_descriptions(self.llm) for file in self.files]
+        self.visited_ucids = set()
+        coroutine_list = [file.resolve_descriptions(self.llm, self.visited_ucids) for file in self.files]
         result = await asyncio.gather(*coroutine_list)
 
     async def resolve_descriptions(self, llm: "LLMClient"):

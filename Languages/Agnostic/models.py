@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
-
+from member_registry import MemberRegistry
 import json
+import asyncio
 
 class BaseFile(ABC):
     """
@@ -24,9 +25,13 @@ class BaseFile(ABC):
         for cls in self.classes:
             cls.resolve_dependencies(self.imports)
     
-    async def resolve_descriptions(self, llm: "LLMClient"):
-        for cls in self.classes:
-            await cls.resolve_descriptions(llm, self.imports)
+    async def resolve_descriptions(self, llm: "LLMClient", visited_ucids: set[str] = None):
+        if visited_ucids is None:
+            visited_ucids = set()
+        coroutine_list = [cls.resolve_descriptions(llm, self.imports, visited_ucids) for cls in self.classes]
+        for class_obj in self.classes:
+            coroutine_list.extend([c.resolve_descriptions(llm, self.imports, visited_ucids) for c in class_obj.child_classes.values()])
+        await asyncio.gather(*coroutine_list)
 
     def __json__(self):
         return {
@@ -44,6 +49,8 @@ class BaseClass(ABC):
     Abstract representation of a Class.
     Stores Members (Fields/Methods) and Metadata for LLM processing.
     """
+    
+    
     def __init__(self, ucid: str, signature: str, body: str):
         self.ucid = ucid            # Unique Context ID (e.g. "com.pkg.MyClass")
         self.signature = signature  # Display signature (e.g. "public class MyClass extends B")
@@ -57,6 +64,8 @@ class BaseClass(ABC):
         self.fields: Dict[str, "BaseField"] = {}
         self.methods: Dict[str, "BaseMethod"] = {}
         self.child_classes: Dict[str, "BaseClass"] = {}
+        
+        self.sent_to_llm = False
 
     @classmethod
     @abstractmethod
@@ -71,18 +80,37 @@ class BaseClass(ABC):
         for child in self.child_classes.values():
             child.resolve_dependencies(imports)
     
-    async def resolve_descriptions(self, llm: "LLMClient", imports: List[str] = []):
-        response_obj = await llm.generate_description(self, imports)
+    async def resolve_descriptions(self, llm: "LLMClient", imports: List[str] = None, visited_ucids: set[str] = None):
+        if imports is None: imports = []
+        if visited_ucids is None: visited_ucids = set()
         
-        self.description = response_obj["description"]
-        self.confidence = response_obj["confidence"]
-        self.needs_context = response_obj["needs_context"]
-        # extract method level descriptions
-        for method_obj in response_obj["methods"]:
-            method = self.methods[method_obj["umid"]]
-            method.description = method_obj["description"]
-            method.confidence = method_obj["confidence"]
-            method.needs_context = method_obj["needs_context"]
+        if self.ucid in visited_ucids:
+            return
+        visited_ucids.add(self.ucid)
+        
+        try:
+            response_obj = await llm.generate_description(self, imports)
+            
+            if not response_obj or response_obj.get("status") == "error":
+                error_msg = response_obj.get('error') if response_obj else 'Returned None'
+                print(f"⚠️ Skipping {self.ucid} due to LLM failure: {error_msg}")
+                return
+            
+            self.description = response_obj["description"]
+            self.confidence = response_obj["confidence"]
+            self.needs_context = response_obj["needs_context"]
+            # extract method level descriptions
+            for method_obj in response_obj["methods"]:
+                returned_umid = method_obj["umid"]
+                
+                method = self.methods.get(returned_umid)
+                
+                if method:
+                    method.description = method_obj["description"]
+                    method.confidence = method_obj["confidence"]
+                    method.needs_context = method_obj["needs_context"]
+        except Exception as e:
+            print(f"Failed to generate description for {self.ucid} with response {response_obj}: {e}")
         # determine which methods need second pass
 
     def __json__(self):
