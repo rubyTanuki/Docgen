@@ -24,9 +24,9 @@ class BaseFile(ABC):
         for cls in self.classes:
             cls.resolve_dependencies(self.imports)
     
-    def resolve_descriptions(self, llm: "LLMClient"):
+    async def resolve_descriptions(self, llm: "LLMClient"):
         for cls in classes:
-            cls.resolve_descriptions(llm, self.imports)
+            await cls.resolve_descriptions(llm, self.imports)
 
     def __json__(self):
         return {
@@ -68,13 +68,12 @@ class BaseClass(ABC):
         """Passes context to methods to link dependencies."""
         for method in self.methods.values():
             method.resolve_dependencies(imports)
+        for child in self.child_classes.values():
+            child.resolve_dependencies(imports)
     
-    def resolve_descriptions(self, llm: "LLMClient", imports: List[str] = []):
-        response = llm.generate_description(self, imports)
-        # return response
-        # deserialize
-        response_obj = json.loads(response)
-        # extract class level description, confidence, needs_context
+    async def resolve_descriptions(self, llm: "LLMClient", imports: List[str] = []):
+        response_obj = await llm.generate_description(self, imports)
+        
         self.description = response_obj["description"]
         self.confidence = response_obj["confidence"]
         self.needs_context = response_obj["needs_context"]
@@ -105,11 +104,15 @@ class BaseMethod(ABC):
     Abstract representation of a Function/Method.
     This is the primary unit of work for the LLM.
     """
-    def __init__(self, umid: str, signature: str, body: str, body_hash: str, dependency_names: List[str]):
+    def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str, body_hash: str, dependency_names: List[str], line: int):
+        self.identifier = identifier
+        self.return_type = return_type
+        self.scoped_identifier = scoped_identifier
         self.umid = umid            # Unique Method ID (e.g. "com.pkg.Class#method(int)")
         self.signature = signature  # Display signature (e.g. "public void method(int a)")
         self.body = body            # Raw source code
         self.body_hash = body_hash  # Hash for diffing
+        self.line = line #line number in file
         
         # LLM Output
         self.description = ""
@@ -118,6 +121,7 @@ class BaseMethod(ABC):
         # Graph Links
         self.dependency_names = dependency_names # Raw strings found in parsing
         self.dependencies: List["BaseMethod"] = [] # Resolved object references
+        self.unresolved_dependencies: List[str] = []
 
     @classmethod
     @abstractmethod
@@ -136,10 +140,13 @@ class BaseMethod(ABC):
     def __json__(self):
         return {
             "umid": self.umid,
+            "return_type": self.return_type if self.return_type else "None",
+            "line": self.line,
             "signature": self.signature,
+            "body_hash": self.body_hash,
             "description": self.description,
-            "confidence": self.confidence,
-            "dependencies": [d.umid for d in self.dependencies] # Only store IDs to prevent cycles
+            "dependencies": self.dependencies,
+            "unresolved_dependencies": self.unresolved_dependencies
         }
 
     def __repr__(self) -> str:
@@ -150,10 +157,11 @@ class BaseField(ABC):
     """
     Abstract representation of a variable/property.
     """
-    def __init__(self, ucid: str, name: str, signature: str):
+    def __init__(self, ucid: str, name: str, signature: str, field_type: str):
         self.ucid = ucid            # Unique ID (e.g. "com.pkg.Class.myField")
         self.name = name            # Short name (e.g. "myField")
         self.signature = signature  # Display string (e.g. "private int myField = 5")
+        self.field_type = field_type
 
     @classmethod
     @abstractmethod
@@ -165,9 +173,8 @@ class BaseField(ABC):
 
     def __json__(self):
         return {
-            "ucid": self.ucid,
             "name": self.name,
-            "signature": self.signature
+            "field_type": self.field_type
         }
 
     def __repr__(self) -> str:

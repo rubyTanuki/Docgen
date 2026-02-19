@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
-            "type": "python",
+            "name": "Python: Class Test",
+            "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/class_test.py",
             "console": "integratedTerminal",
             "env": {"PYTHONPATH": "${workspaceFolder}"}
         }

@@ -1,17 +1,21 @@
 from collections import defaultdict
+from typing import List, Dict, Optional
 
 class MemberRegistry:
-    # registry of all methods, indexed by 
-    methods = defaultdict(list)
-    methods_by_name = defaultdict(list)
+    # "com.pkg.Class#method(int)" -> Method
+    map_umid: Dict[str, "JavaMethod"] = {}
+    
+    # "com.pkg.Class.method" -> [Method(int), Method(str)]
+    map_scoped: Dict[str, List["JavaMethod"]] = defaultdict(list)
+    
+    # "method" -> [Method(ClassA), Method(ClassB)]
+    map_short: Dict[str, List["JavaMethod"]] = defaultdict(list)
     
     
-    def add_method(method: "Method"):
-        MemberRegistry.methods[method.name].append(method)
-        MemberRegistry.methods_by_name[method.identifier].append(method)
+    @classmethod
+    def add_method(cls, method):
+        cls.map_umid[method.umid] = method
         
-    def resolve_method(identifier: str) -> list["Method"]:
-        return MemberRegistry.methods[identifier]
-    
-    def resolve_method_by_name(name: str) -> list["Method"]:
-        return MemberRegistry.methods_by_name[name]
+        cls.map_scoped[method.scoped_identifier].append(method)
+        
+        cls.map_short[method.identifier].append(method)

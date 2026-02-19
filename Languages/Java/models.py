@@ -130,6 +130,7 @@ class JavaClass(BaseClass):
                 if ct in ("method_declaration", "constructor_declaration"):
                     method = JavaMethod.from_node(child, instance.ucid)
                     instance.methods[method.umid] = method
+                    MemberRegistry.add_method(method)
                     
                 elif ct == "field_declaration":
                     field = JavaField.from_node(child, instance.ucid)
@@ -140,26 +141,15 @@ class JavaClass(BaseClass):
                     instance.child_classes[child_class.ucid] = child_class
 
         return instance
-    
-    def resolve_dependencies(self):
-        """Recursively resolve dependencies for all methods and child classes."""
-        for method in self.methods.values():
-            # In a real app, you'd pass the file's imports here. 
-            # For MVP, we assume global registry or pass imports down from JavaFile.resolve_dependencies
-            # For now, we stub imports as empty or rely on global linking.
-            method.resolve_dependencies([]) 
-            
-        for child in self.child_classes.values():
-            child.resolve_dependencies()
 
 
 class JavaField(BaseField):
     
     ACCESS_MODIFIERS = {"public", "protected", "private"}
 
-    def __init__(self, ucid: str, name: str, signature: str):
+    def __init__(self, ucid: str, name: str, signature: str, field_type: str):
         # BaseField init: (ucid, name, signature)
-        super().__init__(ucid, name, signature)
+        super().__init__(ucid, name, signature, field_type)
 
     @classmethod
     def from_node(cls, node: "Node", scope: str = "") -> "JavaField":
@@ -202,7 +192,7 @@ class JavaField(BaseField):
         if value:
             signature += f" = {value}"
 
-        return cls(ucid, identifier, signature)
+        return cls(ucid, identifier, signature, type_text)
 
 
 class JavaMethod(BaseMethod):
@@ -210,13 +200,14 @@ class JavaMethod(BaseMethod):
     _DEP_QUERY = Query(JAVA_LANGUAGE, DEPENDENCY_QUERY)
     ACCESS_MODIFIERS = {"public", "protected", "private"}
     
-    def __init__(self, umid: str, signature: str, body: str, body_hash: str, 
-                 dependency_names: List[str]):
+    def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str, body_hash: str, 
+                 dependency_names: List[str], line: int):
         # BaseMethod init: (umid, signature, body, body_hash, dependency_names)
-        super().__init__(umid, signature, body, body_hash, dependency_names)
+        super().__init__(identifier, scoped_identifier, return_type, umid, signature, body, body_hash, dependency_names, line)
     
     @classmethod
     def from_node(cls, node: "Node", scope: str, dep_query: "Query" = None) -> "JavaMethod":
+        line = node.start_point[0]
         
         identifier = "<init>"
         return_type = "void"
@@ -249,6 +240,7 @@ class JavaMethod(BaseMethod):
         
         # UMID Construction
         umid = f"{scope}#{identifier}({','.join(params_types)})"
+        scoped_identifier = f"{scope}.{identifier}"
         
         modifiers = []
         throws_clause = ""
@@ -273,7 +265,8 @@ class JavaMethod(BaseMethod):
                 
         sig_parts = [access] + other_mods + [type_params, return_type, identifier]
         if return_type == "void" and node.type == 'constructor_declaration':
-             sig_parts.remove("void")
+            sig_parts.remove("void")
+            return_type = "<constructor>"
              
         full_sig_str = f"{' '.join(filter(None, sig_parts))}({', '.join(params_full)})"
         if throws_clause:
@@ -287,7 +280,7 @@ class JavaMethod(BaseMethod):
         if body_node:
             body = body_node.text.decode('utf-8')
             clean_body = re.sub(r'\s+', '', body)
-            body_hash = hashlib.sha256(clean_body.encode('utf-8')).hexdigest()
+            body_hash = hashlib.sha256(clean_body.encode('utf-8')).hexdigest()[:8]
             
             # Use class level query if none provided
             cursor = QueryCursor(JavaMethod._DEP_QUERY)
@@ -304,7 +297,7 @@ class JavaMethod(BaseMethod):
                     if name == "dependencies":
                         dependency_names.append(d_node.text.decode('utf-8'))
                             
-        return cls(umid, full_sig_str, body, body_hash, dependency_names)
+        return cls(identifier, scoped_identifier, return_type, umid, full_sig_str, body, body_hash, dependency_names, line)
     
     def resolve_dependencies(self, imports: List[str]) -> None:
         if not self.dependency_names:
@@ -312,37 +305,51 @@ class JavaMethod(BaseMethod):
         
         unique_names = set(self.dependency_names)
         
+        if '#' in self.umid:
+            parent_class = self.umid.split('#')[0]
+        else:
+            parent_class = self.umid.rsplit('.', 1)[0]
+        
         for name in unique_names:
-            # Safely parse Parent Class
-            if '#' in self.umid:
-                parent_class = self.umid.split('#')[0]
-            else:
-                parent_class = self.umid.rsplit('.', 1)[0]
-            
-            local_fullname = f"{parent_class}.{name}"
             
             # 1. Local Check
-            if local_fullname in MemberRegistry.methods:
-                self.dependencies.append(MemberRegistry.methods[local_fullname])
+            local_fullname = f"{parent_class}.{name}"
+            if local_fullname in MemberRegistry.map_scoped:
+                candidates = MemberRegistry.map_scoped[local_fullname]
+                if len(candidates) == 1:
+                    self.dependencies.append(f"#{candidates[0].umid.split('#')[-1]}")
+                else:
+                    self.dependencies.extend([f"(candidate)#{c.umid.split('#')[-1]}" for c in candidates])
                 continue
             
             # 2. Import Check
             resolved_via_import = False
+            candidates = []
             for imp in imports:
                 import_fullname = f"{imp}.{name}"
-                if import_fullname in MemberRegistry.methods:
-                     self.dependencies.append(MemberRegistry.methods[import_fullname])
-                     resolved_via_import = True
-            if resolved_via_import:
+                if import_fullname in MemberRegistry.map_scoped:
+                    candidates.extend(MemberRegistry.map_scoped[import_fullname])
+            if candidates:
+                if len(candidates) == 1:
+                    self.dependencies.append(candidates[0].umid)
+                else:
+                    self.dependencies.extend([f"(candidate){c.umid}" for c in candidates])
                 continue
             
             # 3. Global Name Check
-            if name in MemberRegistry.methods_by_name:
-                candidates = MemberRegistry.methods_by_name[name]
+            if name in MemberRegistry.map_short:
+                candidates = MemberRegistry.map_short[name]
                 if len(candidates) == 1:
-                    self.dependencies.append(candidates[0])
+                    self.dependencies.append(candidates[0].umid)
                 else:
-                    self.dependencies.extend(candidates)
+                    self.dependencies.extend([f"(candidate){c.umid}" for c in candidates])
+                continue
+            
+            self.unresolved_dependencies.append(name)
+        # remove duplicates
+        self.dependencies = list(set(self.dependencies))
+        if self in self.dependencies:
+            self.dependencies.remove(self)
 
 
 class JavaEnum(BaseEnum):

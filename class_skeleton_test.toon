@@ -1,0 +1,339 @@
+ufid: com.hyperion.core.NexusEngine.java
+imports[12]: com.qualcomm.robotcore.hardware.DcMotor,org.firstinspires.ftc.robotcore.external.Telemetry,com.qualcomm.robotcore.hardware.VoltageSensor,com.qualcomm.robotcore.hardware.DcMotorEx,org.firstinspires.ftc.robotcore.external.navigation.AngleUnit,org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit,org.firstinspires.ftc.robotcore.external.navigation.Pose2D,com.qualcomm.hardware.rev.RevHubOrientationOnRobot,com.qualcomm.robotcore.hardware.IMU,com.qualcomm.robotcore.hardware.HardwareMap,MRILib.util.GoBildaPinpointDriver,MRILib.BotValues
+classes[1]:
+    - ucid: MRILib.managers.Bot
+        signature: public class Bot
+        description: "Represents the robot's physical components and provides methods for their control and state retrieval, including drive motors, IMU, odometry, and voltage sensor."
+        fields[18]{name,field_type}:
+            frontLeft,DcMotorEx
+            backLeft,DcMotorEx
+            frontRight,DcMotorEx
+            backRight,DcMotorEx
+            odo,GoBildaPinpointDriver
+            imu,IMU
+            voltageSensor,VoltageSensor
+            currentPosition,Pose2D
+            lastPosition,Pose2D
+            telemetry,Telemetry
+            frontLeftPos,int
+            frontRightPos,int
+            backLeftPos,int
+            backRightPos,int
+            frontLeftPosPrev,int
+            frontRightPosPrev,int
+            backLeftPosPrev,int
+            backRightPosPrev,int
+        methods[39]:
+            - umid: MRILib.managers.Bot#Bot(HardwareMap)
+                return_type: <constructor>
+                line: 102
+                signature: public Bot(HardwareMap hm)
+                body_hash: 6950ded5
+                description: "Constructs a Bot instance, initializing drive motors, IMU, odometry, and voltage sensor using default hardware map names."
+                dependencies[8]: "(candidate)#initMotors(HardwareMap,String,String,String,String)",(candidate)#initMotors(HardwareMap),(candidate)#initOdo(HardwareMap),(candidate)#initIMU(HardwareMap),"(candidate)#initOdo(HardwareMap,String)","(candidate)#initIMU(HardwareMap,String)",#update(),#getOdoPosition()
+                unresolved_dependencies[2]: iterator,next
+            - umid: MRILib.managers.Bot#initMotors(HardwareMap)
+                return_type: void
+                line: 121
+                signature: private void initMotors(HardwareMap hm)
+                body_hash: 23373a5c
+                description: Initializes the drive motors using default hardwareMap names.
+                dependencies[2]: "(candidate)#initMotors(HardwareMap,String,String,String,String)",(candidate)#initMotors(HardwareMap)
+                unresolved_dependencies[0]:
+            - umid: "MRILib.managers.Bot#initMotors(HardwareMap,String,String,String,String)"
+                return_type: void
+                line: 136
+                signature: "private void initMotors(HardwareMap hm, String fl, String fr, String bl, String br)"
+                body_hash: def70451
+                description: Initializes the drive motors with specified hardwareMap names and sets their directions based on BotValues.
+                dependencies[3]: #setDirections(),#resetEncoders(),#updateEncoders()
+                unresolved_dependencies[1]: get
+            - umid: MRILib.managers.Bot#initIMU(HardwareMap)
+                return_type: void
+                line: 159
+                signature: public void initIMU(HardwareMap hm)
+                body_hash: 5f7880f2
+                description: Initializes the Control Hub's IMU using the default hardwareMap name.
+                dependencies[2]: "(candidate)#initIMU(HardwareMap,String)",(candidate)#initIMU(HardwareMap)
+                unresolved_dependencies[0]:
+            - umid: "MRILib.managers.Bot#initIMU(HardwareMap,String)"
+                return_type: void
+                line: 170
+                signature: "public void initIMU(HardwareMap hm, String name)"
+                body_hash: "27753e39"
+                description: Initializes the Control Hub's IMU with a specified hardwareMap name and orientation parameters defined in BotValues.
+                dependencies[0]:
+                unresolved_dependencies[3]: get,initialize,resetYaw
+            - umid: MRILib.managers.Bot#initOdo(HardwareMap)
+                return_type: void
+                line: 191
+                signature: public void initOdo(HardwareMap hm)
+                body_hash: 9fd76935
+                description: Initializes the GoBilda Pinpoint Odometry Computer using the default hardwareMap name.
+                dependencies[2]: "(candidate)#initOdo(HardwareMap,String)",(candidate)#initOdo(HardwareMap)
+                unresolved_dependencies[0]:
+            - umid: "MRILib.managers.Bot#initOdo(HardwareMap,String)"
+                return_type: void
+                line: 203
+                signature: "public void initOdo(HardwareMap hm, String name)"
+                body_hash: 0e088b29
+                description: "Initializes the GoBilda Pinpoint Odometry Computer with a specified hardwareMap name, setting parameters like offsets, resolution, and encoder directions, then resets its pose."
+                dependencies[0]:
+                unresolved_dependencies[5]: get,setEncoderResolution,setEncoderDirections,resetPosAndIMU,setOffsets
+            - umid: MRILib.managers.Bot#update()
+                return_type: void
+                line: 223
+                signature: public void update()
+                body_hash: cc66fe34
+                description: "Updates the robot's state by reading odometry data, updating current and last positions, and reading drive motor encoder values."
+                dependencies[3]: #update(),#updateEncoders(),#getOdoPosition()
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#updateEncoders()
+                return_type: void
+                line: 236
+                signature: public void updateEncoders()
+                body_hash: 9d879e50
+                description: Updates the stored encoder positions for the drive train motors by saving previous values and reading current values.
+                dependencies[0]:
+                unresolved_dependencies[1]: getCurrentPosition
+            - umid: MRILib.managers.Bot#getFL()
+                return_type: DcMotorEx
+                line: 255
+                signature: public DcMotorEx getFL()
+                body_hash: "07250809"
+                description: Returns the front left drive motor instance.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getFR()
+                return_type: DcMotorEx
+                line: 257
+                signature: public DcMotorEx getFR()
+                body_hash: 97b625d9
+                description: Returns the front right drive motor instance.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getBL()
+                return_type: DcMotorEx
+                line: 259
+                signature: public DcMotorEx getBL()
+                body_hash: e558fa63
+                description: Returns the back left drive motor instance.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getBR()
+                return_type: DcMotorEx
+                line: 261
+                signature: public DcMotorEx getBR()
+                body_hash: 430696eb
+                description: Returns the back right drive motor instance.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getFLPos()
+                return_type: int
+                line: 264
+                signature: public int getFLPos()
+                body_hash: d5fe9e17
+                description: Returns the last read encoder position of the front left motor.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getFRPos()
+                return_type: int
+                line: 266
+                signature: public int getFRPos()
+                body_hash: fd5e383c
+                description: Returns the last read encoder position of the front right motor.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getBLPos()
+                return_type: int
+                line: 268
+                signature: public int getBLPos()
+                body_hash: 2d7c717d
+                description: Returns the last read encoder position of the back left motor.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getBRPos()
+                return_type: int
+                line: 270
+                signature: public int getBRPos()
+                body_hash: c32ffcde
+                description: Returns the last read encoder position of the back right motor.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getFLPosPrev()
+                return_type: int
+                line: 273
+                signature: public int getFLPosPrev()
+                body_hash: f3eb2ae6
+                description: Returns the encoder position of the front left motor from the previous updateEncoders() call.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getFRPosPrev()
+                return_type: int
+                line: 275
+                signature: public int getFRPosPrev()
+                body_hash: 673fb4d9
+                description: Returns the encoder position of the front right motor from the previous updateEncoders() call.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getBLPosPrev()
+                return_type: int
+                line: 277
+                signature: public int getBLPosPrev()
+                body_hash: 3f99484e
+                description: Returns the encoder position of the back left motor from the previous updateEncoders() call.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getBRPosPrev()
+                return_type: int
+                line: 279
+                signature: public int getBRPosPrev()
+                body_hash: 4040a16a
+                description: Returns the encoder position of the back right motor from the previous updateEncoders() call.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getIMUHeading()
+                return_type: double
+                line: 286
+                signature: public double getIMUHeading()
+                body_hash: b5f36d97
+                description: "Gets the robot's current heading (yaw) from the IMU, negated to align with standard FTC coordinate systems."
+                dependencies[0]:
+                unresolved_dependencies[2]: getRobotYawPitchRollAngles,getYaw
+            - umid: MRILib.managers.Bot#resetIMUHeading()
+                return_type: void
+                line: 289
+                signature: public void resetIMUHeading()
+                body_hash: 95b7cff3
+                description: Resets the IMU's yaw angle to zero based on the current orientation.
+                dependencies[0]:
+                unresolved_dependencies[1]: resetYaw
+            - umid: MRILib.managers.Bot#getPosition()
+                return_type: Pose2D
+                line: 296
+                signature: public Pose2D getPosition()
+                body_hash: "0656172f"
+                description: "Gets the robot's current position and heading as estimated by the odometry system, updated during the update() call."
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getLastPosition()
+                return_type: Pose2D
+                line: 305
+                signature: public Pose2D getLastPosition()
+                body_hash: 32b8041e
+                description: "Gets the robot's position and heading from the previous update cycle, useful for calculating displacement."
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getOdoPosition()
+                return_type: Pose2D
+                line: 315
+                signature: private Pose2D getOdoPosition()
+                body_hash: 761995dc
+                description: "Gets the raw position directly from the GoBilda Pinpoint driver, which may not be synchronized with the main update() cycle."
+                dependencies[1]: #getPosition()
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getX()
+                return_type: double
+                line: 325
+                signature: public double getX()
+                body_hash: 5498070f
+                description: Gets the current estimated X-coordinate of the robot in inches.
+                dependencies[2]: #getX(),#getPosition()
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getY()
+                return_type: double
+                line: 334
+                signature: public double getY()
+                body_hash: 38001d1f
+                description: Gets the current estimated Y-coordinate of the robot in inches.
+                dependencies[2]: #getY(),#getPosition()
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getHeading()
+                return_type: double
+                line: 344
+                signature: public double getHeading()
+                body_hash: eab8bc77
+                description: Gets the current estimated heading of the robot in degrees from the odometry system.
+                dependencies[2]: #getHeading(),#getPosition()
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#getVoltage()
+                return_type: double
+                line: 352
+                signature: public synchronized double getVoltage()
+                body_hash: "0433808b"
+                description: Gets the current battery voltage reported by the first available voltage sensor.
+                dependencies[1]: #getVoltage()
+                unresolved_dependencies[0]:
+            - umid: "MRILib.managers.Bot#setPosition(double,double,double)"
+                return_type: void
+                line: 370
+                signature: "public void setPosition(double x, double y, double heading)"
+                body_hash: ee7fa6bd
+                description: Sets the robot's current position and heading in the odometry system using individual coordinate values.
+                dependencies[2]: (candidate)#setPosition(Pose2D),"(candidate)#setPosition(double,double,double)"
+                unresolved_dependencies[1]: toRadians
+            - umid: MRILib.managers.Bot#setPosition(Pose2D)
+                return_type: void
+                line: 379
+                signature: public void setPosition(Pose2D pos)
+                body_hash: 3f087ad6
+                description: Overrides the current position tracked by the GoBilda Pinpoint Odometry Computer and immediately updates internal state.
+                dependencies[4]: (candidate)#setPosition(Pose2D),#update(),"(candidate)#setPosition(double,double,double)",#getOdoPosition()
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#setDirections()
+                return_type: void
+                line: 391
+                signature: public void setDirections()
+                body_hash: 424c8333
+                description: Sets the direction of the drive motors based on the constants defined in BotValues to ensure positive power corresponds to forward motion.
+                dependencies[0]:
+                unresolved_dependencies[1]: setDirection
+            - umid: MRILib.managers.Bot#setMode(DcMotor.RunMode)
+                return_type: void
+                line: 403
+                signature: public void setMode(DcMotor.RunMode mode)
+                body_hash: c52cf935
+                description: Sets the DcMotor.RunMode for all four drive motors simultaneously.
+                dependencies[1]: #setMode(DcMotor.RunMode)
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#resetEncoders()
+                return_type: void
+                line: 415
+                signature: public void resetEncoders()
+                body_hash: 25d4c89a
+                description: "Resets the drive motor encoders to 0, preserving their current RunMode, and resets stored previous encoder values."
+                dependencies[3]: #setMode(DcMotor.RunMode),#resetPrevEncoders(),#updateEncoders()
+                unresolved_dependencies[1]: getMode
+            - umid: MRILib.managers.Bot#resetPrevEncoders()
+                return_type: void
+                line: 438
+                signature: public void resetPrevEncoders()
+                body_hash: dfb4a143
+                description: Resets the stored previous encoder tick values to zero.
+                dependencies[0]:
+                unresolved_dependencies[0]:
+            - umid: MRILib.managers.Bot#enableBrakeMode(boolean)
+                return_type: void
+                line: 453
+                signature: public void enableBrakeMode(boolean enabled)
+                body_hash: fca18f74
+                description: "Enables or disables the 'brake' zero power behavior for all drive motors, switching between brake and float modes based on the boolean input."
+                dependencies[0]:
+                unresolved_dependencies[1]: setZeroPowerBehavior
+            - umid: "MRILib.managers.Bot#driveXYW(double,double,double)"
+                return_type: void
+                line: 473
+                signature: "public void driveXYW(double rx, double ry, double rw)"
+                body_hash: fb220268
+                description: "Drives the robot using robot-centric Cartesian coordinates (x, y) and rotation (w), calculating and applying Mecanum wheel powers, normalized and voltage-compensated."
+                dependencies[1]: #getVoltage()
+                unresolved_dependencies[3]: max,setPower,abs
+            - umid: "MRILib.managers.Bot#driveFieldXYW(double,double,double)"
+                return_type: void
+                line: 514
+                signature: "public void driveFieldXYW(double fx, double fy, double fw)"
+                body_hash: 1f88c7f5
+                description: "Drives the robot using field-centric coordinates (x, y) and robot-centric rotation (w) by rotating the field movement vector based on the robot's current heading before calling driveXYW."
+                dependencies[2]: "#driveXYW(double,double,double)",#getHeading()
+                unresolved_dependencies[3]: toRadians,sin,cos
+        child_classes[0]:

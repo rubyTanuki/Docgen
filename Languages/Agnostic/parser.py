@@ -4,13 +4,15 @@ from pathlib import Path
 from abc import ABC
 from collections import defaultdict
 import toons
+import asyncio
 
 class BaseParser(ABC):
-    def __init__(self, project_dir: str):
+    def __init__(self, project_dir: str, llm=None):
+        self.llm = llm
         self.files: list[BaseFile] = []
         self.project_dir = project_dir
 
-    def parse(self, query="*"):
+    async def parse(self, query="*"):
         from Languages.Java import JavaFile
 
         path = Path(self.project_dir)
@@ -35,13 +37,15 @@ class BaseParser(ABC):
 
         # 3. Resolve Dependencies (Global Pass)
         for file in self.files:
-            # Assuming your resolve_dependencies handles the logic internally
-            # or you might need to pass self.files/imports here depending on your impl
             file.resolve_dependencies()
 
-    def resolve_descriptions(self, llm: "LLMClient"):
+        # 4. Resolve Descriptions
         for file in self.files:
-            file.resolve_descriptions(llm)
+            await file.resolve_descriptions(self.llm)
+
+    async def resolve_descriptions(self, llm: "LLMClient"):
+        for file in self.files:
+            await file.resolve_descriptions(llm)
 
     def generate_distributed_context(self, output_filename="_context.toon"):
         """

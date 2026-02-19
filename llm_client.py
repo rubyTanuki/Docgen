@@ -20,14 +20,12 @@ class DescriptionResult(BaseModel):
 
 class GeminiClient:
     def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-lite"):
-        # 1. Initialize the unified Client
         self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
         
-        # 2. Rate Limiting Semaphore
-        self.semaphore = asyncio.Semaphore(15)
+        self.semaphore = asyncio.Semaphore(100)
 
-    def generate_description(self, class_obj: "BaseClass", imports: list[str]) -> dict:
+    async def generate_description(self, class_obj: "BaseClass", imports: list[str]) -> dict:
         # Define the system prompt (static instructions)
         system_instruction = """
 You are an expert senior software engineer and technical writer. 
@@ -43,7 +41,7 @@ Analyze the provided code and generate a JSON response.
 4. **Needs Description**: True if the method is complex enough to need a description or has context which would be unknown with just the signature(ignore simple getters/setters).
 """
 
-        # Prepare the User Content
+
         input_data = {
             "code": class_obj.body,
             "ucid": class_obj.ucid,
@@ -52,22 +50,26 @@ Analyze the provided code and generate a JSON response.
         }
 
         try: 
-            interaction =  self.client.interactions.create(
-                model=self.model_name,
-                input=json.dumps(input_data),
-                system_instruction=system_instruction,
-                response_mime_type="application/json",
-                response_format=DescriptionResult.model_json_schema(),
-                generation_config={
-                    "temperature": 0.2,
-                    "max_output_tokens": 1024
-                }
-            )
+            async with self.semaphore:
+                # 3. Use client.aio for async execution and bundle config
+                response = await self.client.aio.models.generate_content(
+                    model=self.model_name,
+                    contents=json.dumps(input_data),
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        response_mime_type="application/json",
+                        response_json_schema=DescriptionResult.model_json_schema(),
+                        temperature=0.2,
+                        max_output_tokens=8192
+                    )
+                )
             
-            return interaction.outputs[-1].text
+            # The JSON string is safely retrieved via .text
+            return response.parsed
+            
         except Exception as e:
             return {
-                "signature": method.signature,
+                "ucid": class_obj.ucid,
                 "error": str(e),
                 "status": "error"
             }
