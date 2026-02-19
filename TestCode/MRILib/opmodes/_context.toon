@@ -1,0 +1,60 @@
+[2]:
+    - filename: AutonExample.java
+        package: MRILib.opmodes
+        imports[12]: MRILib.BotValues,MRILib.managers,MRILib.motion,MRILib.statemachine,java.util,com.qualcomm.robotcore.eventloop.opmode.Disabled,com.qualcomm.robotcore.eventloop.opmode.LinearOpMode,com.qualcomm.robotcore.eventloop.opmode.Autonomous,com.qualcomm.robotcore.hardware.DcMotor,org.firstinspires.ftc.robotcore.external.navigation.AngleUnit,org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit,org.firstinspires.ftc.robotcore.external.navigation.Pose2D
+        classes[1]:
+            - identifier: AutonExample
+                name: MRILib.opmodes.AutonExample
+                signature: "@Autonomous(name=\"AutonExample\") public class AutonExample extends LinearOpMode"
+                fields[6]{identifier,name,type,signature}:
+                    bot,MRILib.opmodes.AutonExample.bot,Bot,public Bot bot
+                    pid,MRILib.opmodes.AutonExample.pid,PIDController,public PIDController pid
+                    dsm,MRILib.opmodes.AutonExample.dsm,DriveFSM,public DriveFSM dsm
+                    BUCKET_X,MRILib.opmodes.AutonExample.BUCKET_X,double,private static final double BUCKET_X = 55.5
+                    BUCKET_Y,MRILib.opmodes.AutonExample.BUCKET_Y,double,private static final double BUCKET_Y = 52.5
+                    BUCKET_HEADING,MRILib.opmodes.AutonExample.BUCKET_HEADING,double,private static final double BUCKET_HEADING = 135
+                methods[1]:
+                    - class_name: MRILib.opmodes.AutonExample
+                        identifier: runOpMode
+                        name: MRILib.opmodes.AutonExample.runOpMode
+                        return_type: void
+                        parameters[0]:
+                        signature: @Override public void runOpMode()
+                        dependencies[38]: public double getTargetY(),public double getCurrentRadians(),public void setMode(DcMotor.RunMode mode),public void setState(String name),public void setState(ArmState state),public double getX(),void start(),public void start(),public void start(),public void start(),public void start(),public Pose2D getPosition(),public double getHeading(),public double getTargetX(),public void update(Gamepad gpad),void update(),public void update(),public void update(),public void update(),@Override public double update(double current),public double update(double current),"public double update(double current1, double current2)",public void update(),"public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos),public void setTurnPID(PID theta),"public void moveTo(double x, double y, double theta, Runnable command, double timeout)","public void moveTo(double x, double y, double theta, Runnable command)","public void moveTo(double x, double y, double theta, double timeout)","public void moveTo(double x, double y, double theta)",public void moveTo(Pose2D pose),"public void moveTo(double x, double y, double degrees)",public double getY(),"public void waitForSeconds(double seconds, Runnable command)",public void waitForSeconds(double seconds),public void enableBrakeMode(boolean enabled),"public void setPID(PID x, PID y)",public double getTargetRadians()
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: ServoZero.java
+        package: MRILib.opmodes
+        imports[2]: MRILib.util,java.util
+        classes[1]:
+            - identifier: ServoZero
+                name: MRILib.opmodes.ServoZero
+                signature: "@TeleOp(name=\"ServoZero\") public class ServoZero extends OpMode"
+                fields[8]{identifier,name,type,signature}:
+                    gpad,MRILib.opmodes.ServoZero.gpad,Bpad,private Bpad gpad
+                    elbow,MRILib.opmodes.ServoZero.elbow,Servo,Servo elbow
+                    wrist,MRILib.opmodes.ServoZero.wrist,Servo,Servo wrist
+                    roll,MRILib.opmodes.ServoZero.roll,Servo,Servo roll
+                    claw,MRILib.opmodes.ServoZero.claw,Servo,Servo claw
+                    servoList,MRILib.opmodes.ServoZero.servoList,"Servo[]","Servo[] servoList"
+                    positionList,MRILib.opmodes.ServoZero.positionList,"double[]","double[] positionList"
+                    index,MRILib.opmodes.ServoZero.index,int,int index = 0
+                methods[2]:
+                    - class_name: MRILib.opmodes.ServoZero
+                        identifier: init
+                        name: MRILib.opmodes.ServoZero.init
+                        return_type: void
+                        parameters[0]:
+                        signature: public void init()
+                        dependencies[1]: public boolean get(String button)
+                    - class_name: MRILib.opmodes.ServoZero
+                        identifier: loop
+                        name: MRILib.opmodes.ServoZero.loop
+                        return_type: void
+                        parameters[0]:
+                        signature: public void loop()
+                        dependencies[12]: public boolean get(String button),public void update(Gamepad gpad),void update(),public void update(),public void update(),public void update(),@Override public double update(double current),public double update(double current),"public double update(double current1, double current2)",public void update(),"public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos)
+                child_classes[0]:
+        methods[0]:
+        fields[0]:

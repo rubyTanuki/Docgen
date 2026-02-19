@@ -48,7 +48,7 @@ Analyze the provided code and generate a JSON response.
             "imports": imports,
             "method_umids": [method.umid for method in class_obj.methods.values()]
         }
-
+        print(f"Generating Description for {class_obj.ucid}...")
         try: 
             async with self.semaphore:
                 # 3. Use client.aio for async execution and bundle config
@@ -65,6 +65,7 @@ Analyze the provided code and generate a JSON response.
                 )
             
             # The JSON string is safely retrieved via .text
+            print(f"✅ Generated Description for {class_obj.ucid}")
             return response.parsed
             
         except Exception as e:

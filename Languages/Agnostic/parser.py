@@ -34,14 +34,15 @@ class BaseParser(ABC):
                 if file_obj:
                     file_obj.source_path = filepath 
                     self.files.append(file_obj)
-
+        print("✅ Parsed Project Files")
         # 3. Resolve Dependencies (Global Pass)
         for file in self.files:
             file.resolve_dependencies()
-
+        print("✅ Resolved Dependencies")
+        print("Generating Descriptions...\n")
         # 4. Resolve Descriptions
-        for file in self.files:
-            await file.resolve_descriptions(self.llm)
+        coroutine_list = [file.resolve_descriptions(self.llm) for file in self.files]
+        result = await asyncio.gather(*coroutine_list)
 
     async def resolve_descriptions(self, llm: "LLMClient"):
         for file in self.files:

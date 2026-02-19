@@ -25,7 +25,7 @@ class BaseFile(ABC):
             cls.resolve_dependencies(self.imports)
     
     async def resolve_descriptions(self, llm: "LLMClient"):
-        for cls in classes:
+        for cls in self.classes:
             await cls.resolve_descriptions(llm, self.imports)
 
     def __json__(self):

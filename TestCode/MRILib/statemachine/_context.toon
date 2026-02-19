@@ -1,0 +1,340 @@
+[3]:
+    - filename: BotState.java
+        package: MRILib.statemachine
+        imports[0]:
+        classes[1]:
+            - identifier: BotState
+                name: MRILib.statemachine.BotState
+                signature: public abstract class BotState
+                fields[1]{identifier,name,type,signature}:
+                    name,MRILib.statemachine.BotState.name,String,public String name
+                methods[6]:
+                    - class_name: MRILib.statemachine.BotState
+                        identifier: BotState
+                        name: MRILib.statemachine.BotState.BotState
+                        return_type: MRILib.statemachine.BotState
+                        parameters[1]: String n
+                        signature: public MRILib.statemachine.BotState BotState(String n)
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.BotState
+                        identifier: BotState
+                        name: MRILib.statemachine.BotState.BotState
+                        return_type: MRILib.statemachine.BotState
+                        parameters[0]:
+                        signature: public MRILib.statemachine.BotState BotState()
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.BotState
+                        identifier: start
+                        name: MRILib.statemachine.BotState.start
+                        return_type: void
+                        parameters[0]:
+                        signature: void start()
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.BotState
+                        identifier: update
+                        name: MRILib.statemachine.BotState.update
+                        return_type: void
+                        parameters[0]:
+                        signature: void update()
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.BotState
+                        identifier: end
+                        name: MRILib.statemachine.BotState.end
+                        return_type: void
+                        parameters[0]:
+                        signature: void end()
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.BotState
+                        identifier: toString
+                        name: MRILib.statemachine.BotState.toString
+                        return_type: String
+                        parameters[0]:
+                        signature: @Override public String toString()
+                        dependencies[0]:
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: ArmFSM.java
+        package: MRILib.statemachine
+        imports[5]: com.qualcomm.robotcore.hardware.Gamepad,java.util.HashMap,java.util.function.Supplier,java.util.ArrayList,MRILib.managers
+        classes[3]:
+            - identifier: ArmFSM
+                name: MRILib.statemachine.ArmFSM
+                signature: public class ArmFSM
+                fields[6]{identifier,name,type,signature}:
+                    bot,MRILib.statemachine.ArmFSM.bot,ArmBotEasy,private ArmBotEasy bot
+                    currentState,MRILib.statemachine.ArmFSM.currentState,ArmState,private ArmState currentState
+                    conditionalList,MRILib.statemachine.ArmFSM.conditionalList,ArrayList<Conditional>,private ArrayList<Conditional> conditionalList = new ArrayList<>()
+                    gpad1,MRILib.statemachine.ArmFSM.gpad1,Gamepad,Gamepad gpad1
+                    gpad2,MRILib.statemachine.ArmFSM.gpad2,Gamepad,Gamepad gpad2
+                    auton,MRILib.statemachine.ArmFSM.auton,boolean,boolean auton
+                methods[11]:
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: ArmFSM
+                        name: MRILib.statemachine.ArmFSM.ArmFSM
+                        return_type: MRILib.statemachine.ArmFSM
+                        parameters[1]: ArmBotEasy bot
+                        signature: public MRILib.statemachine.ArmFSM ArmFSM(ArmBotEasy bot)
+                        dependencies[2]: public static ArmState getState(String s),private void init()
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: ArmFSM
+                        name: MRILib.statemachine.ArmFSM.ArmFSM
+                        return_type: MRILib.statemachine.ArmFSM
+                        parameters[3]: ArmBotEasy bot,Gamepad gpad1,Gamepad gpad2
+                        signature: "public MRILib.statemachine.ArmFSM ArmFSM(ArmBotEasy bot, Gamepad gpad1, Gamepad gpad2)"
+                        dependencies[2]: public static ArmState getState(String s),private void init()
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: start
+                        name: MRILib.statemachine.ArmFSM.start
+                        return_type: void
+                        parameters[0]:
+                        signature: public void start()
+                        dependencies[1]: public void start()
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: update
+                        name: MRILib.statemachine.ArmFSM.update
+                        return_type: void
+                        parameters[0]:
+                        signature: public void update()
+                        dependencies[2]: public void update(),public void checkConditionals()
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: end
+                        name: MRILib.statemachine.ArmFSM.end
+                        return_type: void
+                        parameters[0]:
+                        signature: public void end()
+                        dependencies[1]: public void end()
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: setState
+                        name: MRILib.statemachine.ArmFSM.setState
+                        return_type: void
+                        parameters[1]: String name
+                        signature: public void setState(String name)
+                        dependencies[3]: public static ArmState getState(String s),public void setState(String name),public void setState(ArmState state)
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: setState
+                        name: MRILib.statemachine.ArmFSM.setState
+                        return_type: void
+                        parameters[1]: ArmState state
+                        signature: public void setState(ArmState state)
+                        dependencies[2]: public void start(),public void end()
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: transition
+                        name: MRILib.statemachine.ArmFSM.transition
+                        return_type: void
+                        parameters[0]:
+                        signature: public void transition()
+                        dependencies[3]: "public HashMap<String, Boolean> getTransitions()",public void setState(String name),public void setState(ArmState state)
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: addConditional
+                        name: MRILib.statemachine.ArmFSM.addConditional
+                        return_type: void
+                        parameters[2]: Supplier<Boolean> condition,Runnable command
+                        signature: "public void addConditional(Supplier<Boolean> condition, Runnable command)"
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: checkConditionals
+                        name: MRILib.statemachine.ArmFSM.checkConditionals
+                        return_type: void
+                        parameters[0]:
+                        signature: public void checkConditionals()
+                        dependencies[4]: public boolean get(String button),public void run(Runnable command),@Override public void run(),@Override public void run()
+                    - class_name: MRILib.statemachine.ArmFSM
+                        identifier: init
+                        name: MRILib.statemachine.ArmFSM.init
+                        return_type: void
+                        parameters[0]:
+                        signature: private void init()
+                        dependencies[1]: public void transition()
+                child_classes[0]:
+            - identifier: ArmState
+                name: MRILib.statemachine.ArmState
+                signature: protected class ArmState extends BotState
+                fields[2]{identifier,name,type,signature}:
+                    states,MRILib.statemachine.ArmState.states,"HashMap<String, ArmState>","private static HashMap<String, ArmState> states = new HashMap<>()"
+                    transitions,MRILib.statemachine.ArmState.transitions,"HashMap<String, Boolean>","private HashMap<String, Boolean> transitions = new HashMap<>()"
+                methods[8]:
+                    - class_name: MRILib.statemachine.ArmState
+                        identifier: getState
+                        name: MRILib.statemachine.ArmState.getState
+                        return_type: ArmState
+                        parameters[1]: String s
+                        signature: public static ArmState getState(String s)
+                        dependencies[1]: public boolean get(String button)
+                    - class_name: MRILib.statemachine.ArmState
+                        identifier: clearSavedStates
+                        name: MRILib.statemachine.ArmState.clearSavedStates
+                        return_type: void
+                        parameters[0]:
+                        signature: public static void clearSavedStates()
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.ArmState
+                        identifier: ArmState
+                        name: MRILib.statemachine.ArmState.ArmState
+                        return_type: MRILib.statemachine.ArmState
+                        parameters[0]:
+                        signature: public MRILib.statemachine.ArmState ArmState()
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.ArmState
+                        identifier: ArmState
+                        name: MRILib.statemachine.ArmState.ArmState
+                        return_type: MRILib.statemachine.ArmState
+                        parameters[1]: String name
+                        signature: public MRILib.statemachine.ArmState ArmState(String name)
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.ArmState
+                        identifier: ArmState
+                        name: MRILib.statemachine.ArmState.ArmState
+                        return_type: MRILib.statemachine.ArmState
+                        parameters[2]: String name,boolean save
+                        signature: "public MRILib.statemachine.ArmState ArmState(String name, boolean save)"
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.ArmState
+                        identifier: setDefault
+                        name: MRILib.statemachine.ArmState.setDefault
+                        return_type: void
+                        parameters[1]: String stateName
+                        signature: public void setDefault(String stateName)
+                        dependencies[1]: public boolean get(String button)
+                    - class_name: MRILib.statemachine.ArmState
+                        identifier: setTransition
+                        name: MRILib.statemachine.ArmState.setTransition
+                        return_type: void
+                        parameters[2]: String targetState,boolean condition
+                        signature: "public void setTransition(String targetState, boolean condition)"
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.ArmState
+                        identifier: getTransitions
+                        name: MRILib.statemachine.ArmState.getTransitions
+                        return_type: "HashMap<String, Boolean>"
+                        parameters[0]:
+                        signature: "public HashMap<String, Boolean> getTransitions()"
+                        dependencies[0]:
+                child_classes[0]:
+            - identifier: Conditional
+                name: MRILib.statemachine.Conditional
+                signature: protected class Conditional
+                fields[2]{identifier,name,type,signature}:
+                    condition,MRILib.statemachine.Conditional.condition,Supplier<Boolean>,public Supplier<Boolean> condition
+                    command,MRILib.statemachine.Conditional.command,Runnable,public Runnable command
+                methods[1]:
+                    - class_name: MRILib.statemachine.Conditional
+                        identifier: Conditional
+                        name: MRILib.statemachine.Conditional.Conditional
+                        return_type: MRILib.statemachine.Conditional
+                        parameters[2]: Supplier<Boolean> condition,Runnable command
+                        signature: "public MRILib.statemachine.Conditional Conditional(Supplier<Boolean> condition, Runnable command)"
+                        dependencies[0]:
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: DriveFSM.java
+        package: MRILib.statemachine
+        imports[9]: MRILib.managers,MRILib.motion.PIDController,MRILib.util.Mathf,org.firstinspires.ftc.robotcore.external.navigation.Pose2D,com.qualcomm.robotcore.util.ElapsedTime,org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit,org.firstinspires.ftc.robotcore.external.navigation.AngleUnit,com.qualcomm.robotcore.hardware.Gamepad,java.util.ArrayList
+        classes[1]:
+            - identifier: DriveFSM
+                name: MRILib.statemachine.DriveFSM
+                signature: public class DriveFSM
+                fields[7]{identifier,name,type,signature}:
+                    bot,MRILib.statemachine.DriveFSM.bot,Bot,private Bot bot
+                    pid,MRILib.statemachine.DriveFSM.pid,PIDController,private PIDController pid = null
+                    steps,MRILib.statemachine.DriveFSM.steps,ArrayList<BotState>,ArrayList<BotState> steps = new ArrayList<>()
+                    currentStep,MRILib.statemachine.DriveFSM.currentStep,int,public int currentStep = 0
+                    lastX,MRILib.statemachine.DriveFSM.lastX,double,public double lastX = 0
+                    lastY,MRILib.statemachine.DriveFSM.lastY,double,public double lastY = 0
+                    lastAngle,MRILib.statemachine.DriveFSM.lastAngle,double,public double lastAngle = 0
+                methods[13]:
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: DriveFSM
+                        name: MRILib.statemachine.DriveFSM.DriveFSM
+                        return_type: MRILib.statemachine.DriveFSM
+                        parameters[2]: Bot bot,PIDController pid
+                        signature: "public MRILib.statemachine.DriveFSM DriveFSM(Bot bot, PIDController pid)"
+                        dependencies[0]:
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: start
+                        name: MRILib.statemachine.DriveFSM.start
+                        return_type: void
+                        parameters[0]:
+                        signature: public void start()
+                        dependencies[2]: public boolean get(String button),public void start()
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: update
+                        name: MRILib.statemachine.DriveFSM.update
+                        return_type: void
+                        parameters[0]:
+                        signature: public void update()
+                        dependencies[2]: public boolean get(String button),public void update()
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: end
+                        name: MRILib.statemachine.DriveFSM.end
+                        return_type: void
+                        parameters[0]:
+                        signature: public void end()
+                        dependencies[2]: public boolean get(String button),public void end()
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: nextState
+                        name: MRILib.statemachine.DriveFSM.nextState
+                        return_type: void
+                        parameters[0]:
+                        signature: public void nextState()
+                        dependencies[2]: public void start(),public void end()
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: moveTo
+                        name: MRILib.statemachine.DriveFSM.moveTo
+                        return_type: void
+                        parameters[5]: double x,double y,double theta,Runnable command,double timeout
+                        signature: "public void moveTo(double x, double y, double theta, Runnable command, double timeout)"
+                        dependencies[13]: public double getX(),public void run(Runnable command),public Pose2D getPosition(),public static double angleWrap(double radian),public double getHeading(),"public void moveTo(double x, double y, double theta, Runnable command, double timeout)","public void moveTo(double x, double y, double theta, Runnable command)","public void moveTo(double x, double y, double theta, double timeout)","public void moveTo(double x, double y, double theta)",public void moveTo(Pose2D pose),public void nextState(),public double getY(),public void update()
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: moveTo
+                        name: MRILib.statemachine.DriveFSM.moveTo
+                        return_type: void
+                        parameters[4]: double x,double y,double theta,Runnable command
+                        signature: "public void moveTo(double x, double y, double theta, Runnable command)"
+                        dependencies[5]: "public void moveTo(double x, double y, double theta, Runnable command, double timeout)","public void moveTo(double x, double y, double theta, Runnable command)","public void moveTo(double x, double y, double theta, double timeout)","public void moveTo(double x, double y, double theta)",public void moveTo(Pose2D pose)
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: moveTo
+                        name: MRILib.statemachine.DriveFSM.moveTo
+                        return_type: void
+                        parameters[4]: double x,double y,double theta,double timeout
+                        signature: "public void moveTo(double x, double y, double theta, double timeout)"
+                        dependencies[5]: "public void moveTo(double x, double y, double theta, Runnable command, double timeout)","public void moveTo(double x, double y, double theta, Runnable command)","public void moveTo(double x, double y, double theta, double timeout)","public void moveTo(double x, double y, double theta)",public void moveTo(Pose2D pose)
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: moveTo
+                        name: MRILib.statemachine.DriveFSM.moveTo
+                        return_type: void
+                        parameters[3]: double x,double y,double theta
+                        signature: "public void moveTo(double x, double y, double theta)"
+                        dependencies[5]: "public void moveTo(double x, double y, double theta, Runnable command, double timeout)","public void moveTo(double x, double y, double theta, Runnable command)","public void moveTo(double x, double y, double theta, double timeout)","public void moveTo(double x, double y, double theta)",public void moveTo(Pose2D pose)
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: moveTo
+                        name: MRILib.statemachine.DriveFSM.moveTo
+                        return_type: void
+                        parameters[1]: Pose2D pose
+                        signature: public void moveTo(Pose2D pose)
+                        dependencies[8]: public double getY(),public double getX(),public double getHeading(),"public void moveTo(double x, double y, double theta, Runnable command, double timeout)","public void moveTo(double x, double y, double theta, Runnable command)","public void moveTo(double x, double y, double theta, double timeout)","public void moveTo(double x, double y, double theta)",public void moveTo(Pose2D pose)
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: waitForSeconds
+                        name: MRILib.statemachine.DriveFSM.waitForSeconds
+                        return_type: void
+                        parameters[2]: double seconds,Runnable command
+                        signature: "public void waitForSeconds(double seconds, Runnable command)"
+                        dependencies[8]: public void run(Runnable command),"public void moveTo(double x, double y, double theta, Runnable command, double timeout)","public void moveTo(double x, double y, double theta, Runnable command)","public void moveTo(double x, double y, double theta, double timeout)","public void moveTo(double x, double y, double theta)",public void moveTo(Pose2D pose),public void nextState(),public void update()
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: waitForSeconds
+                        name: MRILib.statemachine.DriveFSM.waitForSeconds
+                        return_type: void
+                        parameters[1]: double seconds
+                        signature: public void waitForSeconds(double seconds)
+                        dependencies[2]: "public void waitForSeconds(double seconds, Runnable command)",public void waitForSeconds(double seconds)
+                    - class_name: MRILib.statemachine.DriveFSM
+                        identifier: run
+                        name: MRILib.statemachine.DriveFSM.run
+                        return_type: void
+                        parameters[1]: Runnable command
+                        signature: public void run(Runnable command)
+                        dependencies[2]: "public void waitForSeconds(double seconds, Runnable command)",public void waitForSeconds(double seconds)
+                child_classes[0]:
+        methods[0]:
+        fields[0]:

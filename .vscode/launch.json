@@ -8,6 +8,14 @@
             "program": "${workspaceFolder}/class_test.py",
             "console": "integratedTerminal",
             "env": {"PYTHONPATH": "${workspaceFolder}"}
+        },
+        {
+            "name": "Python: Project Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/project_test.py",
+            "console": "integratedTerminal",
+            "env": {"PYTHONPATH": "${workspaceFolder}"}
         }
     ]
 }

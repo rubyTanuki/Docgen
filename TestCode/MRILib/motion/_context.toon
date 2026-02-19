@@ -1,0 +1,221 @@
+[3]:
+    - filename: HeadingPID.java
+        package: MRILib.motion
+        imports[1]: MRILib.util
+        classes[1]:
+            - identifier: HeadingPID
+                name: MRILib.motion.HeadingPID
+                signature: public class HeadingPID extends PID
+                fields[0]:
+                methods[2]:
+                    - class_name: MRILib.motion.HeadingPID
+                        identifier: HeadingPID
+                        name: MRILib.motion.HeadingPID.HeadingPID
+                        return_type: MRILib.motion.HeadingPID
+                        parameters[3]: double p,double i,double d
+                        signature: "public MRILib.motion.HeadingPID HeadingPID(double p, double i, double d)"
+                        dependencies[0]:
+                    - class_name: MRILib.motion.HeadingPID
+                        identifier: update
+                        name: MRILib.motion.HeadingPID.update
+                        return_type: double
+                        parameters[1]: double current
+                        signature: @Override public double update(double current)
+                        dependencies[1]: public static double angleWrap(double radian)
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: PID.java
+        package: MRILib.motion
+        imports[1]: com.qualcomm.robotcore.util.ElapsedTime
+        classes[1]:
+            - identifier: PID
+                name: MRILib.motion.PID
+                signature: public class PID
+                fields[10]{identifier,name,type,signature}:
+                    kP,MRILib.motion.PID.kP,double,public double kP
+                    kI,MRILib.motion.PID.kI,double,public double kI
+                    kD,MRILib.motion.PID.kD,double,public double kD
+                    iLimit,MRILib.motion.PID.iLimit,double,public double iLimit = 1
+                    targetVal,MRILib.motion.PID.targetVal,double,public double targetVal = 0
+                    errorSum,MRILib.motion.PID.errorSum,double,double errorSum = 0
+                    errorSumTotal,MRILib.motion.PID.errorSumTotal,double,public double errorSumTotal = .1
+                    lastTime,MRILib.motion.PID.lastTime,double,double lastTime = 0
+                    lastError,MRILib.motion.PID.lastError,double,double lastError = 0
+                    timer,MRILib.motion.PID.timer,ElapsedTime,ElapsedTime timer = null
+                methods[7]:
+                    - class_name: MRILib.motion.PID
+                        identifier: PID
+                        name: MRILib.motion.PID.PID
+                        return_type: MRILib.motion.PID
+                        parameters[3]: double p,double i,double d
+                        signature: "public MRILib.motion.PID PID(double p, double i, double d)"
+                        dependencies[1]: public void start()
+                    - class_name: MRILib.motion.PID
+                        identifier: start
+                        name: MRILib.motion.PID.start
+                        return_type: void
+                        parameters[0]:
+                        signature: public void start()
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PID
+                        identifier: update
+                        name: MRILib.motion.PID.update
+                        return_type: double
+                        parameters[1]: double current
+                        signature: public double update(double current)
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PID
+                        identifier: update
+                        name: MRILib.motion.PID.update
+                        return_type: double
+                        parameters[2]: double current1,double current2
+                        signature: "public double update(double current1, double current2)"
+                        dependencies[2]: public double update(double current),"public double update(double current1, double current2)"
+                    - class_name: MRILib.motion.PID
+                        identifier: setTarget
+                        name: MRILib.motion.PID.setTarget
+                        return_type: void
+                        parameters[1]: double target
+                        signature: public void setTarget(double target)
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PID
+                        identifier: setILimit
+                        name: MRILib.motion.PID.setILimit
+                        return_type: void
+                        parameters[1]: double limit
+                        signature: public void setILimit(double limit)
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PID
+                        identifier: setIntegralSumLimit
+                        name: MRILib.motion.PID.setIntegralSumLimit
+                        return_type: void
+                        parameters[1]: double limit
+                        signature: public void setIntegralSumLimit(double limit)
+                        dependencies[0]:
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: PIDController.java
+        package: MRILib.motion
+        imports[8]: com.qualcomm.robotcore.util.ElapsedTime,org.firstinspires.ftc.robotcore.external.navigation.AngleUnit,org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit,org.firstinspires.ftc.robotcore.external.navigation.Pose2D,com.qualcomm.robotcore.util.Range,java.util.function.Supplier,org.firstinspires.ftc.robotcore.external.Telemetry,MRILib.managers
+        classes[1]:
+            - identifier: PIDController
+                name: MRILib.motion.PIDController
+                signature: public class PIDController
+                fields[13]{identifier,name,type,signature}:
+                    bot,MRILib.motion.PIDController.bot,Bot,private Bot bot = null
+                    telemetry,MRILib.motion.PIDController.telemetry,Telemetry,private Telemetry telemetry
+                    xPID,MRILib.motion.PIDController.xPID,PID,public PID xPID
+                    yPID,MRILib.motion.PIDController.yPID,PID,public PID yPID
+                    thetaPID,MRILib.motion.PIDController.thetaPID,PID,public PID thetaPID
+                    targetX,MRILib.motion.PIDController.targetX,double,public double targetX = 0
+                    targetY,MRILib.motion.PIDController.targetY,double,public double targetY = 0
+                    targetRadians,MRILib.motion.PIDController.targetRadians,double,public double targetRadians = 0
+                    maxAngSpeed,MRILib.motion.PIDController.maxAngSpeed,Supplier<Double>,public Supplier<Double> maxAngSpeed = ()-> 0.6
+                    maxSpeed,MRILib.motion.PIDController.maxSpeed,Supplier<Double>,public Supplier<Double> maxSpeed
+                    POWER_SCALE,MRILib.motion.PIDController.POWER_SCALE,double,public double POWER_SCALE = 1
+                    timer,MRILib.motion.PIDController.timer,ElapsedTime,ElapsedTime timer = null
+                    nextState,MRILib.motion.PIDController.nextState,boolean,public boolean nextState = false
+                methods[14]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: PIDController
+                        name: MRILib.motion.PIDController.PIDController
+                        return_type: MRILib.motion.PIDController
+                        parameters[2]: Bot bot,Telemetry telemetry
+                        signature: "public MRILib.motion.PIDController PIDController(Bot bot, Telemetry telemetry)"
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: setPID
+                        name: MRILib.motion.PIDController.setPID
+                        return_type: void
+                        parameters[2]: PID x,PID y
+                        signature: "public void setPID(PID x, PID y)"
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: setTurnPID
+                        name: MRILib.motion.PIDController.setTurnPID
+                        return_type: void
+                        parameters[1]: PID theta
+                        signature: public void setTurnPID(PID theta)
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: start
+                        name: MRILib.motion.PIDController.start
+                        return_type: void
+                        parameters[0]:
+                        signature: public void start()
+                        dependencies[2]: public void setTarget(double target),public void start()
+                    - class_name: MRILib.motion.PIDController
+                        identifier: update
+                        name: MRILib.motion.PIDController.update
+                        return_type: void
+                        parameters[0]:
+                        signature: public void update()
+                        dependencies[7]: public double getX(),public boolean get(String button),public Pose2D getPosition(),public double getHeading(),public double getY(),"public void driveFieldXYW(double fx, double fy, double fw)",public void update()
+                    - class_name: MRILib.motion.PIDController
+                        identifier: moveTo
+                        name: MRILib.motion.PIDController.moveTo
+                        return_type: void
+                        parameters[3]: double x,double y,double degrees
+                        signature: "public void moveTo(double x, double y, double degrees)"
+                        dependencies[1]: public void setTarget(double target)
+                    - class_name: MRILib.motion.PIDController
+                        identifier: setMaxSpeed
+                        name: MRILib.motion.PIDController.setMaxSpeed
+                        return_type: void
+                        parameters[1]: double s
+                        signature: public void setMaxSpeed(double s)
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: setMaxAngSpeed
+                        name: MRILib.motion.PIDController.setMaxAngSpeed
+                        return_type: void
+                        parameters[1]: double s
+                        signature: public void setMaxAngSpeed(double s)
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: getTargetX
+                        name: MRILib.motion.PIDController.getTargetX
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getTargetX()
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: getTargetY
+                        name: MRILib.motion.PIDController.getTargetY
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getTargetY()
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: getTargetRadians
+                        name: MRILib.motion.PIDController.getTargetRadians
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getTargetRadians()
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: getTargetDegrees
+                        name: MRILib.motion.PIDController.getTargetDegrees
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getTargetDegrees()
+                        dependencies[0]:
+                    - class_name: MRILib.motion.PIDController
+                        identifier: getCurrentDegrees
+                        name: MRILib.motion.PIDController.getCurrentDegrees
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getCurrentDegrees()
+                        dependencies[2]: public Pose2D getPosition(),public double getHeading()
+                    - class_name: MRILib.motion.PIDController
+                        identifier: getCurrentRadians
+                        name: MRILib.motion.PIDController.getCurrentRadians
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getCurrentRadians()
+                        dependencies[2]: public Pose2D getPosition(),public double getHeading()
+                child_classes[0]:
+        methods[0]:
+        fields[0]:

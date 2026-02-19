@@ -1,0 +1,872 @@
+[4]:
+    - filename: ArmBotEasy.java
+        package: MRILib.managers
+        imports[5]: com.qualcomm.robotcore.hardware.DcMotor,com.qualcomm.robotcore.hardware.Servo,com.qualcomm.robotcore.hardware.DcMotorEx,com.qualcomm.robotcore.hardware.HardwareMap,MRILib.BotValues
+        classes[1]:
+            - identifier: ArmBotEasy
+                name: MRILib.managers.ArmBotEasy
+                signature: public class ArmBotEasy extends Bot
+                fields[9]{identifier,name,type,signature}:
+                    slide,MRILib.managers.ArmBotEasy.slide,DcMotorEx,private DcMotorEx slide
+                    pivot,MRILib.managers.ArmBotEasy.pivot,DcMotorEx,private DcMotorEx pivot
+                    claw,MRILib.managers.ArmBotEasy.claw,Servo,private Servo claw
+                    claw_pitch,MRILib.managers.ArmBotEasy.claw_pitch,Servo,private Servo claw_pitch
+                    claw_roll,MRILib.managers.ArmBotEasy.claw_roll,Servo,private Servo claw_roll
+                    slidePos,MRILib.managers.ArmBotEasy.slidePos,int,int slidePos = 0
+                    pivotPos,MRILib.managers.ArmBotEasy.pivotPos,int,int pivotPos = 0
+                    slidePosPrev,MRILib.managers.ArmBotEasy.slidePosPrev,int,int slidePosPrev = 0
+                    pivotPosPrev,MRILib.managers.ArmBotEasy.pivotPosPrev,int,int pivotPosPrev = 0
+                methods[22]:
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: ArmBotEasy
+                        name: MRILib.managers.ArmBotEasy.ArmBotEasy
+                        return_type: MRILib.managers.ArmBotEasy
+                        parameters[1]: HardwareMap hm
+                        signature: public MRILib.managers.ArmBotEasy ArmBotEasy(HardwareMap hm)
+                        dependencies[2]: private void initMotors(HardwareMap hm),private void initServos(HardwareMap hm)
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: initMotors
+                        name: MRILib.managers.ArmBotEasy.initMotors
+                        return_type: void
+                        parameters[1]: HardwareMap hm
+                        signature: private void initMotors(HardwareMap hm)
+                        dependencies[2]: public boolean get(String button),public void setMode(DcMotor.RunMode mode)
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: initServos
+                        name: MRILib.managers.ArmBotEasy.initServos
+                        return_type: void
+                        parameters[1]: HardwareMap hm
+                        signature: private void initServos(HardwareMap hm)
+                        dependencies[1]: public boolean get(String button)
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: setArmMode
+                        name: MRILib.managers.ArmBotEasy.setArmMode
+                        return_type: void
+                        parameters[1]: DcMotor.RunMode mode
+                        signature: public void setArmMode(DcMotor.RunMode mode)
+                        dependencies[1]: public void setMode(DcMotor.RunMode mode)
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: resetEncoders
+                        name: MRILib.managers.ArmBotEasy.resetEncoders
+                        return_type: void
+                        parameters[0]:
+                        signature: @Override public void resetEncoders()
+                        dependencies[3]: @Override public void resetEncoders(),public void setMode(DcMotor.RunMode mode),@Override public void updateEncoders()
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: updateEncoders
+                        name: MRILib.managers.ArmBotEasy.updateEncoders
+                        return_type: void
+                        parameters[0]:
+                        signature: @Override public void updateEncoders()
+                        dependencies[1]: @Override public void updateEncoders()
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getSlideMotor
+                        name: MRILib.managers.ArmBotEasy.getSlideMotor
+                        return_type: DcMotorEx
+                        parameters[0]:
+                        signature: public DcMotorEx getSlideMotor()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getPivotMotor
+                        name: MRILib.managers.ArmBotEasy.getPivotMotor
+                        return_type: DcMotorEx
+                        parameters[0]:
+                        signature: public DcMotorEx getPivotMotor()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getSlidePos
+                        name: MRILib.managers.ArmBotEasy.getSlidePos
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getSlidePos()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getPivotPos
+                        name: MRILib.managers.ArmBotEasy.getPivotPos
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getPivotPos()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getClawPitch
+                        name: MRILib.managers.ArmBotEasy.getClawPitch
+                        return_type: Servo
+                        parameters[0]:
+                        signature: public Servo getClawPitch()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getClawRoll
+                        name: MRILib.managers.ArmBotEasy.getClawRoll
+                        return_type: Servo
+                        parameters[0]:
+                        signature: public Servo getClawRoll()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getClaw
+                        name: MRILib.managers.ArmBotEasy.getClaw
+                        return_type: Servo
+                        parameters[0]:
+                        signature: public Servo getClaw()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getClawPitchPos
+                        name: MRILib.managers.ArmBotEasy.getClawPitchPos
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getClawPitchPos()
+                        dependencies[1]: public Pose2D getPosition()
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getClawRollPos
+                        name: MRILib.managers.ArmBotEasy.getClawRollPos
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getClawRollPos()
+                        dependencies[1]: public Pose2D getPosition()
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: getClawPos
+                        name: MRILib.managers.ArmBotEasy.getClawPos
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getClawPos()
+                        dependencies[1]: public Pose2D getPosition()
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: setClawPitch
+                        name: MRILib.managers.ArmBotEasy.setClawPitch
+                        return_type: void
+                        parameters[1]: double pos
+                        signature: public void setClawPitch(double pos)
+                        dependencies[2]: "public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos)
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: setClawRoll
+                        name: MRILib.managers.ArmBotEasy.setClawRoll
+                        return_type: void
+                        parameters[1]: double pos
+                        signature: public void setClawRoll(double pos)
+                        dependencies[2]: "public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos)
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: setClaw
+                        name: MRILib.managers.ArmBotEasy.setClaw
+                        return_type: void
+                        parameters[1]: double pos
+                        signature: public void setClaw(double pos)
+                        dependencies[2]: "public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos)
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: setPivot
+                        name: MRILib.managers.ArmBotEasy.setPivot
+                        return_type: void
+                        parameters[1]: int target
+                        signature: public void setPivot(int target)
+                        dependencies[1]: public void setMode(DcMotor.RunMode mode)
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: setSlides
+                        name: MRILib.managers.ArmBotEasy.setSlides
+                        return_type: void
+                        parameters[1]: int target
+                        signature: public void setSlides(int target)
+                        dependencies[1]: public void setMode(DcMotor.RunMode mode)
+                    - class_name: MRILib.managers.ArmBotEasy
+                        identifier: setArm
+                        name: MRILib.managers.ArmBotEasy.setArm
+                        return_type: void
+                        parameters[2]: int pivotTarget,int slideTarget
+                        signature: "public void setArm(int pivotTarget, int slideTarget)"
+                        dependencies[2]: public void setSlides(int target),public void setPivot(int target)
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: ArmBotFF.java
+        package: MRILib.managers
+        imports[6]: com.qualcomm.robotcore.hardware.DcMotor,com.qualcomm.robotcore.hardware.Servo,com.qualcomm.robotcore.hardware.DcMotorEx,com.qualcomm.robotcore.hardware.HardwareMap,MRILib.BotValues,java.lang.Thread
+        classes[2]:
+            - identifier: ArmBotFF
+                name: MRILib.managers.ArmBotFF
+                signature: public class ArmBotFF extends Bot
+                fields[11]{identifier,name,type,signature}:
+                    slide,MRILib.managers.ArmBotFF.slide,DcMotorEx,private DcMotorEx slide
+                    pivot,MRILib.managers.ArmBotFF.pivot,DcMotorEx,private DcMotorEx pivot
+                    claw,MRILib.managers.ArmBotFF.claw,Servo,private Servo claw
+                    claw_pitch,MRILib.managers.ArmBotFF.claw_pitch,Servo,private Servo claw_pitch
+                    claw_roll,MRILib.managers.ArmBotFF.claw_roll,Servo,private Servo claw_roll
+                    armController,MRILib.managers.ArmBotFF.armController,PivotArmController,private PivotArmController armController
+                    armThread,MRILib.managers.ArmBotFF.armThread,Thread,private Thread armThread
+                    slidePos,MRILib.managers.ArmBotFF.slidePos,int,int slidePos = 0
+                    pivotPos,MRILib.managers.ArmBotFF.pivotPos,int,int pivotPos = 0
+                    slidePosPrev,MRILib.managers.ArmBotFF.slidePosPrev,int,int slidePosPrev = 0
+                    pivotPosPrev,MRILib.managers.ArmBotFF.pivotPosPrev,int,int pivotPosPrev = 0
+                methods[28]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: ArmBotFF
+                        name: MRILib.managers.ArmBotFF.ArmBotFF
+                        return_type: MRILib.managers.ArmBotFF
+                        parameters[2]: HardwareMap hm,org.firstinspires.ftc.robotcore.external.Telemetry telemetry
+                        signature: "public MRILib.managers.ArmBotFF ArmBotFF(HardwareMap hm, org.firstinspires.ftc.robotcore.external.Telemetry telemetry)"
+                        dependencies[7]: void start(),public void start(),public void start(),public void start(),public void start(),private void initMotors(HardwareMap hm),private void initServos(HardwareMap hm)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: initMotors
+                        name: MRILib.managers.ArmBotFF.initMotors
+                        return_type: void
+                        parameters[1]: HardwareMap hm
+                        signature: private void initMotors(HardwareMap hm)
+                        dependencies[4]: public boolean get(String button),@Override public void updateEncoders(),public void setMode(DcMotor.RunMode mode),public void resetPrevEncoders()
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: initServos
+                        name: MRILib.managers.ArmBotFF.initServos
+                        return_type: void
+                        parameters[1]: HardwareMap hm
+                        signature: private void initServos(HardwareMap hm)
+                        dependencies[1]: public boolean get(String button)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: setArmMode
+                        name: MRILib.managers.ArmBotFF.setArmMode
+                        return_type: void
+                        parameters[1]: DcMotor.RunMode mode
+                        signature: public void setArmMode(DcMotor.RunMode mode)
+                        dependencies[1]: public void setMode(DcMotor.RunMode mode)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: resetEncoders
+                        name: MRILib.managers.ArmBotFF.resetEncoders
+                        return_type: void
+                        parameters[0]:
+                        signature: @Override public void resetEncoders()
+                        dependencies[4]: @Override public void resetEncoders(),@Override public void updateEncoders(),public void setMode(DcMotor.RunMode mode),public void resetPrevEncoders()
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: resetPrevEncoders
+                        name: MRILib.managers.ArmBotFF.resetPrevEncoders
+                        return_type: void
+                        parameters[0]:
+                        signature: public void resetPrevEncoders()
+                        dependencies[1]: public void resetPrevEncoders()
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: updateControllerState
+                        name: MRILib.managers.ArmBotFF.updateControllerState
+                        return_type: void
+                        parameters[0]:
+                        signature: public void updateControllerState()
+                        dependencies[4]: public double getPivotVelocity(),"@Override public synchronized void updateCurrentState(int currentPos, double currentVel)","public synchronized double updateCurrentState(double armPos, double velocity, double slidePosition)","public synchronized void updateCurrentState(double armPos, double velocity)"
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: updateEncoders
+                        name: MRILib.managers.ArmBotFF.updateEncoders
+                        return_type: void
+                        parameters[0]:
+                        signature: @Override public void updateEncoders()
+                        dependencies[1]: @Override public void updateEncoders()
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getSlideMotor
+                        name: MRILib.managers.ArmBotFF.getSlideMotor
+                        return_type: DcMotorEx
+                        parameters[0]:
+                        signature: public DcMotorEx getSlideMotor()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getPivotMotor
+                        name: MRILib.managers.ArmBotFF.getPivotMotor
+                        return_type: DcMotorEx
+                        parameters[0]:
+                        signature: public DcMotorEx getPivotMotor()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getSlidePos
+                        name: MRILib.managers.ArmBotFF.getSlidePos
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getSlidePos()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getPivotPos
+                        name: MRILib.managers.ArmBotFF.getPivotPos
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getPivotPos()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getSlideVelocity
+                        name: MRILib.managers.ArmBotFF.getSlideVelocity
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getSlideVelocity()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getPivotVelocity
+                        name: MRILib.managers.ArmBotFF.getPivotVelocity
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getPivotVelocity()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getClawPitch
+                        name: MRILib.managers.ArmBotFF.getClawPitch
+                        return_type: Servo
+                        parameters[0]:
+                        signature: public Servo getClawPitch()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getClawRoll
+                        name: MRILib.managers.ArmBotFF.getClawRoll
+                        return_type: Servo
+                        parameters[0]:
+                        signature: public Servo getClawRoll()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getClaw
+                        name: MRILib.managers.ArmBotFF.getClaw
+                        return_type: Servo
+                        parameters[0]:
+                        signature: public Servo getClaw()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getClawPitchPos
+                        name: MRILib.managers.ArmBotFF.getClawPitchPos
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getClawPitchPos()
+                        dependencies[1]: public Pose2D getPosition()
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getClawRollPos
+                        name: MRILib.managers.ArmBotFF.getClawRollPos
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getClawRollPos()
+                        dependencies[1]: public Pose2D getPosition()
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: getClawPos
+                        name: MRILib.managers.ArmBotFF.getClawPos
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getClawPos()
+                        dependencies[1]: public Pose2D getPosition()
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: setClawPitch
+                        name: MRILib.managers.ArmBotFF.setClawPitch
+                        return_type: void
+                        parameters[1]: double pos
+                        signature: public void setClawPitch(double pos)
+                        dependencies[2]: "public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: setClawRoll
+                        name: MRILib.managers.ArmBotFF.setClawRoll
+                        return_type: void
+                        parameters[1]: double pos
+                        signature: public void setClawRoll(double pos)
+                        dependencies[2]: "public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: setClaw
+                        name: MRILib.managers.ArmBotFF.setClaw
+                        return_type: void
+                        parameters[1]: double pos
+                        signature: public void setClaw(double pos)
+                        dependencies[2]: "public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: setPivot
+                        name: MRILib.managers.ArmBotFF.setPivot
+                        return_type: void
+                        parameters[1]: int target
+                        signature: public void setPivot(int target)
+                        dependencies[1]: public void setMode(DcMotor.RunMode mode)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: setPivotPower
+                        name: MRILib.managers.ArmBotFF.setPivotPower
+                        return_type: void
+                        parameters[1]: double pow
+                        signature: public void setPivotPower(double pow)
+                        dependencies[1]: public void setMode(DcMotor.RunMode mode)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: setSlides
+                        name: MRILib.managers.ArmBotFF.setSlides
+                        return_type: void
+                        parameters[1]: int target
+                        signature: public void setSlides(int target)
+                        dependencies[1]: public void setMode(DcMotor.RunMode mode)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: setArm
+                        name: MRILib.managers.ArmBotFF.setArm
+                        return_type: void
+                        parameters[2]: int pivotTarget,int slideTarget
+                        signature: "public void setArm(int pivotTarget, int slideTarget)"
+                        dependencies[2]: public void setSlides(int target),public void setPivot(int target)
+                    - class_name: MRILib.managers.ArmBotFF
+                        identifier: stopMultiThread
+                        name: MRILib.managers.ArmBotFF.stopMultiThread
+                        return_type: void
+                        parameters[0]:
+                        signature: public void stopMultiThread()
+                        dependencies[2]: @Override public void stop(),public void stop()
+                child_classes[0]:
+            - identifier: PivotArmController
+                name: MRILib.managers.PivotArmController
+                signature: protected class PivotArmController implements RunnableStoppable
+                fields[4]{identifier,name,type,signature}:
+                    running,MRILib.managers.PivotArmController.running,boolean,private volatile boolean running = true
+                    robot,MRILib.managers.PivotArmController.robot,ArmBotFF,private ArmBotFF robot
+                    currentPivotPos,MRILib.managers.PivotArmController.currentPivotPos,int,private int currentPivotPos
+                    currentPivotVel,MRILib.managers.PivotArmController.currentPivotVel,double,private double currentPivotVel
+                methods[5]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: PivotArmController
+                        name: MRILib.managers.PivotArmController.PivotArmController
+                        return_type: MRILib.managers.PivotArmController
+                        parameters[1]: ArmBotFF robot
+                        signature: public MRILib.managers.PivotArmController PivotArmController(ArmBotFF robot)
+                        dependencies[0]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: run
+                        name: MRILib.managers.PivotArmController.run
+                        return_type: void
+                        parameters[0]:
+                        signature: @Override public void run()
+                        dependencies[1]: public void setPivotPower(double pow)
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: stop
+                        name: MRILib.managers.PivotArmController.stop
+                        return_type: void
+                        parameters[0]:
+                        signature: @Override public void stop()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: updateCurrentState
+                        name: MRILib.managers.PivotArmController.updateCurrentState
+                        return_type: void
+                        parameters[2]: int currentPos,double currentVel
+                        signature: "@Override public synchronized void updateCurrentState(int currentPos, double currentVel)"
+                        dependencies[0]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: calculateFeedforward
+                        name: MRILib.managers.PivotArmController.calculateFeedforward
+                        return_type: double
+                        parameters[2]: int position,double velocity
+                        signature: "private double calculateFeedforward(int position, double velocity)"
+                        dependencies[0]:
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: Bot.java
+        package: MRILib.managers
+        imports[12]: com.qualcomm.robotcore.hardware.DcMotor,org.firstinspires.ftc.robotcore.external.Telemetry,com.qualcomm.robotcore.hardware.VoltageSensor,com.qualcomm.robotcore.hardware.DcMotorEx,org.firstinspires.ftc.robotcore.external.navigation.AngleUnit,org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit,org.firstinspires.ftc.robotcore.external.navigation.Pose2D,com.qualcomm.hardware.rev.RevHubOrientationOnRobot,com.qualcomm.robotcore.hardware.IMU,com.qualcomm.robotcore.hardware.HardwareMap,MRILib.util.GoBildaPinpointDriver,MRILib.BotValues
+        classes[1]:
+            - identifier: Bot
+                name: MRILib.managers.Bot
+                signature: public class Bot
+                fields[18]{identifier,name,type,signature}:
+                    frontLeft,MRILib.managers.Bot.frontLeft,DcMotorEx,private DcMotorEx frontLeft
+                    backLeft,MRILib.managers.Bot.backLeft,DcMotorEx,private DcMotorEx backLeft
+                    frontRight,MRILib.managers.Bot.frontRight,DcMotorEx,private DcMotorEx frontRight
+                    backRight,MRILib.managers.Bot.backRight,DcMotorEx,private DcMotorEx backRight
+                    odo,MRILib.managers.Bot.odo,GoBildaPinpointDriver,public GoBildaPinpointDriver odo
+                    imu,MRILib.managers.Bot.imu,IMU,public IMU imu
+                    voltageSensor,MRILib.managers.Bot.voltageSensor,VoltageSensor,private VoltageSensor voltageSensor
+                    currentPosition,MRILib.managers.Bot.currentPosition,Pose2D,private Pose2D currentPosition
+                    lastPosition,MRILib.managers.Bot.lastPosition,Pose2D,private Pose2D lastPosition
+                    telemetry,MRILib.managers.Bot.telemetry,Telemetry,private Telemetry telemetry
+                    frontLeftPos,MRILib.managers.Bot.frontLeftPos,int,int frontLeftPos = 0
+                    frontRightPos,MRILib.managers.Bot.frontRightPos,int,int frontRightPos = 0
+                    backLeftPos,MRILib.managers.Bot.backLeftPos,int,int backLeftPos = 0
+                    backRightPos,MRILib.managers.Bot.backRightPos,int,int backRightPos = 0
+                    frontLeftPosPrev,MRILib.managers.Bot.frontLeftPosPrev,int,int frontLeftPosPrev = 0
+                    frontRightPosPrev,MRILib.managers.Bot.frontRightPosPrev,int,int frontRightPosPrev = 0
+                    backLeftPosPrev,MRILib.managers.Bot.backLeftPosPrev,int,int backLeftPosPrev = 0
+                    backRightPosPrev,MRILib.managers.Bot.backRightPosPrev,int,int backRightPosPrev = 0
+                methods[39]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: Bot
+                        name: MRILib.managers.Bot.Bot
+                        return_type: MRILib.managers.Bot
+                        parameters[1]: HardwareMap hm
+                        signature: public MRILib.managers.Bot Bot(HardwareMap hm)
+                        dependencies[8]: public void initOdo(HardwareMap hm),"public void initOdo(HardwareMap hm, String name)",private void initMotors(HardwareMap hm),"private void initMotors(HardwareMap hm, String fl, String fr, String bl, String br)",public void initIMU(HardwareMap hm),"public void initIMU(HardwareMap hm, String name)",private Pose2D getOdoPosition(),public void update()
+                    - class_name: MRILib.managers.Bot
+                        identifier: initMotors
+                        name: MRILib.managers.Bot.initMotors
+                        return_type: void
+                        parameters[1]: HardwareMap hm
+                        signature: private void initMotors(HardwareMap hm)
+                        dependencies[2]: private void initMotors(HardwareMap hm),"private void initMotors(HardwareMap hm, String fl, String fr, String bl, String br)"
+                    - class_name: MRILib.managers.Bot
+                        identifier: initMotors
+                        name: MRILib.managers.Bot.initMotors
+                        return_type: void
+                        parameters[5]: HardwareMap hm,String fl,String fr,String bl,String br
+                        signature: "private void initMotors(HardwareMap hm, String fl, String fr, String bl, String br)"
+                        dependencies[4]: public void resetEncoders(),public boolean get(String button),public void setDirections(),public void updateEncoders()
+                    - class_name: MRILib.managers.Bot
+                        identifier: initIMU
+                        name: MRILib.managers.Bot.initIMU
+                        return_type: void
+                        parameters[1]: HardwareMap hm
+                        signature: public void initIMU(HardwareMap hm)
+                        dependencies[2]: public void initIMU(HardwareMap hm),"public void initIMU(HardwareMap hm, String name)"
+                    - class_name: MRILib.managers.Bot
+                        identifier: initIMU
+                        name: MRILib.managers.Bot.initIMU
+                        return_type: void
+                        parameters[2]: HardwareMap hm,String name
+                        signature: "public void initIMU(HardwareMap hm, String name)"
+                        dependencies[1]: public boolean get(String button)
+                    - class_name: MRILib.managers.Bot
+                        identifier: initOdo
+                        name: MRILib.managers.Bot.initOdo
+                        return_type: void
+                        parameters[1]: HardwareMap hm
+                        signature: public void initOdo(HardwareMap hm)
+                        dependencies[2]: public void initOdo(HardwareMap hm),"public void initOdo(HardwareMap hm, String name)"
+                    - class_name: MRILib.managers.Bot
+                        identifier: initOdo
+                        name: MRILib.managers.Bot.initOdo
+                        return_type: void
+                        parameters[2]: HardwareMap hm,String name
+                        signature: "public void initOdo(HardwareMap hm, String name)"
+                        dependencies[1]: public boolean get(String button)
+                    - class_name: MRILib.managers.Bot
+                        identifier: update
+                        name: MRILib.managers.Bot.update
+                        return_type: void
+                        parameters[0]:
+                        signature: public void update()
+                        dependencies[3]: private Pose2D getOdoPosition(),public void update(),public void updateEncoders()
+                    - class_name: MRILib.managers.Bot
+                        identifier: updateEncoders
+                        name: MRILib.managers.Bot.updateEncoders
+                        return_type: void
+                        parameters[0]:
+                        signature: public void updateEncoders()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getFL
+                        name: MRILib.managers.Bot.getFL
+                        return_type: DcMotorEx
+                        parameters[0]:
+                        signature: public DcMotorEx getFL()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getFR
+                        name: MRILib.managers.Bot.getFR
+                        return_type: DcMotorEx
+                        parameters[0]:
+                        signature: public DcMotorEx getFR()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getBL
+                        name: MRILib.managers.Bot.getBL
+                        return_type: DcMotorEx
+                        parameters[0]:
+                        signature: public DcMotorEx getBL()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getBR
+                        name: MRILib.managers.Bot.getBR
+                        return_type: DcMotorEx
+                        parameters[0]:
+                        signature: public DcMotorEx getBR()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getFLPos
+                        name: MRILib.managers.Bot.getFLPos
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getFLPos()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getFRPos
+                        name: MRILib.managers.Bot.getFRPos
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getFRPos()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getBLPos
+                        name: MRILib.managers.Bot.getBLPos
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getBLPos()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getBRPos
+                        name: MRILib.managers.Bot.getBRPos
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getBRPos()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getFLPosPrev
+                        name: MRILib.managers.Bot.getFLPosPrev
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getFLPosPrev()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getFRPosPrev
+                        name: MRILib.managers.Bot.getFRPosPrev
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getFRPosPrev()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getBLPosPrev
+                        name: MRILib.managers.Bot.getBLPosPrev
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getBLPosPrev()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getBRPosPrev
+                        name: MRILib.managers.Bot.getBRPosPrev
+                        return_type: int
+                        parameters[0]:
+                        signature: public int getBRPosPrev()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getIMUHeading
+                        name: MRILib.managers.Bot.getIMUHeading
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getIMUHeading()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: resetIMUHeading
+                        name: MRILib.managers.Bot.resetIMUHeading
+                        return_type: void
+                        parameters[0]:
+                        signature: public void resetIMUHeading()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getPosition
+                        name: MRILib.managers.Bot.getPosition
+                        return_type: Pose2D
+                        parameters[0]:
+                        signature: public Pose2D getPosition()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getLastPosition
+                        name: MRILib.managers.Bot.getLastPosition
+                        return_type: Pose2D
+                        parameters[0]:
+                        signature: public Pose2D getLastPosition()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: getOdoPosition
+                        name: MRILib.managers.Bot.getOdoPosition
+                        return_type: Pose2D
+                        parameters[0]:
+                        signature: private Pose2D getOdoPosition()
+                        dependencies[1]: public Pose2D getPosition()
+                    - class_name: MRILib.managers.Bot
+                        identifier: getX
+                        name: MRILib.managers.Bot.getX
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getX()
+                        dependencies[2]: public Pose2D getPosition(),public double getX()
+                    - class_name: MRILib.managers.Bot
+                        identifier: getY
+                        name: MRILib.managers.Bot.getY
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getY()
+                        dependencies[2]: public Pose2D getPosition(),public double getY()
+                    - class_name: MRILib.managers.Bot
+                        identifier: getHeading
+                        name: MRILib.managers.Bot.getHeading
+                        return_type: double
+                        parameters[0]:
+                        signature: public double getHeading()
+                        dependencies[2]: public Pose2D getPosition(),public double getHeading()
+                    - class_name: MRILib.managers.Bot
+                        identifier: getVoltage
+                        name: MRILib.managers.Bot.getVoltage
+                        return_type: double
+                        parameters[0]:
+                        signature: public synchronized double getVoltage()
+                        dependencies[1]: public synchronized double getVoltage()
+                    - class_name: MRILib.managers.Bot
+                        identifier: setPosition
+                        name: MRILib.managers.Bot.setPosition
+                        return_type: void
+                        parameters[3]: double x,double y,double heading
+                        signature: "public void setPosition(double x, double y, double heading)"
+                        dependencies[2]: "public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos)
+                    - class_name: MRILib.managers.Bot
+                        identifier: setPosition
+                        name: MRILib.managers.Bot.setPosition
+                        return_type: void
+                        parameters[1]: Pose2D pos
+                        signature: public void setPosition(Pose2D pos)
+                        dependencies[4]: private Pose2D getOdoPosition(),public void update(),"public void setPosition(double x, double y, double heading)",public void setPosition(Pose2D pos)
+                    - class_name: MRILib.managers.Bot
+                        identifier: setDirections
+                        name: MRILib.managers.Bot.setDirections
+                        return_type: void
+                        parameters[0]:
+                        signature: public void setDirections()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: setMode
+                        name: MRILib.managers.Bot.setMode
+                        return_type: void
+                        parameters[1]: DcMotor.RunMode mode
+                        signature: public void setMode(DcMotor.RunMode mode)
+                        dependencies[1]: public void setMode(DcMotor.RunMode mode)
+                    - class_name: MRILib.managers.Bot
+                        identifier: resetEncoders
+                        name: MRILib.managers.Bot.resetEncoders
+                        return_type: void
+                        parameters[0]:
+                        signature: public void resetEncoders()
+                        dependencies[3]: public void setMode(DcMotor.RunMode mode),public void updateEncoders(),public void resetPrevEncoders()
+                    - class_name: MRILib.managers.Bot
+                        identifier: resetPrevEncoders
+                        name: MRILib.managers.Bot.resetPrevEncoders
+                        return_type: void
+                        parameters[0]:
+                        signature: public void resetPrevEncoders()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: enableBrakeMode
+                        name: MRILib.managers.Bot.enableBrakeMode
+                        return_type: void
+                        parameters[1]: boolean enabled
+                        signature: public void enableBrakeMode(boolean enabled)
+                        dependencies[0]:
+                    - class_name: MRILib.managers.Bot
+                        identifier: driveXYW
+                        name: MRILib.managers.Bot.driveXYW
+                        return_type: void
+                        parameters[3]: double rx,double ry,double rw
+                        signature: "public void driveXYW(double rx, double ry, double rw)"
+                        dependencies[1]: public synchronized double getVoltage()
+                    - class_name: MRILib.managers.Bot
+                        identifier: driveFieldXYW
+                        name: MRILib.managers.Bot.driveFieldXYW
+                        return_type: void
+                        parameters[3]: double fx,double fy,double fw
+                        signature: "public void driveFieldXYW(double fx, double fy, double fw)"
+                        dependencies[2]: "public void driveXYW(double rx, double ry, double rw)",public double getHeading()
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: PivotArmController.java
+        package: MRILib.managers
+        imports[6]: MRILib.motion,org.firstinspires.ftc.robotcore.external.Telemetry,MRILib.BotValues,org.firstinspires.ftc.robotcore.external.navigation.AngleUnit,com.qualcomm.robotcore.util.ElapsedTime,com.qualcomm.robotcore.util.Range
+        classes[1]:
+            - identifier: PivotArmController
+                name: MRILib.managers.PivotArmController
+                signature: public class PivotArmController implements Runnable
+                fields[28]{identifier,name,type,signature}:
+                    bot,MRILib.managers.PivotArmController.bot,ArmBotFF,private ArmBotFF bot
+                    telemetry,MRILib.managers.PivotArmController.telemetry,Telemetry,private Telemetry telemetry
+                    kG,MRILib.managers.PivotArmController.kG,double,private final double kG = 0.00089
+                    kG2,MRILib.managers.PivotArmController.kG2,double,private final double kG2 = -0.003
+                    currentSlidePosition,MRILib.managers.PivotArmController.currentSlidePosition,double,private double currentSlidePosition = 0
+                    currentSlideLength,MRILib.managers.PivotArmController.currentSlideLength,double,private double currentSlideLength = 350
+                    armPos,MRILib.managers.PivotArmController.armPos,double,private double armPos = 0
+                    g,MRILib.managers.PivotArmController.g,double,private final double g = .009810
+                    m_slide,MRILib.managers.PivotArmController.m_slide,double,double m_slide = 1.4
+                    m_claw,MRILib.managers.PivotArmController.m_claw,double,double m_claw = .27
+                    m_motor,MRILib.managers.PivotArmController.m_motor,double,double m_motor = .9
+                    d_motor,MRILib.managers.PivotArmController.d_motor,double,double d_motor = 85
+                    d_slide,MRILib.managers.PivotArmController.d_slide,double,double d_slide = 350
+                    d_slideOffset,MRILib.managers.PivotArmController.d_slideOffset,double,double d_slideOffset = -85
+                    m_total,MRILib.managers.PivotArmController.m_total,double,double m_total = m_slide+m_claw+m_motor
+                    armCoM,MRILib.managers.PivotArmController.armCoM,double,double armCoM = (m_slide*(d_slide+d_slideOffset)/2 + m_motor*d_motor + m_claw*(d_slide+d_slideOffset))/m_total
+                    armMountOffset,MRILib.managers.PivotArmController.armMountOffset,double,private double armMountOffset = 90
+                    thetaOffset,MRILib.managers.PivotArmController.thetaOffset,double,private double thetaOffset = 0
+                    pivotMode,MRILib.managers.PivotArmController.pivotMode,PivotMode,public volatile PivotMode pivotMode = PivotMode.RUN_TO_POSITION
+                    inputPower,MRILib.managers.PivotArmController.inputPower,double,private volatile double inputPower = 0
+                    positionPID,MRILib.managers.PivotArmController.positionPID,PID,"private PID positionPID = new PID(1.5, 0.01, 0.046)"
+                    targetTheta,MRILib.managers.PivotArmController.targetTheta,double,private volatile double targetTheta
+                    targetAngularVelocity,MRILib.managers.PivotArmController.targetAngularVelocity,double,private volatile double targetAngularVelocity
+                    currentArmTheta,MRILib.managers.PivotArmController.currentArmTheta,double,private volatile double currentArmTheta
+                    currentArmAngularVelocity,MRILib.managers.PivotArmController.currentArmAngularVelocity,double,private volatile double currentArmAngularVelocity
+                    previousArmTheta,MRILib.managers.PivotArmController.previousArmTheta,double,private double previousArmTheta
+                    previousArmAngularVelocity,MRILib.managers.PivotArmController.previousArmAngularVelocity,double,private double previousArmAngularVelocity
+                    running,MRILib.managers.PivotArmController.running,boolean,private volatile boolean running = true
+                methods[12]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: PivotArmController
+                        name: MRILib.managers.PivotArmController.PivotArmController
+                        return_type: MRILib.managers.PivotArmController
+                        parameters[1]: ArmBotFF bot
+                        signature: public MRILib.managers.PivotArmController PivotArmController(ArmBotFF bot)
+                        dependencies[0]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: run
+                        name: MRILib.managers.PivotArmController.run
+                        return_type: void
+                        parameters[0]:
+                        signature: @Override public void run()
+                        dependencies[11]: public double setMotorPower(double power),private double calculateFeedForward(),public void update(Gamepad gpad),void update(),public void update(),public void update(),public void update(),@Override public double update(double current),public double update(double current),"public double update(double current1, double current2)",public void update()
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: setMotorPower
+                        name: MRILib.managers.PivotArmController.setMotorPower
+                        return_type: double
+                        parameters[1]: double power
+                        signature: public double setMotorPower(double power)
+                        dependencies[2]: public void setPivotPower(double pow),public synchronized double getVoltage()
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: calculateFeedForward
+                        name: MRILib.managers.PivotArmController.calculateFeedForward
+                        return_type: double
+                        parameters[0]:
+                        signature: private double calculateFeedForward()
+                        dependencies[0]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: updateCurrentState
+                        name: MRILib.managers.PivotArmController.updateCurrentState
+                        return_type: double
+                        parameters[3]: double armPos,double velocity,double slidePosition
+                        signature: "public synchronized double updateCurrentState(double armPos, double velocity, double slidePosition)"
+                        dependencies[0]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: updateCurrentState
+                        name: MRILib.managers.PivotArmController.updateCurrentState
+                        return_type: void
+                        parameters[2]: double armPos,double velocity
+                        signature: "public synchronized void updateCurrentState(double armPos, double velocity)"
+                        dependencies[3]: "@Override public synchronized void updateCurrentState(int currentPos, double currentVel)","public synchronized double updateCurrentState(double armPos, double velocity, double slidePosition)","public synchronized void updateCurrentState(double armPos, double velocity)"
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: setPivotMode
+                        name: MRILib.managers.PivotArmController.setPivotMode
+                        return_type: void
+                        parameters[1]: PivotMode mode
+                        signature: public synchronized void setPivotMode(PivotMode mode)
+                        dependencies[0]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: setInputPower
+                        name: MRILib.managers.PivotArmController.setInputPower
+                        return_type: void
+                        parameters[1]: double input
+                        signature: public synchronized void setInputPower(double input)
+                        dependencies[0]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: setTargetTheta
+                        name: MRILib.managers.PivotArmController.setTargetTheta
+                        return_type: void
+                        parameters[2]: double theta,AngleUnit unit
+                        signature: "public void setTargetTheta(double theta, AngleUnit unit)"
+                        dependencies[1]: public void setTarget(double target)
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: setTargetTheta
+                        name: MRILib.managers.PivotArmController.setTargetTheta
+                        return_type: void
+                        parameters[1]: double theta
+                        signature: public void setTargetTheta(double theta)
+                        dependencies[2]: "public void setTargetTheta(double theta, AngleUnit unit)",public void setTargetTheta(double theta)
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: setThetaOffset
+                        name: MRILib.managers.PivotArmController.setThetaOffset
+                        return_type: void
+                        parameters[1]: double theta
+                        signature: public void setThetaOffset(double theta)
+                        dependencies[0]:
+                    - class_name: MRILib.managers.PivotArmController
+                        identifier: stop
+                        name: MRILib.managers.PivotArmController.stop
+                        return_type: void
+                        parameters[0]:
+                        signature: public void stop()
+                        dependencies[0]:
+                child_classes[1]:
+                    - identifier: PivotMode
+                        name: MRILib.managers.PivotArmController.PivotMode
+                        signature: public enum PivotMode
+                        child_classes[0]:
+                        constants[3]: HOLD_POSITION,RUN_TO_POSITION,RUN_WITH_POWER
+        methods[0]:
+        fields[0]:

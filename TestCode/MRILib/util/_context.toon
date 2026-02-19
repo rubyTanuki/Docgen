@@ -1,0 +1,60 @@
+[3]:
+    - filename: Bpad.java
+        package: MRILib.util
+        imports[1]: java.util
+        classes[1]:
+            - identifier: Bpad
+                name: MRILib.util.Bpad
+                signature: public class Bpad
+                fields[7]{identifier,name,type,signature}:
+                    map,MRILib.util.Bpad.map,"HashMap<String, Boolean>","private HashMap<String, Boolean> map = new HashMap<>()"
+                    left_stick_x,MRILib.util.Bpad.left_stick_x,double,public double left_stick_x
+                    left_stick_y,MRILib.util.Bpad.left_stick_y,double,public double left_stick_y
+                    right_stick_x,MRILib.util.Bpad.right_stick_x,double,public double right_stick_x
+                    right_stick_y,MRILib.util.Bpad.right_stick_y,double,public double right_stick_y
+                    left_trigger,MRILib.util.Bpad.left_trigger,double,public double left_trigger
+                    right_trigger,MRILib.util.Bpad.right_trigger,double,public double right_trigger
+                methods[2]:
+                    - class_name: MRILib.util.Bpad
+                        identifier: get
+                        name: MRILib.util.Bpad.get
+                        return_type: boolean
+                        parameters[1]: String button
+                        signature: public boolean get(String button)
+                        dependencies[1]: public boolean get(String button)
+                    - class_name: MRILib.util.Bpad
+                        identifier: update
+                        name: MRILib.util.Bpad.update
+                        return_type: void
+                        parameters[1]: Gamepad gpad
+                        signature: public void update(Gamepad gpad)
+                        dependencies[1]: public boolean get(String button)
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: ComputeOdo.java
+        package: ""
+        imports[0]:
+        classes[0]:
+        methods[0]:
+        fields[0]:
+    - filename: Mathf.java
+        package: MRILib.util
+        imports[0]:
+        classes[1]:
+            - identifier: Mathf
+                name: MRILib.util.Mathf
+                signature: public final class Mathf
+                fields[1]{identifier,name,type,signature}:
+                    TAU,MRILib.util.Mathf.TAU,double,public static final double TAU = Math.PI * 2
+                methods[1]:
+                    - class_name: MRILib.util.Mathf
+                        identifier: angleWrap
+                        name: MRILib.util.Mathf.angleWrap
+                        return_type: double
+                        parameters[1]: double radian
+                        signature: public static double angleWrap(double radian)
+                        dependencies[0]:
+                child_classes[0]:
+        methods[0]:
+        fields[0]:
