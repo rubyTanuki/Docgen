@@ -201,9 +201,9 @@ class JavaMethod(BaseMethod):
     ACCESS_MODIFIERS = {"public", "protected", "private"}
     
     def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str, body_hash: str, 
-                 dependency_names: List[str], line: int):
+                 dependency_names: List[str], line: int, parameters: List[str]):
         # BaseMethod init: (umid, signature, body, body_hash, dependency_names)
-        super().__init__(identifier, scoped_identifier, return_type, umid, signature, body, body_hash, dependency_names, line)
+        super().__init__(identifier, scoped_identifier, return_type, umid, signature, body, body_hash, dependency_names, line, parameters)
     
     @classmethod
     def from_node(cls, node: "Node", scope: str, dep_query: "Query" = None) -> "JavaMethod":
@@ -297,7 +297,7 @@ class JavaMethod(BaseMethod):
                     if name == "dependencies":
                         dependency_names.append(d_node.text.decode('utf-8'))
                             
-        return cls(identifier, scoped_identifier, return_type, umid, full_sig_str, body, body_hash, dependency_names, line)
+        return cls(identifier, scoped_identifier, return_type, umid, full_sig_str, body, body_hash, dependency_names, line, parameters=params_full)
     
     def resolve_dependencies(self, imports: List[str]) -> None:
         if not self.dependency_names:
@@ -310,8 +310,11 @@ class JavaMethod(BaseMethod):
         else:
             parent_class = self.umid.rsplit('.', 1)[0]
         
+        
+        
         for name in unique_names:
-            
+            parameters = name.split('(')[-1].strip(')').split(',')
+            arity = len(parameters)
             # 1. Local Check
             local_fullname = f"{parent_class}.{name}"
             if local_fullname in MemberRegistry.map_scoped:
@@ -319,7 +322,7 @@ class JavaMethod(BaseMethod):
                 if len(candidates) == 1:
                     self.dependencies.append(f"#{candidates[0].umid.split('#')[-1]}")
                 else:
-                    self.dependencies.extend([f"(candidate)#{c.umid.split('#')[-1]}" for c in candidates])
+                    self.dependencies.extend([f"(candidate)#{c.umid.split('#')[-1]}" for c in candidates if c.arity == arity])
                 continue
             
             # 2. Import Check
@@ -333,7 +336,7 @@ class JavaMethod(BaseMethod):
                 if len(candidates) == 1:
                     self.dependencies.append(candidates[0].umid)
                 else:
-                    self.dependencies.extend([f"(candidate){c.umid}" for c in candidates])
+                    self.dependencies.extend([f"{c.umid}" for c in candidates if c.arity == arity])
                 continue
             
             # 3. Global Name Check
@@ -342,7 +345,7 @@ class JavaMethod(BaseMethod):
                 if len(candidates) == 1:
                     self.dependencies.append(candidates[0].umid)
                 else:
-                    self.dependencies.extend([f"(candidate){c.umid}" for c in candidates])
+                    self.dependencies.extend([f"(candidate){c.umid}" for c in candidates if c.arity == arity])
                 continue
             
             self.unresolved_dependencies.append(name)

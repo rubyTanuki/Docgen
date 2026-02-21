@@ -88,6 +88,11 @@ class BaseClass(ABC):
             return
         visited_ucids.add(self.ucid)
         
+        needs_description = any([not method.description for method in self.methods.values()])
+        if not needs_description:
+            # print(f"No changes in {self.ucid}, skipping llm call")
+            return
+        
         try:
             response_obj = await llm.generate_description(self, imports)
             
@@ -98,7 +103,6 @@ class BaseClass(ABC):
             
             self.description = response_obj["description"]
             self.confidence = response_obj["confidence"]
-            self.needs_context = response_obj["needs_context"]
             # extract method level descriptions
             for method_obj in response_obj["methods"]:
                 returned_umid = method_obj["umid"]
@@ -108,7 +112,6 @@ class BaseClass(ABC):
                 if method:
                     method.description = method_obj["description"]
                     method.confidence = method_obj["confidence"]
-                    method.needs_context = method_obj["needs_context"]
         except Exception as e:
             print(f"Failed to generate description for {self.ucid} with response {response_obj}: {e}")
         # determine which methods need second pass
@@ -132,7 +135,8 @@ class BaseMethod(ABC):
     Abstract representation of a Function/Method.
     This is the primary unit of work for the LLM.
     """
-    def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str, body_hash: str, dependency_names: List[str], line: int):
+    id = 0
+    def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str, body_hash: str, dependency_names: List[str], line: int, parameters: List[str]):
         self.identifier = identifier
         self.return_type = return_type
         self.scoped_identifier = scoped_identifier
@@ -141,6 +145,10 @@ class BaseMethod(ABC):
         self.body = body            # Raw source code
         self.body_hash = body_hash  # Hash for diffing
         self.line = line #line number in file
+        self.parameters = parameters
+        self.arity = len(self.parameters)
+        self.id = BaseMethod.id
+        BaseMethod.id += 1
         
         # LLM Output
         self.description = ""

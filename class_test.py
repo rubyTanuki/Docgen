@@ -548,6 +548,7 @@ public class Bot{
 
 
 if __name__ == "__main__":
+    
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     if GEMINI_API_KEY is None:
         raise ValueError("API key not found. Set the GEMINI_API_KEY environment variable.")
@@ -555,7 +556,7 @@ if __name__ == "__main__":
     llm = GeminiClient(api_key=GEMINI_API_KEY)
     print("Generating AST...")
     start_time = time.perf_counter()
-    file = JavaFile.from_source("com.hyperion.core.NexusEngine.java", java)
+    file = JavaFile.from_source("MRILib.managers.bot.java", java)
     file.resolve_dependencies()
     class_obj = file.classes[0]
     end_time = time.perf_counter()
@@ -572,8 +573,9 @@ if __name__ == "__main__":
         print(f"Generated Descriptions in {elapsed_time:.4f} seconds.")
         
         toons_string = toons.dumps(file.__json__(), indent=4)
-        with open("class_skeleton_test.toon", "w") as file:
+        with open("MRILib/class_skeleton_test.toon", "w") as file:
             file.write(toons_string)
+        
     asyncio.run(main(file))
 
     

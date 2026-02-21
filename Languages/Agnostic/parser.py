@@ -5,6 +5,8 @@ from abc import ABC
 from collections import defaultdict
 import toons
 import asyncio
+from member_registry import MemberRegistry
+import json
 
 
 class BaseParser(ABC):
@@ -13,7 +15,7 @@ class BaseParser(ABC):
         self.files: list[BaseFile] = []
         self.project_dir = project_dir
 
-    async def parse(self, query="*"):
+    async def parse(self, query="*", use_cache=True):
         from Languages.Java import JavaFile
 
         path = Path(self.project_dir)
@@ -41,6 +43,14 @@ class BaseParser(ABC):
             file.resolve_dependencies()
         print("✅ Resolved Dependencies")
         print("Generating Descriptions...\n")
+        # 4. Pull Cache
+        if use_cache:
+            cache_file = path / ".toaster_cache.json"
+            if cache_file.exists():
+                print(f"Loading cache from {cache_file}")
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    MemberRegistry.load_cache(json.load(f))
+        
         # 4. Resolve Descriptions
         self.visited_ucids = set()
         coroutine_list = [file.resolve_descriptions(self.llm, self.visited_ucids) for file in self.files]
