@@ -313,16 +313,18 @@ class JavaMethod(BaseMethod):
         
         
         for name in unique_names:
-            parameters = name.split('(')[-1].strip(')').split(',')
-            arity = len(parameters)
+            param_str = name.split('(')[-1].strip(')')
+            arity = 0 if param_str == '' else len(param_str.split(','))
             # 1. Local Check
             local_fullname = f"{parent_class}.{name}"
             if local_fullname in MemberRegistry.map_scoped:
-                candidates = MemberRegistry.map_scoped[local_fullname]
+                candidates = [c for c in MemberRegistry.map_scoped[local_fullname] if c.arity == arity]
                 if len(candidates) == 1:
                     self.dependencies.append(f"#{candidates[0].umid.split('#')[-1]}")
+                elif len(candidates) <= 3:
+                    self.dependencies.extend([f"~#{c.umid.split('#')[-1]}" for c in candidates])
                 else:
-                    self.dependencies.extend([f"(candidate)#{c.umid.split('#')[-1]}" for c in candidates if c.arity == arity])
+                    self.dependencies.append(f"~#{candidates[0].identifier}(?)")
                 continue
             
             # 2. Import Check
@@ -336,23 +338,25 @@ class JavaMethod(BaseMethod):
                 if len(candidates) == 1:
                     self.dependencies.append(candidates[0].umid)
                 else:
-                    self.dependencies.extend([f"{c.umid}" for c in candidates if c.arity == arity])
+                    self.dependencies.extend([f"~{c.umid}" for c in candidates if c.arity == arity])
                 continue
             
             # 3. Global Name Check
             if name in MemberRegistry.map_short:
-                candidates = MemberRegistry.map_short[name]
+                candidates = [c for c in MemberRegistry.map_short[name] if c.arity == arity]
                 if len(candidates) == 1:
                     self.dependencies.append(candidates[0].umid)
+                elif len(candidates) <= 3:
+                    self.dependencies.extend([f"~{c.umid}" for c in candidates])
                 else:
-                    self.dependencies.extend([f"(candidate){c.umid}" for c in candidates if c.arity == arity])
+                    self.dependencies.append(f"~{candidates[0].identifier}(?)")
                 continue
             
             self.unresolved_dependencies.append(name)
         # remove duplicates
         self.dependencies = list(set(self.dependencies))
-        if self in self.dependencies:
-            self.dependencies.remove(self)
+        self_ref = f"#{self.umid.split('#')[-1]}"
+        self.dependencies = [d for d in self.dependencies if d != self_ref]
 
 
 class JavaEnum(BaseEnum):

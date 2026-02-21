@@ -1,0 +1,59 @@
+toon:
+    ufid: MRILib.util.mathf.java
+    imports[0]:
+    classes[1]:
+        - ucid: MRILib.util.Mathf
+            signature: public final class Mathf
+            description: "Provides utility methods for mathematical operations, particularly related to angles."
+            fields[1]{name,field_type}:
+                TAU,double
+            methods[1]:
+                - umid: MRILib.util.Mathf#angleWrap(double)
+                    return_type: double
+                    line: 7
+                    signature: public static double angleWrap(double radian)
+                    body_hash: 0e139e85
+                    description: "Normalizes a given angle in radians to be within the range (-PI, PI]."
+                    dependencies[0]:
+                    unresolved_dependencies[0]:
+            child_classes[0]:
+
+json:
+    MRILib.util.mathf.java:{
+        imports: []
+        classes: {
+            MRILib.util.Mathf: {
+                signature: public final class Mathf
+                description: "Provides utility methods for mathematical operations, particularly related to angles."
+                fields: [(TAU, double)]
+                methods: {
+                    MRILib.util.Mathf#angleWrap(double): {
+                        return_type: double
+                        line: 7
+                        signature: public static double angleWrap(double radian)
+                        body_hash: 0e139e85
+                        description: "Normalizes a given angle in radians to be within the range (-PI, PI]."
+                        dependencies: []
+                        unresolved_dependencies: []
+                    }
+                }
+            }
+        }
+    }
+
+
+toast:
+
+F01: mathf.java
+IMPORTS: 
+
+C01: public final class Mathf
+// Provides utility methods for mathematical operations, particularly related to angles.
+fields: double TAU
+
+M001 @L7 | public static double angleWrap(double radian)
+// Normalizes a given angle in radians to be within the range (-PI, PI).
+> None
+< None
+
+

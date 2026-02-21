@@ -9,11 +9,16 @@ class BaseFile(ABC):
     Abstract representation of a source code file.
     Acts as the root container for the dependency graph.
     """
+    
+    id = 0
     def __init__(self, ufid: str, imports: List[str], classes: List["BaseClass"]):
         self.ufid = ufid          # Unique File ID (usually filename or relative path)
         self.imports = imports    # List of import strings
         self.classes = classes    # Top-level classes defined in this file
 
+        self.id = BaseFile.id
+        BaseFile.id += 1
+        
     @classmethod
     @abstractmethod
     def from_source(cls, filename: str, source_code: bytes) -> "BaseFile":
@@ -50,7 +55,7 @@ class BaseClass(ABC):
     Stores Members (Fields/Methods) and Metadata for LLM processing.
     """
     
-    
+    id = 0
     def __init__(self, ucid: str, signature: str, body: str):
         self.ucid = ucid            # Unique Context ID (e.g. "com.pkg.MyClass")
         self.signature = signature  # Display signature (e.g. "public class MyClass extends B")
@@ -64,6 +69,9 @@ class BaseClass(ABC):
         self.fields: Dict[str, "BaseField"] = {}
         self.methods: Dict[str, "BaseMethod"] = {}
         self.child_classes: Dict[str, "BaseClass"] = {}
+        
+        self.id = BaseClass.id
+        BaseClass.id += 1
         
         self.sent_to_llm = False
 
