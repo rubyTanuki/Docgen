@@ -320,11 +320,15 @@ class JavaMethod(BaseMethod):
             if local_fullname in MemberRegistry.map_scoped:
                 candidates = [c for c in MemberRegistry.map_scoped[local_fullname] if c.arity == arity]
                 if len(candidates) == 1:
+                    candidates[0].inbound_dependencies.append(f"#{self.umid.split('#')[-1]}")
                     self.dependencies.append(f"#{candidates[0].umid.split('#')[-1]}")
-                elif len(candidates) <= 3:
-                    self.dependencies.extend([f"~#{c.umid.split('#')[-1]}" for c in candidates])
                 else:
-                    self.dependencies.append(f"~#{candidates[0].identifier}(?)")
+                    for candidate in candidates: 
+                        candidate.inbound_dependencies.append(f"~#{self.umid.split('#')[-1]}")
+                    if len(candidates) <= 3:
+                        self.dependencies.extend([f"~#{c.umid.split('#')[-1]}" for c in candidates])    
+                    else:
+                        self.dependencies.append(f"~#{candidates[0].identifier}(?)")
                 continue
             
             # 2. Import Check
@@ -336,8 +340,10 @@ class JavaMethod(BaseMethod):
                     candidates.extend(MemberRegistry.map_scoped[import_fullname])
             if candidates:
                 if len(candidates) == 1:
+                    candidates[0].inbound_dependencies.append(self.umid)
                     self.dependencies.append(candidates[0].umid)
                 else:
+                    for c in candidates: c.inbound_dependencies.append(f"~{self.umid}")
                     self.dependencies.extend([f"~{c.umid}" for c in candidates if c.arity == arity])
                 continue
             
@@ -345,11 +351,14 @@ class JavaMethod(BaseMethod):
             if name in MemberRegistry.map_short:
                 candidates = [c for c in MemberRegistry.map_short[name] if c.arity == arity]
                 if len(candidates) == 1:
+                    candidates[0].inbound_dependencies.append(self.umid)
                     self.dependencies.append(candidates[0].umid)
-                elif len(candidates) <= 3:
-                    self.dependencies.extend([f"~{c.umid}" for c in candidates])
                 else:
-                    self.dependencies.append(f"~{candidates[0].identifier}(?)")
+                    self.dependencies.extend([f"~{c.umid}" for c in candidates])
+                    if len(candidates) <= 3:
+                        for c in candidates: c.inbound_dependencies.append(f"~{self.umid}")
+                    else:
+                        self.dependencies.append(f"~{candidates[0].identifier}(?)")
                 continue
             
             self.unresolved_dependencies.append(name)

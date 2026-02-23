@@ -6,23 +6,25 @@ class toast:
     @classmethod
     def dump_method(cls, m: BaseMethod) -> str:
         output = f"""
-M{m.id} @L{m.line} | {m.signature}
-// {m.description}
-"""
+{m.id} @L{m.line} | {m.signature}
+// {m.description}"""
         # outbound dependencies
         if m.dependencies:
-            output += '>' + ', '.join(m.dependencies)
+            output += '\n>' + ', '.join(m.dependencies)
+        # dont add outbound for base .toast output
+        # if m.inbound_dependencies:
+        #     output += '<' + ', '.join(m.inbound_dependencies)
         
         return output
         
     @classmethod
     def dump_class(cls, c: BaseClass) -> str:
         output = f"""
-C{c.id}: {c.signature}
+{c.id} | {c.signature}
 // {c.description}
-fields: {', '.join(c.fields.keys())}
-
 """
+        if c.fields:
+            output += f"fields: {', '.join(c.fields.keys())}"
         for method in c.methods.values():
             output += cls.dump_method(method)
         return output
@@ -30,9 +32,10 @@ fields: {', '.join(c.fields.keys())}
     @classmethod
     def dump_file(cls, f: BaseFile) -> str:
         output = f"""
-F{f.id}: {f.ufid}
-imports: {', '.join(f.imports)}
+{f.id} | {f.ufid}
 """
+        if f.imports:
+            output += f"imports: {', '.join(f.imports)}"
         for c in f.classes:
             output += cls.dump_class(c)
         return output

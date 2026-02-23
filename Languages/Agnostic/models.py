@@ -166,6 +166,8 @@ class BaseMethod(ABC):
         self.dependency_names = dependency_names # Raw strings found in parsing
         self.dependencies: List["BaseMethod"] = [] # Resolved object references
         self.unresolved_dependencies: List[str] = []
+        
+        self.inbound_dependencies: List["BaseMethod"] = []
 
     @classmethod
     @abstractmethod
