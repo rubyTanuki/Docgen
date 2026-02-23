@@ -31,9 +31,11 @@ class MemberRegistry:
     
     @classmethod
     def load_cache(cls, cache: Dict[str, Dict[str, str]]):
-        cls.method_cache = cache
+        assert cache['methods']
+        cls.method_cache = cache.get('methods')
+        assert cls.method_cache
         for method in cls.map_umid.values():
-            cached_data = cache.get(method.umid)
+            cached_data = cache['methods'].get(method.umid)
             if cached_data and cached_data["hash"] == method.body_hash:
                 method.description = cached_data["description"]
             else:

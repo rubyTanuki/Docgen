@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Optional
 from member_registry import MemberRegistry
 import json
 import asyncio
+import hashlib
 
 class BaseFile(ABC):
     """
@@ -10,14 +11,13 @@ class BaseFile(ABC):
     Acts as the root container for the dependency graph.
     """
     
-    id = 0
     def __init__(self, ufid: str, imports: List[str], classes: List["BaseClass"]):
         self.ufid = ufid          # Unique File ID (usually filename or relative path)
         self.imports = imports    # List of import strings
         self.classes = classes    # Top-level classes defined in this file
 
-        self.id = BaseFile.id
-        BaseFile.id += 1
+        id_hash = hashlib.md5(self.ufid.encode('utf-8')).hexdigest()[:4]
+        self.id = f"F-{id_hash}"
         
     @classmethod
     @abstractmethod
@@ -55,7 +55,6 @@ class BaseClass(ABC):
     Stores Members (Fields/Methods) and Metadata for LLM processing.
     """
     
-    id = 0
     def __init__(self, ucid: str, signature: str, body: str):
         self.ucid = ucid            # Unique Context ID (e.g. "com.pkg.MyClass")
         self.signature = signature  # Display signature (e.g. "public class MyClass extends B")
@@ -70,8 +69,8 @@ class BaseClass(ABC):
         self.methods: Dict[str, "BaseMethod"] = {}
         self.child_classes: Dict[str, "BaseClass"] = {}
         
-        self.id = BaseClass.id
-        BaseClass.id += 1
+        id_hash = hashlib.md5(self.ucid.encode('utf-8')).hexdigest()[:4]
+        self.id = f"C-{id_hash}"
         
         self.sent_to_llm = False
 
@@ -110,6 +109,7 @@ class BaseClass(ABC):
                 return
             
             self.description = response_obj["description"]
+            # print(self.description)
             self.confidence = response_obj["confidence"]
             # extract method level descriptions
             for method_obj in response_obj["methods"]:
@@ -143,8 +143,8 @@ class BaseMethod(ABC):
     Abstract representation of a Function/Method.
     This is the primary unit of work for the LLM.
     """
-    id = 0
-    def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str, body_hash: str, dependency_names: List[str], line: int, parameters: List[str]):
+    def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str,
+                 body_hash: str, dependency_names: List[str], line: int, parameters: List[str]):
         self.identifier = identifier
         self.return_type = return_type
         self.scoped_identifier = scoped_identifier
@@ -155,8 +155,8 @@ class BaseMethod(ABC):
         self.line = line #line number in file
         self.parameters = parameters
         self.arity = len(self.parameters)
-        self.id = BaseMethod.id
-        BaseMethod.id += 1
+        id_hash = hashlib.md5(self.umid.encode('utf-8')).hexdigest()[:5]
+        self.id = f"M-{id_hash}"
         
         # LLM Output
         self.description = ""

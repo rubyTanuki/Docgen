@@ -107,6 +107,8 @@ Reference methods by their provided integer `method_id`.
                         if m_id in method_lookup:
                             method_result["umid"] = method_lookup[m_id].umid
                             
+                    # if not parsed_data["description"]:
+                    #     print("no class level description found")
                     return parsed_data
                     
                 except Exception as e:

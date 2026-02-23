@@ -21,7 +21,7 @@ async def main():
     print("Generating AST...")
     start_time = time.perf_counter()
     parser = JavaParser(FILEPATH, llm)
-    await parser.parse(use_cache=False)
+    await parser.parse(use_cache=True)
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time
     print(f"Generated AST w/ descriptions in {elapsed_time:.4f} seconds.")
@@ -34,7 +34,7 @@ async def main():
     with open(FILEPATH + "/skeleton.toast", "w") as file:
         file.write(toast_string)
         
-    method_cache = json.dumps(MemberRegistry.get_method_cache(), indent=4)
+    method_cache = json.dumps({'methods': MemberRegistry.get_method_cache()}, indent=4)
     with open(FILEPATH + "/.toaster_cache.json", "w") as file:
         file.write(method_cache)
 
