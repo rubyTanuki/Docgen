@@ -105,16 +105,21 @@ class JavaClass(BaseClass):
             if mod in cls.ACCESS_MODIFIERS:
                 access = mod
             else:
-                other_mods.append(mod)
+                if mod[0] != '@' and mod[0] != '/':
+                    other_mods.append(mod)
         
         generics_str = f"{''.join(type_params)}" if type_params else ""
         
         sig_parts = [access] + other_mods + ["class", identifier + generics_str]
         
+        if 'superclass' in sig_parts:
+            sig_parts.remove('superclass')
+        
         if superclass:
             sig_parts.append(f"extends {superclass}")
         if interfaces:
             sig_parts.append(f"implements {', '.join(interfaces)}")
+        
             
         signature = " ".join(filter(None, sig_parts))
         
@@ -249,7 +254,10 @@ class JavaMethod(BaseMethod):
         for child in node.children:
             ct = child.type
             if ct == "modifiers":
-                modifiers = child.text.decode('utf-8').split()
+                modifiers_txt = child.text.decode('utf-8')
+                modifiers = re.sub(r'//.*', '', modifiers_txt).split()
+                print(modifiers)
+                
             elif ct == "type_parameters":
                 type_params = child.text.decode('utf-8')
             elif ct == "throws":
@@ -261,14 +269,16 @@ class JavaMethod(BaseMethod):
             if mod in cls.ACCESS_MODIFIERS:
                 access = mod
             else:
-                other_mods.append(mod)
-                
+                if mod:
+                    if mod[0] != '@' and mod[0] != '/':
+                        other_mods.append(mod)
+        
         sig_parts = [access] + other_mods + [type_params, return_type, identifier]
         if return_type == "void" and node.type == 'constructor_declaration':
             sig_parts.remove("void")
             return_type = "<constructor>"
              
-        full_sig_str = f"{' '.join(filter(None, sig_parts))}({', '.join(params_full)})"
+        full_sig_str = f"{' '.join(filter(None, sig_parts))}({', '.join(params_types)})"
         if throws_clause:
             full_sig_str += f" {throws_clause}"
         
