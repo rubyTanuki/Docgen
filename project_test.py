@@ -34,7 +34,7 @@ async def main():
     with open(FILEPATH + "/skeleton.toast", "w") as file:
         file.write(toast_string)
         
-    method_cache = json.dumps({'methods': MemberRegistry.get_method_cache()}, indent=4)
+    method_cache = json.dumps(MemberRegistry.get_cache(), indent=4)
     with open(FILEPATH + "/.toaster_cache.json", "w") as file:
         file.write(method_cache)
 

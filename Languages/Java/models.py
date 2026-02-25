@@ -41,6 +41,7 @@ class JavaFile(BaseFile):
             elif child.type == "class_declaration":
                 java_class = JavaClass.from_node(child, scope)
                 classes.append(java_class)
+                MemberRegistry.add_class(java_class)
 
         return cls(filename, imports, classes)
 
@@ -83,7 +84,9 @@ class JavaClass(BaseClass):
             child_type = child.type
             
             if child_type == "modifiers":
-                modifiers = child.text.decode('utf-8').split()
+                for mod_node in child.children:
+                    if mod_node.type not in ['line_comment', 'block_comment', 'annotation', 'marker_annotation']:
+                        modifiers.append(mod_node.text.decode('utf-8'))
             elif child_type == "type_parameters":
                 type_params.append(child.text.decode('utf-8'))
             elif child_type == "superclass":
@@ -105,8 +108,7 @@ class JavaClass(BaseClass):
             if mod in cls.ACCESS_MODIFIERS:
                 access = mod
             else:
-                if mod[0] != '@' and mod[0] != '/':
-                    other_mods.append(mod)
+                other_mods.append(mod)
         
         generics_str = f"{''.join(type_params)}" if type_params else ""
         
@@ -254,9 +256,10 @@ class JavaMethod(BaseMethod):
         for child in node.children:
             ct = child.type
             if ct == "modifiers":
-                modifiers_txt = child.text.decode('utf-8')
-                modifiers = re.sub(r'//.*', '', modifiers_txt).split()
-                print(modifiers)
+                for mod_node in child.children:
+                    if mod_node.type not in ['line_comment', 'block_comment', 'annotation', 'marker_annotation']:
+                        modifiers.append(mod_node.text.decode('utf-8'))
+                # print(modifiers)
                 
             elif ct == "type_parameters":
                 type_params = child.text.decode('utf-8')
@@ -270,15 +273,14 @@ class JavaMethod(BaseMethod):
                 access = mod
             else:
                 if mod:
-                    if mod[0] != '@' and mod[0] != '/':
-                        other_mods.append(mod)
+                    other_mods.append(mod)
         
         sig_parts = [access] + other_mods + [type_params, return_type, identifier]
         if return_type == "void" and node.type == 'constructor_declaration':
             sig_parts.remove("void")
             return_type = "<constructor>"
              
-        full_sig_str = f"{' '.join(filter(None, sig_parts))}({', '.join(params_types)})"
+        full_sig_str = f"{' '.join(filter(None, sig_parts))}({', '.join(params_full)})"
         if throws_clause:
             full_sig_str += f" {throws_clause}"
         
