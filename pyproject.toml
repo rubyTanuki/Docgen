@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "toongen"
+name = "toaster"
 version = "0.1.0"
 description = "AST scraper for LLM RAG"
 dependencies = [
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-toongen = "cli:main"
+toaster = "cli:main"
 
 [tool.setuptools]
 py-modules = ["cli", "member_registry", "language", "queries"]
