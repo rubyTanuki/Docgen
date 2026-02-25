@@ -1,5 +1,7 @@
 from typing import List
 
+from Languages.Agnostic.models import BaseFile, BaseClass, BaseMethod, BaseEnum
+
 
 class toast:
     
@@ -19,15 +21,22 @@ class toast:
         
     @classmethod
     def dump_class(cls, c: BaseClass) -> str:
+        is_enum = isinstance(c, BaseEnum)
         output = f"""
-{c.id} | {c.signature}
+{c.id} | {c.signature} {f"{{{', '.join(c.constants)}}}" if is_enum else ""}
 // {c.description}
 """
+        if is_enum:
+            output += f""
+            
         if c.fields:
             output += f"fields: {', '.join(c.fields.keys())}"
         for method in c.methods.values():
             output += cls.dump_method(method)
+        for class_obj in c.child_classes.values():
+            output += cls.dump_class(class_obj)
         return output
+        
         
     @classmethod
     def dump_file(cls, f: BaseFile) -> str:

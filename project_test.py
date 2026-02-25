@@ -11,7 +11,7 @@ from toast import toast
 
 
 async def main():
-    FILEPATH = "TestCode/Gson"
+    FILEPATH = "TestCode/gson"
     
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     if GEMINI_API_KEY is None:

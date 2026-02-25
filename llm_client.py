@@ -33,6 +33,8 @@ Assume all descriptions are to be utilized by an AI Agent for contextual referen
 
 ### TASK
 Analyze the provided code and generate a JSON response. 
+**Class Analysis**: Generate a `description` for the overall class. Look at the fields, Javadocs, and method summaries to write a concise explanation of the class's primary purpose and architectural role. Also provide a confidence score and context need score for the class.
+**Method Analysis**: For each method that still has a raw code body, generate:
 1. **Description**: Write a concise summary of what the method does. 
    - **Focus on**: Inputs and Outputs (semantics) and Side Effects (state changes). If the method is complex, include core logic (algorithms and data flow).
    - **Style**: Technical, precise, and dense. Start with an active verb (e.g., "Calculates...", "Updates..."). Unless complexity is high, try to keep it to one sentence.
@@ -46,34 +48,11 @@ Reference methods by their provided integer `method_id`.
         
         has_cached_methods = any(m.description for m in class_obj.methods.values())
         
-        if not has_cached_methods:
-            # COLD START: Send the raw class body, but provide the ID mapping so the LLM knows what IDs to return
-            input_data = {
-                "code": class_obj.body,
-                "ucid": class_obj.ucid,
-                "imports": imports,
-                "method_ids_to_signatures": {idx: m.signature for idx, m in method_lookup.items()},
-                "child_classes": [c.signature for c in class_obj.child_classes.values()]
-            }
-        else:
-            system_instruction += "\nONLY RETURN DETAILS FOR METHODS NOT IN CACHE. "
-            print(f"Cache contains descriptions for {class_obj.ucid}, only generating missing descriptions...")
-            # WARM START: Swap raw code for descriptions where possible, keyed by integer ID
-            input_data = {
-                "ucid": class_obj.ucid,
-                "fields": [f.signature for f in class_obj.fields.values()],
-                "cached_methods": {
-                    idx: m.description 
-                    for idx, m in method_lookup.items() 
-                    if m.description},
-                "methods_to_generate": {
-                    idx: m.body 
-                    for idx, m in method_lookup.items()
-                    if not m.description
-                },
-                "imports": imports,
-                "child_classes": {c.signature: c.description for c in class_obj.child_classes.values()}
-            }
+        
+        input_data = {
+            "code": class_obj.skeletonize(),
+            "method_ids_to_signatures": {idx: m.signature for idx, m in method_lookup.items()}
+        }
         
         print(f"Generating Description for {class_obj.ucid}...")
         start_time = time.perf_counter()

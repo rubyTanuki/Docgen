@@ -25,6 +25,10 @@ class JavaFile(BaseFile):
         scope = ""
         imports = []
         classes = []
+        
+        # if filename.endswith("Strictness.java"):
+        #     print(root_node)
+
 
         for child in root_node.children:
             if child.type == "package_declaration":
@@ -38,10 +42,14 @@ class JavaFile(BaseFile):
                 for grandchild in child.children:
                     if grandchild.type in {"scoped_identifier", "identifier"}:
                         imports.append(grandchild.text.decode('utf-8'))
-            elif child.type == "class_declaration":
+            elif child.type == "class_declaration" or child.type == "interface_declaration":
                 java_class = JavaClass.from_node(child, scope)
                 classes.append(java_class)
-                MemberRegistry.add_class(java_class)
+                # MemberRegistry.add_class(java_class)
+            elif child.type == "enum_declaration":
+                java_enum = JavaEnum.from_node(child, scope)
+                classes.append(java_enum)
+                # MemberRegistry.add_class(java_enum)
 
         return cls(filename, imports, classes)
 
@@ -56,14 +64,19 @@ class JavaClass(BaseClass):
     
     ACCESS_MODIFIERS = {"public", "protected", "private"}
 
-    def __init__(self, ucid: str, signature: str, body: str):
+    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None):
         # BaseClass init: (ucid, signature, body)
-        super().__init__(ucid, signature, body)
+        super().__init__(ucid, signature, body, node)
         
         # Override types for Java specifics if needed, but Base dicts work fine
         self.fields: Dict[str, "JavaField"] = {}
         self.methods: Dict[str, "JavaMethod"] = {}
         self.child_classes: Dict[str, "JavaClass"] = {}
+        
+        
+        # if self.node.type == "interface_declaration":
+        #     print('ucid', ucid)
+        
 
     @classmethod
     def from_node(cls, node: "Node", scope: str = "") -> "JavaClass":
@@ -88,7 +101,7 @@ class JavaClass(BaseClass):
                     if mod_node.type not in ['line_comment', 'block_comment', 'annotation', 'marker_annotation']:
                         modifiers.append(mod_node.text.decode('utf-8'))
             elif child_type == "type_parameters":
-                type_params.append(child.text.decode('utf-8'))
+                type_params = child.text.decode('utf-8')
             elif child_type == "superclass":
                 for gc in child.children:
                     if "type" in gc.type:
@@ -97,11 +110,12 @@ class JavaClass(BaseClass):
                 type_list = child.child_by_field_name('interfaces')
                 if type_list:
                     interfaces = [c.text.decode('utf-8') for c in type_list.children if "type" in c.type]
-            elif child_type == "class_body":
+            elif child_type == "class_body" or child_type == "interface_body":
                 body_node = child
 
         # Construct Signature
         access = "package-private"
+        is_interface = node.type == "interface_declaration"
         other_mods = []
         
         for mod in modifiers:
@@ -110,9 +124,9 @@ class JavaClass(BaseClass):
             else:
                 other_mods.append(mod)
         
-        generics_str = f"{''.join(type_params)}" if type_params else ""
+        generics_str = type_params if type_params else ""
         
-        sig_parts = [access] + other_mods + ["class", identifier + generics_str]
+        sig_parts = [access] + other_mods + ["class" if not is_interface else "interface", identifier + generics_str]
         
         if 'superclass' in sig_parts:
             sig_parts.remove('superclass')
@@ -127,7 +141,7 @@ class JavaClass(BaseClass):
         
         final_body = body_node.text.decode('utf-8') if body_node else ""
 
-        instance = cls(ucid, signature, final_body)
+        instance = cls(ucid, signature, final_body, node)
 
         # Parse Body
         if body_node:
@@ -143,11 +157,52 @@ class JavaClass(BaseClass):
                     field = JavaField.from_node(child, instance.ucid)
                     instance.fields[field.ucid] = field
                     
-                elif ct == "class_declaration":
+                elif ct == "class_declaration" or ct == "interface_declaration":
                     child_class = JavaClass.from_node(child, scope=instance.ucid)
+                    instance.child_classes[child_class.ucid] = child_class
+                elif ct == "enum_declaration":
+                    child_class = JavaEnum.from_node(child, scope=instance.ucid)
                     instance.child_classes[child_class.ucid] = child_class
 
         return instance
+    
+    def skeletonize(self) -> str:
+        replacements = []
+        
+        class_start_byte = self.node.start_byte
+        
+        for method in self.methods.values():
+            method_node = method.node
+            method_description = method.description
+            
+            if not method_description:
+                continue
+            
+            body_node = None
+            for child in method_node.children:
+                if child.type == 'block':
+                    body_node = child
+                    break
+            if body_node:
+                rel_start = body_node.start_byte - class_start_byte
+                rel_end = body_node.end_byte - class_start_byte
+                replacements.append({
+                    "start": rel_start,
+                    "end": rel_end,
+                    "text": f"{{\n    // {method_description}\n    }}"
+                })
+        replacements.sort(key=lambda x: x["start"], reverse=True)
+        
+        modified_source = self.node.text
+        for rep in replacements:
+            # Slice the byte string: [everything before body] + [new body] + [everything after body]
+            modified_source = (
+                modified_source[:rep["start"]] + 
+                rep["text"].encode('utf-8') + 
+                modified_source[rep["end"]:]
+            )
+
+        return modified_source.decode('utf-8')
 
 
 class JavaField(BaseField):
@@ -208,9 +263,9 @@ class JavaMethod(BaseMethod):
     ACCESS_MODIFIERS = {"public", "protected", "private"}
     
     def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str, body_hash: str, 
-                 dependency_names: List[str], line: int, parameters: List[str]):
+                 dependency_names: List[str], line: int, parameters: List[str], node:"Node" = None):
         # BaseMethod init: (umid, signature, body, body_hash, dependency_names)
-        super().__init__(identifier, scoped_identifier, return_type, umid, signature, body, body_hash, dependency_names, line, parameters)
+        super().__init__(identifier, scoped_identifier, return_type, umid, signature, body, body_hash, dependency_names, line, parameters, node)
     
     @classmethod
     def from_node(cls, node: "Node", scope: str, dep_query: "Query" = None) -> "JavaMethod":
@@ -245,6 +300,8 @@ class JavaMethod(BaseMethod):
                     else:
                         params_types.append(child.text.decode('utf-8').split()[0])
         
+        
+        
         # UMID Construction
         umid = f"{scope}#{identifier}({','.join(params_types)})"
         scoped_identifier = f"{scope}.{identifier}"
@@ -275,7 +332,7 @@ class JavaMethod(BaseMethod):
                 if mod:
                     other_mods.append(mod)
         
-        sig_parts = [access] + other_mods + [type_params, return_type, identifier]
+        sig_parts = [access] + other_mods + [return_type, identifier, type_params]
         if return_type == "void" and node.type == 'constructor_declaration':
             sig_parts.remove("void")
             return_type = "<constructor>"
@@ -283,6 +340,7 @@ class JavaMethod(BaseMethod):
         full_sig_str = f"{' '.join(filter(None, sig_parts))}({', '.join(params_full)})"
         if throws_clause:
             full_sig_str += f" {throws_clause}"
+        
         
         body = ""
         body_hash = ""
@@ -309,7 +367,7 @@ class JavaMethod(BaseMethod):
                     if name == "dependencies":
                         dependency_names.append(d_node.text.decode('utf-8'))
                             
-        return cls(identifier, scoped_identifier, return_type, umid, full_sig_str, body, body_hash, dependency_names, line, parameters=params_full)
+        return cls(identifier, scoped_identifier, return_type, umid, full_sig_str, body, body_hash, dependency_names, line, parameters=params_full, node=node)
     
     def resolve_dependencies(self, imports: List[str]) -> None:
         if not self.dependency_names:
@@ -380,13 +438,13 @@ class JavaMethod(BaseMethod):
         self.dependencies = [d for d in self.dependencies if d != self_ref]
 
 
-class JavaEnum(BaseEnum):
+class JavaEnum(BaseEnum, JavaClass):
     
     ACCESS_MODIFIERS = {"public", "protected", "private"}
 
-    def __init__(self, ucid: str, signature: str, body: str, constants: List[str]):
+    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, constants: List[str] = None):
         # BaseEnum init: (ucid, signature, body, constants)
-        super().__init__(ucid, signature, body, constants)
+        super().__init__(ucid, signature, body, node, constants)
 
         # BaseClass (parent of BaseEnum) already defines fields/methods dicts
         # We don't need to redefine them unless we want strict typing hints
@@ -436,7 +494,7 @@ class JavaEnum(BaseEnum):
         
         final_body = body_node.text.decode('utf-8') if body_node else ""
         
-        instance = cls(ucid, final_signature, final_body, constants)
+        instance = cls(ucid, final_signature, final_body, node, constants)
 
         # Attach members
         if body_node:
@@ -460,8 +518,3 @@ class JavaEnum(BaseEnum):
                     instance.fields[field.ucid] = field
 
         return instance
-
-    def resolve_dependencies(self):
-        """Recursively resolve dependencies for all methods."""
-        for method in self.methods.values():
-            method.resolve_dependencies([])

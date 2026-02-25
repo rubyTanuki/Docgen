@@ -55,14 +55,15 @@ class BaseClass(ABC):
     Stores Members (Fields/Methods) and Metadata for LLM processing.
     """
     
-    def __init__(self, ucid: str, signature: str, body: str):
+    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None):
         self.ucid = ucid            # Unique Context ID (e.g. "com.pkg.MyClass")
         self.signature = signature  # Display signature (e.g. "public class MyClass extends B")
         self.body = body            # Raw source code
+        self.node = node            # AST Tree-sitter Node
+        self.line = node.start_point[0] if node else 0
         
-        # Change Detection & LLM
-        self.body_hash = ""         
-        self.description = ""       
+        self.body_hash = ""         # Hash for diffing
+        self.description = ""       # LLM Output
 
         # Children (Keyed by ID for O(1) access)
         self.fields: Dict[str, "BaseField"] = {}
@@ -73,11 +74,17 @@ class BaseClass(ABC):
         self.id = f"C-{id_hash}"
         
         self.sent_to_llm = False
+        
+        MemberRegistry.add_class(self)
 
     @classmethod
     @abstractmethod
     def from_node(cls, node: Any, scope: str = "") -> "BaseClass":
         """Factory method to parse an AST node."""
+        pass
+    
+    @abstractmethod
+    def skeletonize(self) -> str:
         pass
 
     def resolve_dependencies(self, imports: List[str] = []):
@@ -95,7 +102,8 @@ class BaseClass(ABC):
             return
         visited_ucids.add(self.ucid)
         
-        needs_description = any([not method.description for method in self.methods.values()])
+        
+        needs_description = any([not method.description for method in self.methods.values()]) or not self.description
         if not needs_description:
             # print(f"No changes in {self.ucid}, skipping llm call")
             return
@@ -120,8 +128,9 @@ class BaseClass(ABC):
                 if method:
                     method.description = method_obj["description"]
                     method.confidence = method_obj["confidence"]
+            
         except Exception as e:
-            print(f"Failed to generate description for {self.ucid} with response {response_obj}: {e}")
+            print(f"Failed to generate description for {self.ucid}: {e}")
         # determine which methods need second pass
 
     def __json__(self):
@@ -144,7 +153,8 @@ class BaseMethod(ABC):
     This is the primary unit of work for the LLM.
     """
     def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str,
-                 body_hash: str, dependency_names: List[str], line: int, parameters: List[str]):
+                 body_hash: str, dependency_names: List[str], line: int, parameters: List[str], node:"Node" = None):
+        self.node = node
         self.identifier = identifier
         self.return_type = return_type
         self.scoped_identifier = scoped_identifier
@@ -231,11 +241,12 @@ class BaseEnum(BaseClass):
     """
     Abstract representation of an Enumeration.
     """
-    def __init__(self, ucid: str, signature: str, body: str, constants: List[str]):
-        super().__init__(ucid, signature, body)
+    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, constants: List[str] = None):
+        super().__init__(ucid, signature, body, node)
         self.constants = constants # ["VAL1", "VAL2(args)"]
 
     def __json__(self):
         data = super().__json__()
         data["constants"] = self.constants
         return data
+    
