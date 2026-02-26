@@ -9,14 +9,15 @@ description = "AST scraper for LLM RAG"
 dependencies = [
     "tree-sitter",
     "tree-sitter-java",
-    "toons"
+    "google.genai",
+    "pydantic"
 ]
 
 [project.scripts]
 toaster = "cli:main"
 
 [tool.setuptools]
-py-modules = ["cli", "member_registry", "language", "queries"]
+py-modules = ["cli", "member_registry", "language", "queries", "llm_client", "toast"]
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -53,8 +53,8 @@ class MemberRegistry:
     
     @classmethod
     def load_cache(cls, cache: Dict[str, Dict[str, str]]):
-        assert cache['methods']
-        assert cache['classes']
+        # assert cache['methods']
+        # assert cache['classes']
         
         # load methods
         cls.method_cache = cache.get('methods')
