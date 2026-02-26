@@ -1,11 +1,11 @@
-from Languages.Java import JavaParser
-from llm_client import GeminiClient
 import asyncio
 import time
 import os
 import json
-from member_registry import MemberRegistry
-from toast import toast
+
+from toaster.core import MemberRegistry, toast
+from toaster.languages.java import JavaParser
+from toaster.llm import GeminiClient
 
 
 

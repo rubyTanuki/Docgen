@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
-from member_registry import MemberRegistry
 import json
 import asyncio
 import hashlib
+
+from toaster.core.registry import MemberRegistry
 
 class BaseFile(ABC):
     """

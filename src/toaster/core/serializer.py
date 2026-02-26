@@ -1,6 +1,6 @@
 from typing import List
 
-from Languages.Agnostic.models import BaseFile, BaseClass, BaseMethod, BaseEnum
+from toaster.core.models import BaseFile, BaseClass, BaseMethod, BaseEnum
 
 
 class toast:

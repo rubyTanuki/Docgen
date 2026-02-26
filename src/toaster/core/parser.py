@@ -1,11 +1,11 @@
-from .models import BaseFile
-
 from pathlib import Path
 from abc import ABC
 from collections import defaultdict
 import asyncio
-from member_registry import MemberRegistry
 import json
+
+from toaster.core.models import BaseFile
+from toaster.core.registry import MemberRegistry
 
 class BaseParser(ABC):
     def __init__(self, project_dir: str, llm=None):
@@ -14,7 +14,7 @@ class BaseParser(ABC):
         self.project_dir = project_dir
 
     async def parse(self, query="*", use_cache=True):
-        from Languages.Java import JavaFile
+        from toaster.languages.java import JavaFile
 
         path = Path(self.project_dir)
 

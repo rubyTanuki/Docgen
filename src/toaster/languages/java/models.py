@@ -4,11 +4,9 @@ import re
 from typing import List, Dict, Any, Optional
 from tree_sitter import Node, Query, QueryCursor, Parser
 
-from Languages.Java.queries import DEPENDENCY_QUERY
-from Languages.Java.language import JAVA_LANGUAGE
-
-from member_registry import MemberRegistry
-from Languages.Agnostic import BaseFile, BaseClass, BaseMethod, BaseField, BaseEnum
+from toaster.languages.java.queries import DEPENDENCY_QUERY
+from toaster.languages.java.language import JAVA_LANGUAGE
+from toaster.core import BaseFile, BaseClass, BaseMethod, BaseEnum, BaseField, MemberRegistry
 
 class JavaFile(BaseFile):
     def __init__(self, ufid: str, imports: list[str], classes: list["JavaClass"]):

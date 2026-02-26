@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "toaster"
 version = "0.1.0"
-description = "AST scraper for LLM RAG"
+description = "Token-Optimized AST Generator"
 dependencies = [
     "tree-sitter",
     "tree-sitter-java",
@@ -14,12 +14,4 @@ dependencies = [
 ]
 
 [project.scripts]
-toaster = "cli:main"
-
-[tool.setuptools]
-py-modules = ["cli", "member_registry", "language", "queries", "llm_client", "toast"]
-
-[tool.setuptools.packages.find]
-where = ["."]
-# Optional: explicitly include the Languages folder if you are having issues
-include = ["Languages*"]
+toaster = "toaster.cli:main"

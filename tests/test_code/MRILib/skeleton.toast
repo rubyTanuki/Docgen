@@ -1,0 +1,516 @@
+
+F-786d | BotValues.java
+imports: com.qualcomm.robotcore.hardware.DcMotor, com.qualcomm.hardware.rev.RevHubOrientationOnRobot.LogoFacingDirection, com.qualcomm.hardware.rev.RevHubOrientationOnRobot.UsbFacingDirection
+C-20b2 | public class BotValues 
+// A utility class for storing and defining various robot-specific hardware constants and configurations, including motor directions, wheel dimensions, and encoder tick calculations for both drive motors and an arm mechanism. It centralizes values such as ticks per revolution, gear ratios, wheel diameter, and zero power behaviors, facilitating consistent robot behavior and easier adjustments.
+fields: MRILib.BotValues.LEFTDIR, MRILib.BotValues.RIGHTDIR, MRILib.BotValues.SLIDEDIR, MRILib.BotValues.PIVOTDIR, MRILib.BotValues.LOGO_DIR, MRILib.BotValues.USB_DIR, MRILib.BotValues.TICKS_PER_REVOLUTION, MRILib.BotValues.GEAR_RATIO, MRILib.BotValues.WHEEL_DIAMETER, MRILib.BotValues.WHEEL_CIRCUMFERENCE, MRILib.BotValues.DISTANCE_PER_REVOLUTION, MRILib.BotValues.BRAKE, MRILib.BotValues.FLOAT, MRILib.BotValues.TICKS_PER_REVOLUTION_ARM, MRILib.BotValues.GEAR_RATIO_ARM, MRILib.BotValues.TICKS_PER_DEGREE_ARM
+
+F-63ae | A_TeleOp.java
+imports: MRILib, MRILib.managers, MRILib.statemachine
+C-3df7 | public class A_TeleOp extends LinearOpMode 
+// TeleOp mode for controlling the ArmBotFF robot, featuring field-centric driving with joystick control and trigger-based speed adjustment. It also integrates an ArmFSM for managing the robot's arm state and provides telemetry for robot position, heading, and arm state.
+fields: A_TeleOp.bot, A_TeleOp.asm
+M-7a8f6 @L9 | public void runOpMode()
+// Initializes the robot hardware and the ArmFSM, then enters the main teleoperation loop. In the loop, it continuously updates the robot's state, processes gamepad inputs for driving and arm control, resets the robot's heading if the start button is pressed, and displays telemetry data including runtime, position, heading, and current arm state. The loop continues as long as the op mode is active, and upon termination, it stops the robot's multi-threaded operations.
+>~MRILib.util.Bpad#update(Gamepad), ~MRILib.statemachine.ArmFSM#setState(String), ~MRILib.motion.HeadingPID#update(double), ~MRILib.statemachine.ArmFSM#setState(ArmState), ~MRILib.motion.PID#update(double)
+M-ec1e5 @L54 | public void init()
+// Initializes the ArmBotFF robot by creating an instance, setting its motor run mode to RUN_WITHOUT_ENCODER, and enabling brake mode. It also initializes the ArmFSM, passing the robot instance and gamepad controllers.
+>MRILib.managers.Bot#enableBrakeMode(boolean), MRILib.managers.Bot#setMode(DcMotor.RunMode)
+
+F-32bb | AutonExample.java
+imports: MRILib.BotValues, MRILib.managers, MRILib.motion, MRILib.statemachine, java.util, com.qualcomm.robotcore.eventloop.opmode.Disabled, com.qualcomm.robotcore.eventloop.opmode.LinearOpMode, com.qualcomm.robotcore.eventloop.opmode.Autonomous, com.qualcomm.robotcore.hardware.DcMotor, org.firstinspires.ftc.robotcore.external.navigation.AngleUnit, org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit, org.firstinspires.ftc.robotcore.external.navigation.Pose2D
+C-a6db | public class AutonExample extends LinearOpMode 
+// This class represents an autonomous robot program for FTC (FIRST Tech Challenge). It orchestrates the robot's movement and actions during the autonomous period, including initializing hardware, setting up PID controllers for precise movement, and executing a sequence of predefined paths to interact with game elements like buckets and ground samples. It utilizes a state machine for driving (`DriveFSM`) and arm control (`ArmFSM`), and integrates with hardware components through a `Bot` object. The program also includes telemetry for debugging and status updates.
+fields: MRILib.opmodes.AutonExample.bot, MRILib.opmodes.AutonExample.pid, MRILib.opmodes.AutonExample.dsm, MRILib.opmodes.AutonExample.BUCKET_X, MRILib.opmodes.AutonExample.BUCKET_Y, MRILib.opmodes.AutonExample.BUCKET_HEADING
+M-b005d @L32 | public void runOpMode()
+// Initializes the robot's hardware, including motors and sensors, and sets up PID controllers for autonomous navigation. It then executes a predefined sequence of movements and actions, such as moving to specific locations, interacting with game elements (dropping preloads, picking up samples), and updating the robot's state. The method continuously updates the robot's position and telemetry while the autonomous mode is active. It also includes commented-out sections for AprilTag localization and specific bot initializations.
+>~MRILib.util.Bpad#update(Gamepad), MRILib.managers.Bot#enableBrakeMode(boolean), MRILib.motion.PIDController#setTurnPID(PID), ~MRILib.statemachine.ArmFSM#setState(String), MRILib.statemachine.DriveFSM#moveTo(Pose2D), MRILib.managers.Bot#setMode(DcMotor.RunMode), ~MRILib.motion.HeadingPID#update(double), ~MRILib.statemachine.ArmFSM#setState(ArmState), MRILib.statemachine.DriveFSM#waitForSeconds(double), MRILib.managers.Bot#setPosition(Pose2D), ~MRILib.motion.PID#update(double)
+
+F-b824 | ServoZero.java
+imports: MRILib.util, java.util
+C-efc5 | public class ServoZero extends OpMode 
+// TeleOp class for controlling servos with a gamepad. It allows selection of individual servos using the D-pad and adjustment of their positions using the 'A' and 'Y' buttons. Trigger buttons are used to set servo positions, either individually or all at once. Telemetry displays the current target position for each servo, indicating the selected servo with a '>'.
+fields: MRILib.opmodes.ServoZero.gpad, MRILib.opmodes.ServoZero.elbow, MRILib.opmodes.ServoZero.wrist, MRILib.opmodes.ServoZero.roll, MRILib.opmodes.ServoZero.claw, MRILib.opmodes.ServoZero.servoList, MRILib.opmodes.ServoZero.positionList, MRILib.opmodes.ServoZero.index
+M-c440f @L19 | public void init()
+// Initializes the OpMode by mapping servo hardware components ('elbow', 'wrist', 'roll', 'claw') and setting up arrays to store servo objects and their target positions. The 'gpad' variable is assumed to be initialized elsewhere.
+>MRILib.util.Bpad#get(String)
+M-63eec @L30 | public void loop()
+// Continuously runs during the OpMode. It handles servo selection using the D-pad (up/down) and adjusts the target position of the selected servo using 'A' (increment) and 'Y' (decrement) buttons. It wraps target positions to stay within the 0.0 to 1.0 range. All servos' positions are updated when the left trigger is pressed, and the selected servo's position is updated when the right trigger is pressed. Telemetry data is updated to show the current target position for each servo and indicate the currently selected servo.
+>~MRILib.util.Bpad#update(Gamepad), ~MRILib.motion.HeadingPID#update(double), MRILib.util.Bpad#get(String), MRILib.managers.Bot#setPosition(Pose2D), ~MRILib.motion.PID#update(double)
+
+F-1e3a | Bpad.java
+imports: java.util
+C-574b | public class Bpad 
+// Represents a gamepad's state, including analog stick positions, trigger values, and button states. It tracks the current and previous states of various inputs to detect changes, such as button presses and stick movements.
+fields: MRILib.util.Bpad.map, MRILib.util.Bpad.left_stick_x, MRILib.util.Bpad.left_stick_y, MRILib.util.Bpad.right_stick_x, MRILib.util.Bpad.right_stick_y, MRILib.util.Bpad.left_trigger, MRILib.util.Bpad.right_trigger
+M-0330b @L15 | public boolean get(String button)
+// Retrieves the current boolean state of a specified button. Returns false if the button is not tracked or not pressed.
+M-f0475 @L19 | public void update(Gamepad gpad)
+// Updates the gamepad's state based on the input from a Gamepad object. It copies analog stick and trigger values, and tracks the current and previous states of all buttons to detect double-presses (db_ prefix) and changes in state.
+>#get(String)
+
+F-7a40 | ComputeOdo.java
+
+
+F-f6ce | Mathf.java
+
+C-8348 | public final class Mathf 
+// Provides mathematical utility functions, including angle wrapping and constants like TAU.
+fields: MRILib.util.Mathf.TAU
+M-b632e @L6 | public static double angleWrap(double radian)
+// Normalizes an angle in radians to the range [-PI, PI]. It first applies the modulo TAU operation to bring the angle within a 2*PI range, then ensures it's positive, and finally adjusts it if it exceeds PI by subtracting TAU.
+
+F-0fe8 | BotState.java
+
+C-554b | public abstract class BotState 
+// Represents an abstract state within a Finite State Machine (FSM). It defines the basic structure and lifecycle methods (start, update, end) that subclasses must implement to define specific state behaviors. Includes a name for identification and debugging.
+fields: MRILib.statemachine.BotState.name
+M-712a3 @L25 | public BotState(String n)
+// Initializes a new BotState instance with a specified name.
+M-28ad2 @L32 | public BotState()
+// Initializes a new BotState instance with the default name 'DEFAULT'.
+M-b5ac3 @L40 | package-private void start()
+// Executes initialization logic when the state becomes active in the FSM. Subclasses should override this for state-specific setup.
+M-8afdd @L47 | package-private void update()
+// Executes the primary logic of the state during the FSM's update loop while this state is active. Subclasses should override this to implement state behavior and transition conditions.
+M-8e677 @L54 | package-private void end()
+// Executes cleanup logic when the state is about to be deactivated. Subclasses should override this for state-specific teardown.
+M-3214b @L61 | public String toString()
+// Returns the name of the state, used for identification and debugging.
+
+F-8539 | ArmFSM.java
+imports: com.qualcomm.robotcore.hardware.Gamepad, java.util.HashMap, java.util.function.Supplier, java.util.ArrayList, MRILib.managers
+C-6d09 | public class ArmFSM 
+// Manages the state machine for a robot arm, handling autonomous and tele-operated modes. It orchestrates arm movements and actions based on defined states, transitions, and conditional logic, interacting with the ArmBotEasy hardware manager and optionally with gamepads for control.
+fields: MRILib.statemachine.ArmFSM.bot, MRILib.statemachine.ArmFSM.currentState, MRILib.statemachine.ArmFSM.conditionalList, MRILib.statemachine.ArmFSM.gpad1, MRILib.statemachine.ArmFSM.gpad2, MRILib.statemachine.ArmFSM.auton
+M-45b9b @L68 | public ArmFSM(ArmBotEasy bot)
+// Initializes the ArmFSM for autonomous operation, setting the mode to autonomous, storing the ArmBotEasy instance, and initializing states, starting from the 'DEFAULT' state.
+>MRILib.statemachine.ArmState#getState(String)
+M-d0a10 @L82 | public ArmFSM(ArmBotEasy bot, Gamepad gpad1, Gamepad gpad2)
+// Initializes the ArmFSM for tele-operated control, setting the mode to non-autonomous, storing the ArmBotEasy instance and gamepad references, initializing states, and starting from the 'DEFAULT' state.
+>MRILib.statemachine.ArmState#getState(String)
+M-2d4d4 @L95 | public void start()
+// Executes the 'start' logic of the currently active arm state, which is typically run once upon entering the state.
+M-40ddd @L102 | public void update()
+// Executes the main update loop for the FSM. It first checks and executes any one-time conditional actions and then calls the 'update' logic of the current state.
+M-45afc @L110 | public void end()
+// Executes the 'end' logic of the currently active arm state, which is typically run once when exiting the state or transitioning to another.
+M-25bcc @L121 | public void setState(String name)
+// Transitions the FSM to a new state specified by its name. It retrieves the ArmState object by name and then calls the overloaded setState method.
+>~#setState(String), ~#setState(ArmState), MRILib.statemachine.ArmState#getState(String)
+M-8e45d @L130 | public void setState(ArmState state)
+// Transitions the FSM to a new state represented by the provided ArmState object. If the new state is different from the current state, it ends the current state, updates the current state, and starts the new state.
+M-ae19b @L144 | public void transition()
+// Evaluates the transition conditions defined within the current state. If any transition condition evaluates to true, it calls setState to transition to the corresponding target state and breaks the loop.
+>~#setState(String), ~#setState(ArmState)
+M-1d135 @L164 | public void addConditional(Supplier<Boolean> condition, Runnable command)
+// Adds a one-time conditional action to a list. This action consists of a condition (a Supplier returning a boolean) and a command (a Runnable to execute). The command is executed only once when its condition first becomes true.
+M-c2e4b @L174 | public void checkConditionals()
+// Iterates through a list of conditional actions, checking if their conditions are met. If a condition is true, it executes the associated command and removes the conditional from the list to prevent re-execution. It handles potential exceptions during condition evaluation and command execution, and iterates backwards for safe removal.
+>MRILib.statemachine.DriveFSM#run(Runnable), MRILib.util.Bpad#get(String)
+M-3c83a @L208 | private void init()
+// Initializes all the necessary ArmState objects for the FSM. New ArmState instances are created and automatically registered, defining their start, update, and end logic, as well as their transitions.
+C-eaee | package-private class ArmState extends BotState 
+// Represents a state within an Arm Finite State Machine (FSM). It manages transitions to other states based on defined conditions and provides static methods for managing all initialized ArmState instances, including setting a default fallback state. It inherits basic state behavior from BotState.
+fields: MRILib.statemachine.ArmState.states, MRILib.statemachine.ArmState.transitions
+M-5a0b1 @L283 | public static ArmState getState(String s)
+// Retrieves a previously initialized ArmState by its name from a static map. If the specified state is not found, it returns the state registered as the default fallback.
+>MRILib.util.Bpad#get(String)
+M-d937a @L292 | public static void clearSavedStates()
+// Clears all statically stored ArmState instances from the internal HashMap, freeing up memory and resetting the FSM's state management.
+M-60910 @L300 | public ArmState()
+// Initializes a new ArmState with the name "DEFAULT" and registers it in the static map of states. Calls the superclass constructor.
+M-98179 @L308 | public ArmState(String name)
+// Initializes a new ArmState with a specified name and registers it in the static map of states. Calls the superclass constructor with the provided name.
+M-4f491 @L317 | public ArmState(String name, boolean save)
+// Initializes a new ArmState with a specified name and optionally registers it in the static map of states based on the 'save' flag. Calls the superclass constructor with the provided name.
+M-0c109 @L326 | public void setDefault(String stateName)
+// Sets the fallback default state for the `getState` method. It updates the static map to point the "DEFAULT" key to an existing state identified by `stateName`, if that state exists.
+>MRILib.util.Bpad#get(String)
+M-f87ca @L343 | public void setTransition(String targetState, boolean condition)
+// Defines or updates a transition condition from the current state to a target state. Stores the target state name and a boolean indicating whether the transition condition is met.
+M-a4469 @L351 | public HashMap<String, Boolean> getTransitions()
+// Returns the internal HashMap containing all defined transition conditions for the current state. Each entry maps a target state name to a boolean value indicating if the transition condition is met.
+C-a1fd | package-private class Conditional 
+// Holds a condition and a command, allowing the command to be executed when the condition evaluates to true. It acts as a container for reactive or event-driven logic.
+fields: MRILib.statemachine.Conditional.condition, MRILib.statemachine.Conditional.command
+M-5bdac @L375 | public Conditional(Supplier<Boolean> condition, Runnable command)
+// Initializes a new Conditional object with the specified condition and command. The condition is a Supplier that returns a boolean, and the command is a Runnable to be executed.
+
+F-c215 | DriveFSM.java
+imports: MRILib.managers, MRILib.motion.PIDController, MRILib.util.Mathf, org.firstinspires.ftc.robotcore.external.navigation.Pose2D, com.qualcomm.robotcore.util.ElapsedTime, org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit, org.firstinspires.ftc.robotcore.external.navigation.AngleUnit, com.qualcomm.robotcore.hardware.Gamepad, java.util.ArrayList
+C-6af0 | public class DriveFSM 
+// Manages a sequence of robot movement and action states, allowing for autonomous routines. It orchestrates transitions between states, executes state-specific logic (start, update, end), and handles movement commands with optional parallel actions and timeouts. The FSM maintains the robot's current position and heading, and can hold a target pose.
+fields: MRILib.statemachine.DriveFSM.bot, MRILib.statemachine.DriveFSM.pid, MRILib.statemachine.DriveFSM.steps, MRILib.statemachine.DriveFSM.currentStep, MRILib.statemachine.DriveFSM.lastX, MRILib.statemachine.DriveFSM.lastY, MRILib.statemachine.DriveFSM.lastAngle
+M-b9eb2 @L74 | public DriveFSM(Bot bot, PIDController pid)
+// Initializes the DriveFSM with a Bot instance for robot control and a PIDController for movement.
+M-6d9db @L82 | public void start()
+// Executes the initialization logic for the current state in the sequence.
+>MRILib.util.Bpad#get(String)
+M-82f0a @L90 | public void update()
+// Executes the continuous update logic for the current state.
+>MRILib.util.Bpad#get(String)
+M-4099e @L98 | public void end()
+// Executes the termination logic for the current state.
+>MRILib.util.Bpad#get(String)
+M-ab659 @L106 | public void nextState()
+// Transitions the FSM to the next state in the sequence by ending the current state, incrementing the state index, and starting the new state. It prevents transitioning past the last state.
+M-1f4b7 @L132 | public void moveTo(double x, double y, double theta, Runnable command, double timeout)
+// Adds a new state to the sequence that moves the robot to a target pose (x, y, theta). Optionally runs a parallel command and has a specified timeout. It sets the PID controller's target, saves the target pose for holding, and starts a timer. The update logic continuously updates the PID controller, checks for proximity to the target pose, and transitions to the next state if the target is reached or the timeout occurs.
+>MRILib.util.Mathf#angleWrap(double), #moveTo(Pose2D), #run(Runnable)
+M-a097d @L195 | public void moveTo(double x, double y, double theta, Runnable command)
+// Adds a moveTo state with a specified parallel command and a default timeout of 5 seconds.
+>#moveTo(Pose2D)
+M-c97f1 @L205 | public void moveTo(double x, double y, double theta, double timeout)
+// Adds a moveTo state with a specified timeout and no parallel command.
+>#moveTo(Pose2D)
+M-d03a2 @L214 | public void moveTo(double x, double y, double theta)
+// Adds a moveTo state with a default timeout of 5 seconds and no parallel command.
+>#moveTo(Pose2D)
+M-9a000 @L221 | public void moveTo(Pose2D pose)
+// Adds a moveTo state using a Pose2D object for the target pose with a default timeout of 5 seconds and no parallel command.
+M-6b154 @L233 | public void waitForSeconds(double seconds, Runnable command)
+// Adds a new state to the sequence that waits for a specified duration while holding the last known position and heading. Optionally runs a parallel command. The start logic sets the PID controller to hold the last position and starts a timer. The update logic continuously updates the PID controller and transitions to the next state once the specified duration has elapsed.
+>#moveTo(Pose2D), #run(Runnable)
+M-541d2 @L266 | public void waitForSeconds(double seconds)
+// Adds a waitForSeconds state with a specified duration and no parallel command.
+M-aa5f9 @L273 | public void run(Runnable command)
+// Adds a state that executes a given command immediately with a 0-second wait duration, effectively running a command as a distinct step in the sequence.
+>#waitForSeconds(double)
+
+F-5271 | ArmBotEasy.java
+imports: com.qualcomm.robotcore.hardware.DcMotor, com.qualcomm.robotcore.hardware.Servo, com.qualcomm.robotcore.hardware.DcMotorEx, com.qualcomm.robotcore.hardware.HardwareMap, MRILib.BotValues
+C-c3af | public class ArmBotEasy extends Bot 
+// Represents an arm subsystem for a robot, controlling slide and pivot motors, along with claw servos. It extends a base 'Bot' class, likely handling drive train functionalities. This class provides methods for initializing, controlling, and querying the state of the arm and claw mechanisms, including setting motor modes, resetting encoders, and moving motors to target positions. It also includes getters for hardware components and their current states.
+fields: MRILib.managers.ArmBotEasy.slide, MRILib.managers.ArmBotEasy.pivot, MRILib.managers.ArmBotEasy.claw, MRILib.managers.ArmBotEasy.claw_pitch, MRILib.managers.ArmBotEasy.claw_roll, MRILib.managers.ArmBotEasy.slidePos, MRILib.managers.ArmBotEasy.pivotPos, MRILib.managers.ArmBotEasy.slidePosPrev, MRILib.managers.ArmBotEasy.pivotPosPrev
+M-b26d4 @L40 | public ArmBotEasy(HardwareMap hm)
+// Constructs an ArmBotEasy instance, initializing base bot functionalities and then specifically initializing the arm's motors and servos using the provided HardwareMap.
+>#initMotors(HardwareMap), #initServos(HardwareMap)
+M-bc67b @L54 | private void initMotors(HardwareMap hm)
+// Initializes the slide and pivot DC motors by retrieving them from the HardwareMap, resetting their encoders, setting their directions, and configuring them to run using encoder feedback.
+>MRILib.util.Bpad#get(String), MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-de08b @L87 | private void initServos(HardwareMap hm)
+// Initializes the claw, claw pitch, and claw roll servos by retrieving them from the HardwareMap.
+>MRILib.util.Bpad#get(String)
+M-e0fbf @L100 | public void setArmMode(DcMotor.RunMode mode)
+// Sets the operational mode for both the slide and pivot motors simultaneously to the specified DcMotor.RunMode.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-5fbc4 @L112 | public void resetEncoders()
+// Resets the encoders for the arm's slide and pivot motors to zero, preserving their current RunModes, and updates the stored encoder positions.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-8f57e @L141 | public void updateEncoders()
+// Updates the stored current and previous encoder positions for the slide and pivot motors, reflecting their latest readings.
+M-09c91 @L161 | public DcMotorEx getSlideMotor()
+// Retrieves the DcMotorEx instance for the slide.
+M-3a75d @L167 | public DcMotorEx getPivotMotor()
+// Retrieves the DcMotorEx instance for the pivot.
+M-780c5 @L174 | public int getSlidePos()
+// Returns the last recorded encoder position of the slide motor.
+M-43857 @L181 | public int getPivotPos()
+// Returns the last recorded encoder position of the pivot motor.
+M-486f5 @L187 | public Servo getClawPitch()
+// Retrieves the Servo instance for the claw pitch.
+M-bb41d @L193 | public Servo getClawRoll()
+// Retrieves the Servo instance for the claw roll.
+M-38caa @L199 | public Servo getClaw()
+// Retrieves the Servo instance for the main claw grip.
+M-655ef @L206 | public double getClawPitchPos()
+// Gets the current commanded position of the claw pitch servo.
+M-f662d @L212 | public double getClawRollPos()
+// Gets the current commanded position of the claw roll servo.
+M-affb6 @L218 | public double getClawPos()
+// Gets the current commanded position of the main claw grip servo.
+M-de4e4 @L227 | public void setClawPitch(double pos)
+// Sets the target position for the claw pitch servo.
+>MRILib.managers.Bot#setPosition(Pose2D)
+M-6bfff @L235 | public void setClawRoll(double pos)
+// Sets the target position for the claw roll servo.
+>MRILib.managers.Bot#setPosition(Pose2D)
+M-1883a @L243 | public void setClaw(double pos)
+// Sets the target position for the main claw grip servo.
+>MRILib.managers.Bot#setPosition(Pose2D)
+M-0deb5 @L253 | public void setPivot(int target)
+// Configures the pivot motor to move to a specified encoder target position by setting the mode to RUN_TO_POSITION and applying a default velocity.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-d9546 @L266 | public void setSlides(int target)
+// Configures the slide motor to move to a specified encoder target position by setting the mode to RUN_TO_POSITION and applying a default velocity.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-86913 @L280 | public void setArm(int pivotTarget, int slideTarget)
+// Sets both the pivot and slide motors to move to their respective target encoder positions simultaneously by calling setPivot and setSlides.
+>#setSlides(int), #setPivot(int)
+
+F-7792 | ArmBotFF.java
+imports: com.qualcomm.robotcore.hardware.DcMotor, com.qualcomm.robotcore.hardware.Servo, com.qualcomm.robotcore.hardware.DcMotorEx, com.qualcomm.robotcore.hardware.HardwareMap, MRILib.BotValues, java.lang.Thread
+C-5714 | public class ArmBotFF extends Bot 
+// Represents an arm-based robot with advanced control, including a dedicated thread for a PivotArmController. It manages linear slide and pivot motors, along with multiple servos for claw manipulation. The class handles motor initialization, encoder management, and provides methods for controlling arm and claw movements, as well as safely stopping the background control thread.
+fields: MRILib.managers.ArmBotFF.slide, MRILib.managers.ArmBotFF.pivot, MRILib.managers.ArmBotFF.claw, MRILib.managers.ArmBotFF.claw_pitch, MRILib.managers.ArmBotFF.claw_roll, MRILib.managers.ArmBotFF.armController, MRILib.managers.ArmBotFF.armThread, MRILib.managers.ArmBotFF.slidePos, MRILib.managers.ArmBotFF.pivotPos, MRILib.managers.ArmBotFF.slidePosPrev, MRILib.managers.ArmBotFF.pivotPosPrev
+M-bcdc4 @L56 | public ArmBotFF(HardwareMap hm, org.firstinspires.ftc.robotcore.external.Telemetry telemetry)
+// Constructs an ArmBotFF instance, initializing hardware components (motors, servos), setting up the PivotArmController, and starting its dedicated thread for concurrent operation. It calls parent constructor and initialization methods for motors and servos.
+>#initMotors(HardwareMap), #initServos(HardwareMap)
+M-65333 @L72 | private void initMotors(HardwareMap hm)
+// Initializes the slide and pivot DcMotorEx components by retrieving them from the HardwareMap, resetting their encoders, setting their directions and run modes, and configuring their zero power behavior to BRAKE. It also resets and updates internal position tracking variables.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode), MRILib.util.Bpad#get(String)
+M-7a819 @L106 | private void initServos(HardwareMap hm)
+// Initializes the claw pitch, claw roll, and claw grip servos by retrieving them from the HardwareMap. It does not set initial positions, but prepares them for use.
+>MRILib.util.Bpad#get(String)
+M-dddda @L121 | public void setArmMode(DcMotor.RunMode mode)
+// Sets the RunMode for both the slide and pivot motors to the specified DcMotor.RunMode, allowing for different control strategies like RUN_TO_POSITION or RUN_WITHOUT_ENCODER.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-4ed8b @L131 | public void resetEncoders()
+// Resets encoders for both drive train (via superclass) and arm motors (slide and pivot) to zero. It preserves the current RunMode of the arm motors and resets internal position tracking variables.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-6c98a @L156 | public void resetPrevEncoders()
+// Resets the internal variables tracking the previous encoder positions of the slide and pivot motors to zero. It also calls the superclass method to reset drive train previous positions.
+M-b44d5 @L167 | public void updateControllerState()
+// Updates the PivotArmController with the current pivot motor's encoder position and velocity. This method should be called after updating the main encoders to ensure the controller has the latest state information.
+M-7f91f @L179 | public void updateEncoders()
+// Updates the current and previous encoder positions for both the drive train motors (via superclass) and the arm motors (slide and pivot). This method should be called once per OpMode loop to maintain accurate position tracking.
+M-51ac5 @L195 | public DcMotorEx getSlideMotor()
+// Returns the DcMotorEx instance for the slide.
+M-ef774 @L197 | public DcMotorEx getPivotMotor()
+// Returns the DcMotorEx instance for the pivot.
+M-5f7f5 @L199 | public int getSlidePos()
+// Returns the current encoder position of the slide motor.
+M-14f7f @L201 | public int getPivotPos()
+// Returns the current encoder position of the pivot motor.
+M-be1f3 @L203 | public double getSlideVelocity()
+// Returns the current velocity of the slide motor in encoder ticks per second.
+M-b9925 @L205 | public double getPivotVelocity()
+// Returns the current velocity of the pivot motor in encoder ticks per second.
+M-a6cd2 @L209 | public Servo getClawPitch()
+// Returns the Servo instance controlling the pitch of the claw.
+M-6fc5f @L211 | public Servo getClawRoll()
+// Returns the Servo instance controlling the roll of the claw.
+M-902ff @L213 | public Servo getClaw()
+// Returns the Servo instance controlling the grip of the claw.
+M-2fa7e @L215 | public double getClawPitchPos()
+// Returns the current position of the claw pitch servo, ranging from 0.0 to 1.0.
+M-c37d7 @L217 | public double getClawRollPos()
+// Returns the current position of the claw roll servo, ranging from 0.0 to 1.0.
+M-928fc @L219 | public double getClawPos()
+// Returns the current position of the claw grip servo, ranging from 0.0 to 1.0.
+M-325d1 @L227 | public void setClawPitch(double pos)
+// Sets the target position for the claw pitch servo, clamping the input value between 0.0 and 1.0.
+>MRILib.managers.Bot#setPosition(Pose2D)
+M-97b4a @L235 | public void setClawRoll(double pos)
+// Sets the target position for the claw roll servo, clamping the input value between 0.0 and 1.0.
+>MRILib.managers.Bot#setPosition(Pose2D)
+M-68576 @L242 | public void setClaw(double pos)
+// Sets the target position for the claw grip servo, clamping the input value between 0.0 and 1.0.
+>MRILib.managers.Bot#setPosition(Pose2D)
+M-8fc6f @L251 | public void setPivot(int target)
+// Sets the pivot motor to run to a specific encoder target position by switching to RUN_TO_POSITION mode and setting a predefined velocity.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-054f5 @L263 | public void setPivotPower(double pow)
+// Sets the pivot motor power directly by switching to RUN_WITHOUT_ENCODER mode and applying the specified power level.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-8c282 @L273 | public void setSlides(int target)
+// Sets the slide motor to run to a specific encoder target position by switching to RUN_TO_POSITION mode and setting a predefined velocity.
+>MRILib.managers.Bot#setMode(DcMotor.RunMode)
+M-b0001 @L284 | public void setArm(int pivotTarget, int slideTarget)
+// Sets both the pivot and slide motors to run to their respective target encoder positions simultaneously by calling individual setter methods.
+>#setSlides(int), #setPivot(int)
+M-652ac @L293 | public void stopMultiThread()
+// Safely stops the background PivotArmController thread by signaling it to stop and then joining the thread with a short timeout to ensure proper cleanup. It includes error handling for interruptions and logs a warning if the thread does not terminate cleanly.
+C-6c16 | package-private interface RunnableStoppable 
+// An interface that extends Runnable and adds methods for stopping the execution and updating the current state (position and velocity). It represents a task that can be run, stopped, and whose internal state can be modified.
+
+M-dcb6b @L318 | package-private void stop()
+// Stops the execution of the Runnable task. This method is intended to signal the task to terminate its operation gracefully.
+M-6a583 @L319 | package-private void updateCurrentState(int currentPos, double currentVel)
+// Updates the internal state of the task with the provided current position and velocity. This method allows external modification of the task's operational parameters.
+
+F-a6b9 | Bot.java
+imports: com.qualcomm.robotcore.hardware.DcMotor, org.firstinspires.ftc.robotcore.external.Telemetry, com.qualcomm.robotcore.hardware.VoltageSensor, com.qualcomm.robotcore.hardware.DcMotorEx, org.firstinspires.ftc.robotcore.external.navigation.AngleUnit, org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit, org.firstinspires.ftc.robotcore.external.navigation.Pose2D, com.qualcomm.hardware.rev.RevHubOrientationOnRobot, com.qualcomm.robotcore.hardware.IMU, com.qualcomm.robotcore.hardware.HardwareMap, MRILib.util.GoBildaPinpointDriver, MRILib.BotValues
+C-fcdf | public class Bot 
+// Represents a robot chassis with mecanum drive, odometry, and IMU. It manages drive motors, odometry sensors (GoBilda Pinpoint), and an IMU for position and orientation tracking. Provides methods for initialization, updating robot state, controlling movement (robot-centric and field-centric), and accessing sensor data like position, heading, and battery voltage.
+fields: MRILib.managers.Bot.frontLeft, MRILib.managers.Bot.backLeft, MRILib.managers.Bot.frontRight, MRILib.managers.Bot.backRight, MRILib.managers.Bot.odo, MRILib.managers.Bot.imu, MRILib.managers.Bot.voltageSensor, MRILib.managers.Bot.currentPosition, MRILib.managers.Bot.lastPosition, MRILib.managers.Bot.telemetry, MRILib.managers.Bot.frontLeftPos, MRILib.managers.Bot.frontRightPos, MRILib.managers.Bot.backLeftPos, MRILib.managers.Bot.backRightPos, MRILib.managers.Bot.frontLeftPosPrev, MRILib.managers.Bot.frontRightPosPrev, MRILib.managers.Bot.backLeftPosPrev, MRILib.managers.Bot.backRightPosPrev
+M-dfb94 @L101 | public Bot(HardwareMap hm)
+// Constructs a Bot instance, initializing drive motors, IMU, odometry, and voltage sensor using default hardware map names. It also performs an initial odometry update and sets the starting position.
+>#initMotors(HardwareMap), #initIMU(HardwareMap), #initOdo(HardwareMap)
+M-afb8d @L120 | private void initMotors(HardwareMap hm)
+// Initializes the drive motors using default hardware map names ('frontLeft', 'frontRight', 'backLeft', 'backRight') by calling an overloaded version.
+M-25734 @L135 | private void initMotors(HardwareMap hm, String fl, String fr, String bl, String br)
+// Initializes the drive motors with specified hardware map names and sets their directions based on BotValues constants. Motors are configured for operation without encoders initially, and encoder positions are reset and updated.
+>MRILib.util.Bpad#get(String)
+M-522b4 @L158 | public void initIMU(HardwareMap hm)
+// Initializes the Control Hub's IMU using the default hardware map name ('imu') by calling an overloaded version.
+M-a5c68 @L169 | public void initIMU(HardwareMap hm, String name)
+// Initializes the Control Hub's IMU with a specified hardware map name and configures its orientation using REV Hub Orientation constants. The IMU's yaw angle is then reset to zero.
+>MRILib.util.Bpad#get(String)
+M-95797 @L190 | public void initOdo(HardwareMap hm)
+// Initializes the GoBilda Pinpoint Odometry Computer using the default hardware map name ('odo') by calling an overloaded version.
+M-bcb70 @L202 | public void initOdo(HardwareMap hm, String name)
+// Initializes the GoBilda Pinpoint Odometry Computer with a specified hardware map name, configuring offsets, encoder resolution, and directions. It then resets the odometry's position and IMU heading to zero.
+>MRILib.util.Bpad#get(String)
+M-29109 @L222 | public void update()
+// Updates the robot's state by reading new data from the odometry device, updating the current and last known positions, and reading the latest drive motor encoder values.
+M-2c3b8 @L235 | public void updateEncoders()
+// Updates the stored encoder positions for the drive train motors by saving the previous tick values and reading the current values from each motor.
+M-c332d @L254 | public DcMotorEx getFL()
+// Returns the front left drive motor instance.
+M-00ace @L256 | public DcMotorEx getFR()
+// Returns the front right drive motor instance.
+M-c46c4 @L258 | public DcMotorEx getBL()
+// Returns the back left drive motor instance.
+M-d776b @L260 | public DcMotorEx getBR()
+// Returns the back right drive motor instance.
+M-8a783 @L263 | public int getFLPos()
+// Returns the last read encoder position of the front left motor. Ensure updateEncoders() has been called for the latest value.
+M-8e142 @L265 | public int getFRPos()
+// Returns the last read encoder position of the front right motor. Ensure updateEncoders() has been called for the latest value.
+M-3fed8 @L267 | public int getBLPos()
+// Returns the last read encoder position of the back left motor. Ensure updateEncoders() has been called for the latest value.
+M-7484c @L269 | public int getBRPos()
+// Returns the last read encoder position of the back right motor. Ensure updateEncoders() has been called for the latest value.
+M-362db @L272 | public int getFLPosPrev()
+// Returns the encoder position of the front left motor from the previous updateEncoders() call.
+M-20404 @L274 | public int getFRPosPrev()
+// Returns the encoder position of the front right motor from the previous updateEncoders() call.
+M-a4afb @L276 | public int getBLPosPrev()
+// Returns the encoder position of the back left motor from the previous updateEncoders() call.
+M-f53f1 @L278 | public int getBRPosPrev()
+// Returns the encoder position of the back right motor from the previous updateEncoders() call.
+M-e3551 @L285 | public double getIMUHeading()
+// Gets the robot's current heading (yaw) from the IMU, negated to likely align with standard FTC coordinate systems (counter-clockwise positive).
+M-53c38 @L288 | public void resetIMUHeading()
+// Resets the IMU's yaw angle to zero based on the current orientation.
+M-f3db6 @L295 | public Pose2D getPosition()
+// Gets the robot's current position and heading as estimated by the odometry system, updated during the last call to update().
+M-2c23b @L304 | public Pose2D getLastPosition()
+// Gets the robot's position and heading from the previous update cycle, useful for calculating displacement or velocity.
+M-66b41 @L314 | private Pose2D getOdoPosition()
+// Gets the raw position directly from the GoBilda Pinpoint driver. This is a private method to encourage the use of the synchronized getPosition().
+M-e36dd @L324 | public double getX()
+// Gets the current estimated X-coordinate of the robot in inches, as reported by the odometry system.
+M-7ffe1 @L333 | public double getY()
+// Gets the current estimated Y-coordinate of the robot in inches, as reported by the odometry system.
+M-4a28e @L343 | public double getHeading()
+// Gets the current estimated heading of the robot in degrees, as reported by the odometry system.
+M-d3e0b @L351 | public synchronized double getVoltage()
+// Gets the current battery voltage reported by the first available voltage sensor.
+M-5af2d @L369 | public void setPosition(double x, double y, double heading)
+// Sets the robot's current position and heading in the odometry system using separate x, y, and heading values. Converts heading to radians for internal Pose2D representation.
+>#setPosition(Pose2D)
+M-c7df1 @L378 | public void setPosition(Pose2D pos)
+// Overrides the current position tracked by the GoBilda Pinpoint Odometry Computer with a new Pose2D. It then immediately updates the odometry and syncs the Bot's internal position variables.
+M-d3bf5 @L390 | public void setDirections()
+// Sets the direction of all four drive motors based on the LEFTDIR and RIGHTDIR constants defined in BotValues, ensuring consistent forward motion.
+M-2b938 @L402 | public void setMode(DcMotor.RunMode mode)
+// Sets the DcMotor.RunMode for all four drive motors simultaneously to the specified mode.
+M-f5995 @L414 | public void resetEncoders()
+// Resets the drive motor encoders to 0 while preserving their current RunMode. It also resets internal previous encoder position tracking and updates current positions.
+>#setMode(DcMotor.RunMode)
+M-41da8 @L437 | public void resetPrevEncoders()
+// Resets the stored previous encoder tick values for all drive motors to zero. This is an internal helper method called by resetEncoders().
+M-4d5f5 @L452 | public void enableBrakeMode(boolean enabled)
+// Enables or disables the 'brake' zero power behavior for all drive motors. When enabled, motors resist movement at zero power; when disabled, they coast.
+M-2ccb8 @L472 | public void driveXYW(double rx, double ry, double rw)
+// Drives the robot using robot-centric Cartesian coordinates (rx: forward/backward, ry: strafe left/right) and rotational velocity (rw). It calculates the required power for each Mecanum wheel, normalizes them to stay within [-1, 1], and applies voltage compensation.
+M-843d5 @L513 | public void driveFieldXYW(double fx, double fy, double fw)
+// Drives the robot using field-centric coordinates (fx: forward/backward relative to field, fy: strafe left/right relative to field) and robot-centric rotational velocity (fw). It rotates the field-relative movement vector based on the robot's current heading and then calls driveXYW to execute the movement.
+
+F-e4b8 | PivotArmController.java
+imports: MRILib.motion, org.firstinspires.ftc.robotcore.external.Telemetry, MRILib.BotValues, org.firstinspires.ftc.robotcore.external.navigation.AngleUnit, com.qualcomm.robotcore.util.ElapsedTime, com.qualcomm.robotcore.util.Range
+C-7020 | public class PivotArmController 
+// Controls the pivot arm of a robot, managing its position, velocity, and power through various modes. It incorporates feedforward control for gravity compensation and feedback control using a PID controller for precise movements. The controller also handles motor power scaling based on battery voltage and updates its internal state based on sensor readings.
+fields: MRILib.managers.PivotArmController.bot, MRILib.managers.PivotArmController.telemetry, MRILib.managers.PivotArmController.kG, MRILib.managers.PivotArmController.kG2, MRILib.managers.PivotArmController.currentSlidePosition, MRILib.managers.PivotArmController.currentSlideLength, MRILib.managers.PivotArmController.armPos, MRILib.managers.PivotArmController.g, MRILib.managers.PivotArmController.m_slide, MRILib.managers.PivotArmController.m_claw, MRILib.managers.PivotArmController.m_motor, MRILib.managers.PivotArmController.d_motor, MRILib.managers.PivotArmController.d_slide, MRILib.managers.PivotArmController.d_slideOffset, MRILib.managers.PivotArmController.m_total, MRILib.managers.PivotArmController.armCoM, MRILib.managers.PivotArmController.armMountOffset, MRILib.managers.PivotArmController.thetaOffset, MRILib.managers.PivotArmController.pivotMode, MRILib.managers.PivotArmController.inputPower, MRILib.managers.PivotArmController.positionPID, MRILib.managers.PivotArmController.targetTheta, MRILib.managers.PivotArmController.targetAngularVelocity, MRILib.managers.PivotArmController.currentArmTheta, MRILib.managers.PivotArmController.currentArmAngularVelocity, MRILib.managers.PivotArmController.previousArmTheta, MRILib.managers.PivotArmController.previousArmAngularVelocity, MRILib.managers.PivotArmController.running
+M-f0908 @L59 | public PivotArmController(ArmBotFF bot)
+// Constructs a PivotArmController instance, initializing it with an ArmBotFF object and obtaining telemetry.
+M-c8a70 @L66 | public void run()
+// Executes the main control loop for the pivot arm. It continuously updates the arm's state, calculates feedforward and feedback control outputs, determines the appropriate motor power based on the current pivot mode, and applies the calculated power to the motor. The loop runs asynchronously and is controlled by the 'running' flag.
+>~MRILib.motion.HeadingPID#update(double), ~MRILib.util.Bpad#update(Gamepad), ~MRILib.motion.PID#update(double), #setMotorPower(double)
+M-4a7e9 @L129 | public double setMotorPower(double power)
+// Applies the calculated power to the pivot motor, scaling it based on the current battery voltage to maintain consistent performance. It clips the final power value to a safe range (-0.9 to 1) before setting it on the motor.
+>MRILib.managers.ArmBotFF#setPivotPower(double)
+M-4b8f5 @L140 | private double calculateFeedForward()
+// Calculates the feedforward control output to compensate for gravity. It uses pre-defined constants and the current arm's angle and center of mass to estimate the gravitational torque, adjusting the output based on specific arm angle conditions.
+M-b5b18 @L149 | public synchronized double updateCurrentState(double armPos, double velocity, double slidePosition)
+// Updates the internal state of the pivot arm, including its current angular position, angular velocity, and slide position. It also recalculates the arm's center of mass based on the updated slide position. This method is synchronized to prevent race conditions.
+M-22ffa @L158 | public synchronized void updateCurrentState(double armPos, double velocity)
+// Updates the current arm position and velocity, defaulting the slide position to 0. This is a convenience overload for when the slide position is not relevant.
+M-e23ce @L162 | public synchronized void setPivotMode(PivotMode mode)
+// Sets the operational mode of the pivot arm controller. The mode determines how the controller behaves, such as holding a position, moving to a target position, or responding to direct power input. This method is synchronized.
+M-8d903 @L165 | public synchronized void setInputPower(double input)
+// Sets the direct input power for the 'RUN_WITH_POWER' pivot mode. This allows external control to directly set the motor power. This method is synchronized.
+M-48bf2 @L169 | public void setTargetTheta(double theta, AngleUnit unit)
+// Sets the target angular position for the pivot arm, accepting the target angle in either degrees or radians. It then updates the PID controller's target.
+>MRILib.motion.PID#setTarget(double)
+M-82127 @L173 | public void setTargetTheta(double theta)
+// Sets the target angular position for the pivot arm, defaulting the angle unit to degrees. This is an overload for convenience.
+M-30d5a @L177 | public void setThetaOffset(double theta)
+// Sets an offset to be applied to the current arm angle readings, allowing for calibration or adjustment of the arm's zero position. The offset is expected in degrees.
+M-33e70 @L181 | public void stop()
+// Stops the main control loop by setting the 'running' flag to false, effectively halting the pivot arm's operation.
+C-6dde | public enum PivotMode {HOLD_POSITION, RUN_TO_POSITION, RUN_WITH_POWER}
+// An enumeration defining different modes for controlling a pivot mechanism. The modes specify whether the pivot should maintain its current position, move to a target position, or move with a specified power level.
+
+
+F-9932 | HeadingPID.java
+imports: MRILib.util
+C-4614 | public class HeadingPID extends PID 
+// A PID controller specifically designed for angular or heading control. It extends the base PID class and modifies the update method to correctly calculate angular error using Mathf.angleWrap, ensuring the shortest angular distance is always considered. It also incorporates standard PID components like integral anti-windup and derivative calculation, adapted for angular inputs.
+
+M-73505 @L30 | public HeadingPID(double p, double i, double d)
+// Constructs a new HeadingPID controller, initializing the proportional (kP), integral (kI), and derivative (kD) gains by calling the superclass PID constructor.
+M-50ed2 @L45 | public double update(double current)
+// Updates the PID controller for angular/heading control. It calculates the shortest angular error using Mathf.angleWrap, then computes the integral and derivative terms. The integral term includes anti-windup by limiting accumulation based on error magnitude and clamping the total sum. The derivative term is calculated based on the change in wrapped error over time. Finally, it combines these terms to produce a control output and updates the internal state (lastTime, lastError) for the next iteration.
+>MRILib.util.Mathf#angleWrap(double)
+
+F-cc72 | PID.java
+imports: com.qualcomm.robotcore.util.ElapsedTime
+C-c776 | public class PID 
+// Implements a Proportional-Integral-Derivative (PID) controller. This class calculates a control output based on the error between a target value and a measured current value. It includes features for integral anti-windup and derivative calculation. The controller maintains internal state for accumulated error, last error, and timestamps to compute the control signal over time. It is designed for use in control systems where continuous feedback and adjustment are required.
+fields: MRILib.motion.PID.kP, MRILib.motion.PID.kI, MRILib.motion.PID.kD, MRILib.motion.PID.iLimit, MRILib.motion.PID.targetVal, MRILib.motion.PID.errorSum, MRILib.motion.PID.errorSumTotal, MRILib.motion.PID.lastTime, MRILib.motion.PID.lastError, MRILib.motion.PID.timer
+M-feb66 @L64 | public PID(double p, double i, double d)
+// Constructs a PID controller instance with specified proportional (p), integral (i), and derivative (d) gains. Initializes the internal timer and starts it to ensure accurate delta time calculation from the first update.
+M-bc81a @L80 | public void start()
+// Resets the internal state of the PID controller. Clears the accumulated integral error sum, the last calculated error, and the last update timestamp. Resets the internal timer to zero.
+M-11980 @L95 | public double update(double current)
+// Calculates and returns the PID control output based on the current measured value. It computes the error, delta time, integral term (with anti-windup by clamping errorSum and only accumulating if error is within iLimit), derivative term, and combines them using the configured gains (kP, kI, kD). Updates internal state (lastTime, lastError) for the next iteration.
+M-58384 @L144 | public double update(double current1, double current2)
+// Selects the input value (current1 or current2) that is closer to the target value and then calls the primary `update(double current)` method with the selected value. Returns the calculated PID control output.
+>#update(double)
+M-cbdda @L160 | public void setTarget(double target)
+// Sets the target value (setpoint) for the PID controller. The controller will now aim to minimize the error between this new target and the measured values.
+M-4c483 @L173 | public void setILimit(double limit)
+// Sets the integral limit (iLimit). The integral term will only accumulate when the absolute error is less than this specified limit. Ensures the limit is non-negative by taking its absolute value.
+M-68e1d @L184 | public void setIntegralSumLimit(double limit)
+// Sets the maximum absolute value that the integral error sum (errorSum) is allowed to reach. This acts as a clamping mechanism to prevent integral windup. Ensures the limit is non-negative by taking its absolute value.
+
+F-d28d | PIDController.java
+imports: com.qualcomm.robotcore.util.ElapsedTime, org.firstinspires.ftc.robotcore.external.navigation.AngleUnit, org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit, org.firstinspires.ftc.robotcore.external.navigation.Pose2D, com.qualcomm.robotcore.util.Range, java.util.function.Supplier, org.firstinspires.ftc.robotcore.external.Telemetry, MRILib.managers
+C-b45a | public class PIDController 
+// Manages PID controllers for autonomous robot movement, handling X, Y, and rotational control in a field-centric manner. It integrates with a Bot hardware interface to read robot pose and send drive commands, allowing for dynamic speed limits and target setting.
+fields: MRILib.motion.PIDController.bot, MRILib.motion.PIDController.telemetry, MRILib.motion.PIDController.xPID, MRILib.motion.PIDController.yPID, MRILib.motion.PIDController.thetaPID, MRILib.motion.PIDController.targetX, MRILib.motion.PIDController.targetY, MRILib.motion.PIDController.targetRadians, MRILib.motion.PIDController.maxAngSpeed, MRILib.motion.PIDController.maxSpeed, MRILib.motion.PIDController.POWER_SCALE, MRILib.motion.PIDController.timer, MRILib.motion.PIDController.nextState
+M-71db6 @L76 | public PIDController(Bot bot, Telemetry telemetry)
+// Constructs a PIDController, initializing the maxSpeed supplier to return 0.5 and storing references to the provided Bot and Telemetry objects.
+M-e3bd8 @L91 | public void setPID(PID x, PID y)
+// Assigns PID controller instances for the X and Y axes of movement.
+M-a4bc3 @L103 | public void setTurnPID(PID theta)
+// Assigns a PID controller instance for rotational (heading) control.
+M-bf709 @L112 | public void start()
+// Initializes the PID controllers by resetting their internal states and setting the target for the rotational PID based on the last `moveTo` call.
+>MRILib.motion.PID#setTarget(double)
+M-fb98e @L133 | public void update()
+// Updates the PID controllers based on the robot's current pose and target values, then commands the robot to drive using field-centric control. It reads current position, calculates PID outputs for X, Y, and Theta, applies dynamic speed limits, and sends the resulting scaled drive commands to the Bot.
+>MRILib.util.Bpad#get(String)
+M-457d3 @L208 | public void moveTo(double x, double y, double degrees)
+// Sets the target position and heading for the robot. Updates the target values for the X, Y, and Theta PID controllers, converting the input degrees to radians for the heading target.
+>MRILib.motion.PID#setTarget(double)
+M-9efbe @L226 | public void setMaxSpeed(double s)
+// Sets a constant maximum translational speed limit for the robot, ensuring the value is clipped between 0.0 and 1.0.
+M-44023 @L236 | public void setMaxAngSpeed(double s)
+// Sets a constant maximum angular (rotational) speed limit for the robot, ensuring the value is clipped between 0.0 and 1.0.
+M-8deb8 @L248 | public double getTargetX()
+// Retrieves the currently set target X-coordinate.
+M-53950 @L256 | public double getTargetY()
+// Retrieves the currently set target Y-coordinate.
+M-50ae0 @L264 | public double getTargetRadians()
+// Retrieves the currently set target heading in radians.
+M-04403 @L274 | public double getTargetDegrees()
+// Retrieves the currently set target heading in degrees by converting the internal radian value.
+M-900d7 @L284 | public double getCurrentDegrees()
+// Retrieves the robot's current heading in degrees from the Bot's odometry, potentially applying a negation based on convention.
+M-5f767 @L295 | public double getCurrentRadians()
+// Retrieves the robot's current heading in radians from the Bot's odometry, converting from degrees and potentially applying a negation based on convention.

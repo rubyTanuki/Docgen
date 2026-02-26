@@ -1,10 +1,11 @@
-from Languages.Java import JavaFile
-from llm_client import GeminiClient
 import asyncio
 import time
 import os
 import json
-from toast import toast
+
+from toaster.core import toast
+from toaster.languages.java import JavaFile
+from toaster.llm import GeminiClient
 
 java = b"""
 package MRILib.util;

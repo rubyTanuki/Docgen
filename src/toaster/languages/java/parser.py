@@ -1,4 +1,4 @@
-from Languages.Agnostic import BaseParser
+from toaster.core import BaseParser
 
 class JavaParser(BaseParser):
     def __init__(self, project_dir:str, llm=None):

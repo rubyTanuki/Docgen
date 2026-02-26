@@ -6,10 +6,9 @@ import time
 import json
 from pathlib import Path
 
-from llm_client import GeminiClient
-from member_registry import MemberRegistry
-from Languages.Java import JavaParser
-from toast import toast
+from toaster.llm import GeminiClient
+from toaster.core import MemberRegistry, toast
+from toaster.languages.java import JavaParser
 
 
 def main():
