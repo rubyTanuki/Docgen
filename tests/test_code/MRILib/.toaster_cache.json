@@ -1,98 +1,95 @@
 {
     "classes": {
         "MRILib.BotValues": {
-            "description": "A utility class for storing and defining various robot-specific hardware constants and configurations, including motor directions, wheel dimensions, and encoder tick calculations for both drive motors and an arm mechanism. It centralizes values such as ticks per revolution, gear ratios, wheel diameter, and zero power behaviors, facilitating consistent robot behavior and easier adjustments."
+            "description": "A utility class for storing and defining various robot-specific motor directions, wheel constants, and calculated values. It centralizes configuration parameters such as motor directions, wheel diameter, gear ratios, and tick counts per revolution, along with zero power behaviors for motors. This class is essential for consistent and configurable robot behavior."
         },
         "A_TeleOp": {
-            "description": "TeleOp mode for controlling the ArmBotFF robot, featuring field-centric driving with joystick control and trigger-based speed adjustment. It also integrates an ArmFSM for managing the robot's arm state and provides telemetry for robot position, heading, and arm state."
+            "description": "TeleOp mode for controlling the ArmBotFF robot, featuring field-centric driving with joystick inputs and trigger-based speed control. It also integrates an ArmFSM for managing the robot's arm state and provides telemetry for robot position, heading, and arm state."
         },
         "MRILib.opmodes.AutonExample": {
-            "description": "This class represents an autonomous robot program for FTC (FIRST Tech Challenge). It orchestrates the robot's movement and actions during the autonomous period, including initializing hardware, setting up PID controllers for precise movement, and executing a sequence of predefined paths to interact with game elements like buckets and ground samples. It utilizes a state machine for driving (`DriveFSM`) and arm control (`ArmFSM`), and integrates with hardware components through a `Bot` object. The program also includes telemetry for debugging and status updates."
+            "description": "This class represents an autonomous robot program for a FTC competition. It utilizes a 'Bot' object for hardware interaction, a 'PIDController' for precise movement, and a 'DriveFSM' (Drive State Machine) to manage autonomous routines. The program defines target positions for a 'bucket' and executes a sequence of movements and actions, including moving the arm to specific states (e.g., 'ARM_UP', 'DROP', 'ARM_PICKUP'), picking up samples, and dropping them. It also includes commented-out code for AprilTag localization and telemetry updates for driver feedback."
         },
         "MRILib.opmodes.ServoZero": {
-            "description": "TeleOp class for controlling servos with a gamepad. It allows selection of individual servos using the D-pad and adjustment of their positions using the 'A' and 'Y' buttons. Trigger buttons are used to set servo positions, either individually or all at once. Telemetry displays the current target position for each servo, indicating the selected servo with a '>'."
+            "description": "TeleOp OpMode for controlling multiple servos on a robot. Allows selection of individual servos using the D-pad and adjustment of their positions using the 'A' and 'Y' buttons. Servo positions are normalized between 0 and 1. Trigger buttons activate servo movements, with the left trigger moving all servos and the right trigger moving the currently selected servo. Telemetry displays the current target position for each servo, indicating the selected servo with a '>'."
         },
         "MRILib.util.Bpad": {
-            "description": "Represents a gamepad's state, including analog stick positions, trigger values, and button states. It tracks the current and previous states of various inputs to detect changes, such as button presses and stick movements."
+            "description": "Represents a gamepad's state, including analog stick positions, trigger values, and button states. It tracks the current and previous states of various inputs to detect changes, such as button presses and stick movements, and provides a mechanism to query the state of individual buttons."
         },
         "MRILib.util.Mathf": {
-            "description": "Provides mathematical utility functions, including angle wrapping and constants like TAU."
+            "description": "Provides utility methods for mathematical operations, specifically focusing on angle manipulation. It includes constants like TAU (2 * PI) and methods for wrapping angles to a standard range."
         },
         "MRILib.statemachine.BotState": {
-            "description": "Represents an abstract state within a Finite State Machine (FSM). It defines the basic structure and lifecycle methods (start, update, end) that subclasses must implement to define specific state behaviors. Includes a name for identification and debugging."
+            "description": "Represents an abstract state within a Finite State Machine (FSM). It defines the basic structure for states, including a name for identification and lifecycle methods (start, update, end) that can be overridden by concrete subclasses to implement state-specific behavior. The class also provides default implementations for these methods and a toString method that returns the state's name."
         },
         "MRILib.statemachine.ArmFSM": {
-            "description": "Manages the state machine for a robot arm, handling autonomous and tele-operated modes. It orchestrates arm movements and actions based on defined states, transitions, and conditional logic, interacting with the ArmBotEasy hardware manager and optionally with gamepads for control."
+            "description": "Manages the state machine for a robot arm, handling autonomous and tele-operated modes. It orchestrates arm movements and actions through distinct states, allowing for complex behaviors to be defined and executed sequentially or conditionally. The FSM supports transitions between states, one-time conditional actions, and integration with robot hardware via the ArmBotEasy interface."
         },
         "MRILib.statemachine.ArmState": {
-            "description": "Represents a state within an Arm Finite State Machine (FSM). It manages transitions to other states based on defined conditions and provides static methods for managing all initialized ArmState instances, including setting a default fallback state. It inherits basic state behavior from BotState."
+            "description": "Represents a state within an Arm Finite State Machine (FSM). It manages transitions to other states based on defined conditions and provides static methods for managing and retrieving state instances. It extends BotState, inheriting basic state functionality."
         },
         "MRILib.statemachine.Conditional": {
-            "description": "Holds a condition and a command, allowing the command to be executed when the condition evaluates to true. It acts as a container for reactive or event-driven logic."
+            "description": "Holds a condition and a command, allowing for the execution of the command when the condition is met. It acts as a container for reactive logic."
         },
         "MRILib.statemachine.DriveFSM": {
-            "description": "Manages a sequence of robot movement and action states, allowing for autonomous routines. It orchestrates transitions between states, executes state-specific logic (start, update, end), and handles movement commands with optional parallel actions and timeouts. The FSM maintains the robot's current position and heading, and can hold a target pose."
+            "description": "Manages a sequence of robot movement and action states, allowing for autonomous routines. It orchestrates transitions between states, executes state-specific logic (start, update, end), and handles movement commands with optional parallel actions and timeouts. The FSM maintains the robot's current position and heading, and can hold a specific pose."
         },
         "MRILib.managers.ArmBotEasy": {
-            "description": "Represents an arm subsystem for a robot, controlling slide and pivot motors, along with claw servos. It extends a base 'Bot' class, likely handling drive train functionalities. This class provides methods for initializing, controlling, and querying the state of the arm and claw mechanisms, including setting motor modes, resetting encoders, and moving motors to target positions. It also includes getters for hardware components and their current states."
+            "description": "Represents an arm subsystem for a robot, controlling slide and pivot motors, along with claw servos. It extends a base 'Bot' class, likely handling drivetrain and other common robot functionalities. This class provides methods for initializing, controlling, and querying the state of the arm and claw mechanisms."
         },
         "MRILib.managers.ArmBotFF": {
-            "description": "Represents an arm-based robot with advanced control, including a dedicated thread for a PivotArmController. It manages linear slide and pivot motors, along with multiple servos for claw manipulation. The class handles motor initialization, encoder management, and provides methods for controlling arm and claw movements, as well as safely stopping the background control thread."
+            "description": "Represents an arm-based robot with advanced control, including feedforward mechanisms for precise movement. It manages linear slide and pivot motors, along with multiple servos for claw manipulation. The class utilizes a dedicated thread for its PivotArmController to handle complex arm movements concurrently, ensuring smooth and responsive operation. It also tracks encoder positions and velocities for both arm components and provides methods for mode setting, encoder resetting, and safe thread termination."
         },
         "MRILib.managers.RunnableStoppable": {
-            "description": "An interface that extends Runnable and adds methods for stopping the execution and updating the current state (position and velocity). It represents a task that can be run, stopped, and whose internal state can be modified."
+            "description": "An interface that extends Runnable and adds methods for stopping the execution and updating the current state (position and velocity). This interface is suitable for tasks that require both continuous operation and the ability to be halted and have their internal state modified."
         },
         "MRILib.managers.Bot": {
-            "description": "Represents a robot chassis with mecanum drive, odometry, and IMU. It manages drive motors, odometry sensors (GoBilda Pinpoint), and an IMU for position and orientation tracking. Provides methods for initialization, updating robot state, controlling movement (robot-centric and field-centric), and accessing sensor data like position, heading, and battery voltage."
+            "description": "Represents the robot's chassis and drivetrain, encapsulating motors, odometry, IMU, and voltage sensing. It provides methods for initialization, state updates, and controlling robot movement using both robot-centric and field-centric drive commands. This class acts as a central hub for all drivetrain-related hardware and odometry data."
         },
         "MRILib.managers.PivotArmController": {
-            "description": "Controls the pivot arm of a robot, managing its position, velocity, and power through various modes. It incorporates feedforward control for gravity compensation and feedback control using a PID controller for precise movements. The controller also handles motor power scaling based on battery voltage and updates its internal state based on sensor readings."
-        },
-        "MRILib.managers.PivotArmController.PivotMode": {
-            "description": "An enumeration defining different modes for controlling a pivot mechanism. The modes specify whether the pivot should maintain its current position, move to a target position, or move with a specified power level."
+            "description": "Controls the pivot arm of a robot, managing its position, velocity, and power using a combination of feedforward and feedback control. It supports different operational modes like holding position, running to a target, or running with direct power input. The controller also calculates and compensates for gravitational forces acting on the arm."
         },
         "MRILib.motion.HeadingPID": {
-            "description": "A PID controller specifically designed for angular or heading control. It extends the base PID class and modifies the update method to correctly calculate angular error using Mathf.angleWrap, ensuring the shortest angular distance is always considered. It also incorporates standard PID components like integral anti-windup and derivative calculation, adapted for angular inputs."
+            "description": "A PID controller specifically designed for angular or heading control. It extends the base PID class and modifies the update method to correctly calculate angular error using Mathf.angleWrap, ensuring the shortest angular distance is used. It also incorporates standard PID components like integral anti-windup and derivative calculation, adapted for angular inputs."
         },
         "MRILib.motion.PID": {
             "description": "Implements a Proportional-Integral-Derivative (PID) controller. This class calculates a control output based on the error between a target value and a measured current value. It includes features for integral anti-windup and derivative calculation. The controller maintains internal state for accumulated error, last error, and timestamps to compute the control signal over time. It is designed for use in control systems where continuous feedback and adjustment are required."
         },
         "MRILib.motion.PIDController": {
-            "description": "Manages PID controllers for autonomous robot movement, handling X, Y, and rotational control in a field-centric manner. It integrates with a Bot hardware interface to read robot pose and send drive commands, allowing for dynamic speed limits and target setting."
+            "description": "Manages PID controllers for a robot's field-centric movement, including X, Y translation and rotational (theta) control. It interfaces with a Bot object for hardware access (odometry, motors) and Telemetry for debugging. The controller allows dynamic adjustment of maximum translational and rotational speeds and provides methods to set target positions and update movement commands based on current robot pose."
         }
     },
     "methods": {
         "A_TeleOp#runOpMode()": {
             "hash": "8721562a",
-            "description": "Initializes the robot hardware and the ArmFSM, then enters the main teleoperation loop. In the loop, it continuously updates the robot's state, processes gamepad inputs for driving and arm control, resets the robot's heading if the start button is pressed, and displays telemetry data including runtime, position, heading, and current arm state. The loop continues as long as the op mode is active, and upon termination, it stops the robot's multi-threaded operations."
+            "description": "Initializes the robot hardware, including the ArmBotFF and ArmFSM. Configures the motors for running without encoders and enables brake mode. Sets up the ArmFSM with the robot instance and gamepad inputs. This method is called once at the beginning of the OpMode."
         },
         "A_TeleOp#init()": {
             "hash": "865f0fa7",
-            "description": "Initializes the ArmBotFF robot by creating an instance, setting its motor run mode to RUN_WITHOUT_ENCODER, and enabling brake mode. It also initializes the ArmFSM, passing the robot instance and gamepad controllers."
+            "description": "Executes the main teleoperation loop. Initializes the robot and ArmFSM, then starts multi-threaded operations for the bot. Inside the loop, it continuously updates the bot and arm state machine, processes gamepad inputs for driving (field-centric XYW control with speed scaling via left trigger) and arm state changes (setting to 'IDLE' on 'X' button press). It also resets the robot's heading if the 'start' button is pressed or the IMU yaw if 'dpad_up' is pressed. Telemetry data including runtime, position (X, Y, Heading), and the current arm state is displayed. The loop continues as long as the OpMode is active, and upon termination, it stops the bot's multi-threaded operations."
         },
         "MRILib.opmodes.AutonExample#runOpMode()": {
             "hash": "0ee9a361",
-            "description": "Initializes the robot's hardware, including motors and sensors, and sets up PID controllers for autonomous navigation. It then executes a predefined sequence of movements and actions, such as moving to specific locations, interacting with game elements (dropping preloads, picking up samples), and updating the robot's state. The method continuously updates the robot's position and telemetry while the autonomous mode is active. It also includes commented-out sections for AprilTag localization and specific bot initializations."
+            "description": "Initializes the robot hardware, sets up PID controllers for movement, and defines the autonomous routine. The routine includes moving to a starting position, interacting with a 'bucket' for sample collection and dropping, and executing timed sequences. It continuously updates the robot's state, movement, and arm status while the op mode is active, and displays telemetry data including target and current positions, and heading. Includes commented-out AprilTag localization logic."
         },
         "MRILib.opmodes.ServoZero#init()": {
             "hash": "7c5add47",
-            "description": "Initializes the OpMode by mapping servo hardware components ('elbow', 'wrist', 'roll', 'claw') and setting up arrays to store servo objects and their target positions. The 'gpad' variable is assumed to be initialized elsewhere."
+            "description": "Initializes the OpMode by mapping servo hardware components (elbow, wrist, roll, claw) and creating arrays to store servo objects and their target positions. The position list is initialized to a size of 4, corresponding to the four servos."
         },
         "MRILib.opmodes.ServoZero#loop()": {
             "hash": "6c57eff5",
-            "description": "Continuously runs during the OpMode. It handles servo selection using the D-pad (up/down) and adjusts the target position of the selected servo using 'A' (increment) and 'Y' (decrement) buttons. It wraps target positions to stay within the 0.0 to 1.0 range. All servos' positions are updated when the left trigger is pressed, and the selected servo's position is updated when the right trigger is pressed. Telemetry data is updated to show the current target position for each servo and indicate the currently selected servo."
+            "description": "Continuously runs during the OpMode. It handles servo selection using the D-pad (up/down) and adjusts the target position of the selected servo using the 'A' (increment) and 'Y' (decrement) buttons. Servo positions are wrapped around between 0 and 1. The left trigger moves all servos to their target positions, while the right trigger moves only the selected servo. Telemetry data is updated to display the current target position for each servo and indicate the currently selected servo."
         },
         "MRILib.util.Bpad#get(String)": {
             "hash": "94bfbfca",
-            "description": "Retrieves the current boolean state of a specified button. Returns false if the button is not tracked or not pressed."
+            "description": "Retrieves the boolean state of a specified button. Returns true if the button is currently pressed or has been pressed since the last update, and false otherwise. If the button state is not tracked, it defaults to false."
         },
         "MRILib.util.Bpad#update(Gamepad)": {
             "hash": "91ab5b7c",
-            "description": "Updates the gamepad's state based on the input from a Gamepad object. It copies analog stick and trigger values, and tracks the current and previous states of all buttons to detect double-presses (db_ prefix) and changes in state."
+            "description": "Updates the gamepad's state based on the input from a Gamepad object. It copies analog stick and trigger values, and tracks the current and previous states of all buttons and directional inputs to detect changes. Specifically, it records the current state of each button/input, its previous state, and a 'db' (digital button) state indicating a press that occurred in the current update cycle but not the previous one."
         },
         "MRILib.util.Mathf#angleWrap(double)": {
             "hash": "0e139e85",
-            "description": "Normalizes an angle in radians to the range [-PI, PI]. It first applies the modulo TAU operation to bring the angle within a 2*PI range, then ensures it's positive, and finally adjusts it if it exceeds PI by subtracting TAU."
+            "description": "Normalizes a given radian angle to be within the range of -PI to PI. It first applies the modulo operator with TAU to bring the angle within a 0 to TAU range, then adjusts it to ensure it falls between -PI and PI."
         },
         "MRILib.statemachine.BotState#BotState(String)": {
             "hash": "4ac4692c",
@@ -104,95 +101,95 @@
         },
         "MRILib.statemachine.BotState#start()": {
             "hash": "44136fa3",
-            "description": "Executes initialization logic when the state becomes active in the FSM. Subclasses should override this for state-specific setup."
+            "description": "Executes initialization logic when the state becomes active in the FSM. Default implementation does nothing."
         },
         "MRILib.statemachine.BotState#update()": {
             "hash": "44136fa3",
-            "description": "Executes the primary logic of the state during the FSM's update loop while this state is active. Subclasses should override this to implement state behavior and transition conditions."
+            "description": "Executes the main logic of the state repeatedly while it is active in the FSM, including checking for transition conditions. Default implementation does nothing."
         },
         "MRILib.statemachine.BotState#end()": {
             "hash": "44136fa3",
-            "description": "Executes cleanup logic when the state is about to be deactivated. Subclasses should override this for state-specific teardown."
+            "description": "Executes cleanup logic when the state is about to be deactivated before transitioning to another state. Default implementation does nothing."
         },
         "MRILib.statemachine.BotState#toString()": {
             "hash": "9403f937",
-            "description": "Returns the name of the state, used for identification and debugging."
+            "description": "Returns the name of the state, used for logging and debugging."
         },
         "MRILib.statemachine.ArmFSM#ArmFSM(ArmBotEasy)": {
             "hash": "1e259f0c",
-            "description": "Initializes the ArmFSM for autonomous operation, setting the mode to autonomous, storing the ArmBotEasy instance, and initializing states, starting from the 'DEFAULT' state."
+            "description": "Initializes the ArmFSM for autonomous operation. Sets the autonomous flag to true, assigns the provided ArmBotEasy instance, and calls the internal initialization method. It then sets the initial state to 'DEFAULT'."
         },
         "MRILib.statemachine.ArmFSM#ArmFSM(ArmBotEasy,Gamepad,Gamepad)": {
             "hash": "70f1e9f1",
-            "description": "Initializes the ArmFSM for tele-operated control, setting the mode to non-autonomous, storing the ArmBotEasy instance and gamepad references, initializing states, and starting from the 'DEFAULT' state."
+            "description": "Initializes the ArmFSM for tele-operated control. Sets the autonomous flag to false, assigns the provided ArmBotEasy instance, and stores references to the two Gamepad objects. It then calls the internal initialization method and sets the initial state to 'DEFAULT'."
         },
         "MRILib.statemachine.ArmFSM#start()": {
             "hash": "abb1ae51",
-            "description": "Executes the 'start' logic of the currently active arm state, which is typically run once upon entering the state."
+            "description": "Executes the 'start' logic of the currently active arm state. This method is intended to be called once when a state is first entered."
         },
         "MRILib.statemachine.ArmFSM#update()": {
             "hash": "507f6ae0",
-            "description": "Executes the main update loop for the FSM. It first checks and executes any one-time conditional actions and then calls the 'update' logic of the current state."
+            "description": "Executes the main update loop for the FSM. It first checks and executes any one-time conditional actions and then calls the 'update' logic of the current arm state."
         },
         "MRILib.statemachine.ArmFSM#end()": {
             "hash": "3c389052",
-            "description": "Executes the 'end' logic of the currently active arm state, which is typically run once when exiting the state or transitioning to another."
+            "description": "Executes the 'end' logic of the currently active arm state. This method is intended to be called once when a state is exited, typically before transitioning to another state."
         },
         "MRILib.statemachine.ArmFSM#setState(String)": {
             "hash": "40a62949",
-            "description": "Transitions the FSM to a new state specified by its name. It retrieves the ArmState object by name and then calls the overloaded setState method."
+            "description": "Sets the current state of the FSM to a new state identified by its name. It retrieves the ArmState object using the provided name and then calls the overloaded setState method."
         },
         "MRILib.statemachine.ArmFSM#setState(ArmState)": {
             "hash": "ae8a8e19",
-            "description": "Transitions the FSM to a new state represented by the provided ArmState object. If the new state is different from the current state, it ends the current state, updates the current state, and starts the new state."
+            "description": "Transitions the FSM to a new specified ArmState. If the new state is different from the current state, it calls the 'end' method of the current state, updates the current state, and then calls the 'start' method of the new state."
         },
         "MRILib.statemachine.ArmFSM#transition()": {
             "hash": "58c40077",
-            "description": "Evaluates the transition conditions defined within the current state. If any transition condition evaluates to true, it calls setState to transition to the corresponding target state and breaks the loop."
+            "description": "Evaluates the transition conditions defined within the current arm state. It iterates through the state's transitions and calls setState to transition to the first state whose condition evaluates to true."
         },
         "MRILib.statemachine.ArmFSM#addConditional(Supplier<Boolean>,Runnable)": {
             "hash": "d108c146",
-            "description": "Adds a one-time conditional action to a list. This action consists of a condition (a Supplier returning a boolean) and a command (a Runnable to execute). The command is executed only once when its condition first becomes true."
+            "description": "Adds a one-time conditional action to a list. This action consists of a condition (a Supplier that returns a boolean) and a command (a Runnable). The command will be executed once when the condition first becomes true."
         },
         "MRILib.statemachine.ArmFSM#checkConditionals()": {
             "hash": "000881d2",
-            "description": "Iterates through a list of conditional actions, checking if their conditions are met. If a condition is true, it executes the associated command and removes the conditional from the list to prevent re-execution. It handles potential exceptions during condition evaluation and command execution, and iterates backwards for safe removal."
+            "description": "Iterates through a list of conditional actions, checking if their conditions are met. If a condition is true, it executes the associated command and removes the conditional from the list to prevent re-execution. Handles potential exceptions during condition evaluation or command execution."
         },
         "MRILib.statemachine.ArmFSM#init()": {
             "hash": "d6efe397",
-            "description": "Initializes all the necessary ArmState objects for the FSM. New ArmState instances are created and automatically registered, defining their start, update, and end logic, as well as their transitions."
+            "description": "Initializes all the necessary ArmState objects for the FSM. New ArmState instances are created and automatically registered. This method defines the states, their start, update, and end logic, and their initial transition conditions."
         },
         "MRILib.statemachine.ArmState#getState(String)": {
             "hash": "69067e8f",
-            "description": "Retrieves a previously initialized ArmState by its name from a static map. If the specified state is not found, it returns the state registered as the default fallback."
+            "description": "Retrieves a previously initialized ArmState by its name from a static map. If the specified state is not found, it returns the state registered as the \"DEFAULT\" fallback."
         },
         "MRILib.statemachine.ArmState#clearSavedStates()": {
             "hash": "8ed1fe4e",
-            "description": "Clears all statically stored ArmState instances from the internal HashMap, freeing up memory and resetting the FSM's state management."
+            "description": "Clears all statically stored ArmState instances from the internal HashMap, effectively resetting the state management."
         },
         "MRILib.statemachine.ArmState#ArmState()": {
             "hash": "1107fb26",
-            "description": "Initializes a new ArmState with the name \"DEFAULT\" and registers it in the static map of states. Calls the superclass constructor."
+            "description": "Initializes a new ArmState with the name \"DEFAULT\" and registers it in the static states map."
         },
         "MRILib.statemachine.ArmState#ArmState(String)": {
             "hash": "fddd7c4f",
-            "description": "Initializes a new ArmState with a specified name and registers it in the static map of states. Calls the superclass constructor with the provided name."
+            "description": "Initializes a new ArmState with a specified name and registers it in the static states map."
         },
         "MRILib.statemachine.ArmState#ArmState(String,boolean)": {
             "hash": "09d675bf",
-            "description": "Initializes a new ArmState with a specified name and optionally registers it in the static map of states based on the 'save' flag. Calls the superclass constructor with the provided name."
+            "description": "Initializes a new ArmState with a specified name, optionally registering it in the static states map based on the 'save' flag."
         },
         "MRILib.statemachine.ArmState#setDefault(String)": {
             "hash": "afd10a75",
-            "description": "Sets the fallback default state for the `getState` method. It updates the static map to point the \"DEFAULT\" key to an existing state identified by `stateName`, if that state exists."
+            "description": "Sets an existing state, identified by 'stateName', as the new default fallback state. If 'stateName' does not correspond to an existing state, the default remains unchanged."
         },
         "MRILib.statemachine.ArmState#setTransition(String,boolean)": {
             "hash": "49ac1ed7",
-            "description": "Defines or updates a transition condition from the current state to a target state. Stores the target state name and a boolean indicating whether the transition condition is met."
+            "description": "Defines or updates a transition condition from the current state to a target state. The 'condition' parameter determines whether the transition should occur (true) or not (false)."
         },
         "MRILib.statemachine.ArmState#getTransitions()": {
             "hash": "21f89dfc",
-            "description": "Returns the internal HashMap containing all defined transition conditions for the current state. Each entry maps a target state name to a boolean value indicating if the transition condition is met."
+            "description": "Returns the HashMap containing all defined transition conditions for this state, mapping target state names to their boolean evaluation results."
         },
         "MRILib.statemachine.Conditional#Conditional(Supplier<Boolean>,Runnable)": {
             "hash": "0f34ebcb",
@@ -200,7 +197,7 @@
         },
         "MRILib.statemachine.DriveFSM#DriveFSM(Bot,PIDController)": {
             "hash": "1504e510",
-            "description": "Initializes the DriveFSM with a Bot instance for robot control and a PIDController for movement."
+            "description": "Initializes the DriveFSM with the robot instance and a PID controller for movement."
         },
         "MRILib.statemachine.DriveFSM#start()": {
             "hash": "3bf89c2a",
@@ -208,11 +205,11 @@
         },
         "MRILib.statemachine.DriveFSM#update()": {
             "hash": "d3cf1da4",
-            "description": "Executes the continuous update logic for the current state."
+            "description": "Executes the continuous update logic for the current state, typically called every loop."
         },
         "MRILib.statemachine.DriveFSM#end()": {
             "hash": "58bb22f9",
-            "description": "Executes the termination logic for the current state."
+            "description": "Executes the termination logic for the current state, called before transitioning to the next state."
         },
         "MRILib.statemachine.DriveFSM#nextState()": {
             "hash": "cb25e7cd",
@@ -220,7 +217,7 @@
         },
         "MRILib.statemachine.DriveFSM#moveTo(double,double,double,Runnable,double)": {
             "hash": "a06cf2b3",
-            "description": "Adds a new state to the sequence that moves the robot to a target pose (x, y, theta). Optionally runs a parallel command and has a specified timeout. It sets the PID controller's target, saves the target pose for holding, and starts a timer. The update logic continuously updates the PID controller, checks for proximity to the target pose, and transitions to the next state if the target is reached or the timeout occurs."
+            "description": "Adds a new state to the sequence that moves the robot to a target pose (x, y, theta). Optionally executes a parallel command and enforces a timeout. This method also updates the PID controller's target and stores the current pose as the last known position for holding."
         },
         "MRILib.statemachine.DriveFSM#moveTo(double,double,double,Runnable)": {
             "hash": "7949d4a6",
@@ -236,11 +233,11 @@
         },
         "MRILib.statemachine.DriveFSM#moveTo(Pose2D)": {
             "hash": "f88c9b49",
-            "description": "Adds a moveTo state using a Pose2D object for the target pose with a default timeout of 5 seconds and no parallel command."
+            "description": "Adds a moveTo state using a Pose2D object with default timeout and no parallel command."
         },
         "MRILib.statemachine.DriveFSM#waitForSeconds(double,Runnable)": {
             "hash": "5cd46521",
-            "description": "Adds a new state to the sequence that waits for a specified duration while holding the last known position and heading. Optionally runs a parallel command. The start logic sets the PID controller to hold the last position and starts a timer. The update logic continuously updates the PID controller and transitions to the next state once the specified duration has elapsed."
+            "description": "Adds a new state to the sequence that waits for a specified duration while maintaining the last known position using the PID controller. Optionally executes a parallel command during the wait."
         },
         "MRILib.statemachine.DriveFSM#waitForSeconds(double)": {
             "hash": "47cbb226",
@@ -248,7 +245,7 @@
         },
         "MRILib.statemachine.DriveFSM#run(Runnable)": {
             "hash": "c8bcf9ba",
-            "description": "Adds a state that executes a given command immediately with a 0-second wait duration, effectively running a command as a distinct step in the sequence."
+            "description": "Adds a state that immediately executes a given command without any waiting period, effectively running a command in parallel with the current state."
         },
         "MRILib.managers.ArmBotEasy#ArmBotEasy(HardwareMap)": {
             "hash": "94836ac3",
@@ -264,75 +261,75 @@
         },
         "MRILib.managers.ArmBotEasy#setArmMode(DcMotor.RunMode)": {
             "hash": "ae2e0c9a",
-            "description": "Sets the operational mode for both the slide and pivot motors simultaneously to the specified DcMotor.RunMode."
+            "description": "Sets the run mode for both the slide and pivot motors simultaneously to the specified DcMotor.RunMode."
         },
         "MRILib.managers.ArmBotEasy#resetEncoders()": {
             "hash": "05e7d7b7",
-            "description": "Resets the encoders for the arm's slide and pivot motors to zero, preserving their current RunModes, and updates the stored encoder positions."
+            "description": "Resets the encoders for the arm's slide and pivot motors to zero, preserving their current run modes, and then updates the stored encoder positions."
         },
         "MRILib.managers.ArmBotEasy#updateEncoders()": {
             "hash": "0c7ee22a",
-            "description": "Updates the stored current and previous encoder positions for the slide and pivot motors, reflecting their latest readings."
+            "description": "Updates the stored current and previous encoder positions for the slide and pivot motors, and also calls the superclass method to update drive motor encoders."
         },
         "MRILib.managers.ArmBotEasy#getSlideMotor()": {
             "hash": "1696b7c0",
-            "description": "Retrieves the DcMotorEx instance for the slide."
+            "description": "Returns the DcMotorEx instance for the slide."
         },
         "MRILib.managers.ArmBotEasy#getPivotMotor()": {
             "hash": "db645d36",
-            "description": "Retrieves the DcMotorEx instance for the pivot."
+            "description": "Returns the DcMotorEx instance for the pivot."
         },
         "MRILib.managers.ArmBotEasy#getSlidePos()": {
             "hash": "076a418e",
-            "description": "Returns the last recorded encoder position of the slide motor."
+            "description": "Returns the last recorded encoder position of the slide motor. Ensure updateEncoders() is called prior for the most current value."
         },
         "MRILib.managers.ArmBotEasy#getPivotPos()": {
             "hash": "0d4eff94",
-            "description": "Returns the last recorded encoder position of the pivot motor."
+            "description": "Returns the last recorded encoder position of the pivot motor. Ensure updateEncoders() is called prior for the most current value."
         },
         "MRILib.managers.ArmBotEasy#getClawPitch()": {
             "hash": "6d933d73",
-            "description": "Retrieves the Servo instance for the claw pitch."
+            "description": "Returns the Servo instance for the claw pitch mechanism."
         },
         "MRILib.managers.ArmBotEasy#getClawRoll()": {
             "hash": "1e07723a",
-            "description": "Retrieves the Servo instance for the claw roll."
+            "description": "Returns the Servo instance for the claw roll mechanism."
         },
         "MRILib.managers.ArmBotEasy#getClaw()": {
             "hash": "5a1c58ad",
-            "description": "Retrieves the Servo instance for the main claw grip."
+            "description": "Returns the Servo instance for the main claw grip."
         },
         "MRILib.managers.ArmBotEasy#getClawPitchPos()": {
             "hash": "0cf49ab7",
-            "description": "Gets the current commanded position of the claw pitch servo."
+            "description": "Retrieves and returns the current commanded position of the claw pitch servo."
         },
         "MRILib.managers.ArmBotEasy#getClawRollPos()": {
             "hash": "3cd8852b",
-            "description": "Gets the current commanded position of the claw roll servo."
+            "description": "Retrieves and returns the current commanded position of the claw roll servo."
         },
         "MRILib.managers.ArmBotEasy#getClawPos()": {
             "hash": "5c3ca1fc",
-            "description": "Gets the current commanded position of the main claw grip servo."
+            "description": "Retrieves and returns the current commanded position of the main claw grip servo."
         },
         "MRILib.managers.ArmBotEasy#setClawPitch(double)": {
             "hash": "98169896",
-            "description": "Sets the target position for the claw pitch servo."
+            "description": "Sets the target position for the claw pitch servo to the specified value."
         },
         "MRILib.managers.ArmBotEasy#setClawRoll(double)": {
             "hash": "a114d2e9",
-            "description": "Sets the target position for the claw roll servo."
+            "description": "Sets the target position for the claw roll servo to the specified value."
         },
         "MRILib.managers.ArmBotEasy#setClaw(double)": {
             "hash": "4bc88527",
-            "description": "Sets the target position for the main claw grip servo."
+            "description": "Sets the target position for the main claw grip servo to the specified value."
         },
         "MRILib.managers.ArmBotEasy#setPivot(int)": {
             "hash": "f40176ba",
-            "description": "Configures the pivot motor to move to a specified encoder target position by setting the mode to RUN_TO_POSITION and applying a default velocity."
+            "description": "Configures the pivot motor to move to a specific encoder target position by setting the target position, switching the run mode to RUN_TO_POSITION, and applying a default velocity."
         },
         "MRILib.managers.ArmBotEasy#setSlides(int)": {
             "hash": "517cc452",
-            "description": "Configures the slide motor to move to a specified encoder target position by setting the mode to RUN_TO_POSITION and applying a default velocity."
+            "description": "Configures the slide motor to move to a specific encoder target position by setting the target position, switching the run mode to RUN_TO_POSITION, and applying a default velocity."
         },
         "MRILib.managers.ArmBotEasy#setArm(int,int)": {
             "hash": "8303de74",
@@ -340,19 +337,19 @@
         },
         "MRILib.managers.ArmBotFF#ArmBotFF(HardwareMap,org.firstinspires.ftc.robotcore.external.Telemetry)": {
             "hash": "7db9e9e1",
-            "description": "Constructs an ArmBotFF instance, initializing hardware components (motors, servos), setting up the PivotArmController, and starting its dedicated thread for concurrent operation. It calls parent constructor and initialization methods for motors and servos."
+            "description": "Initializes the ArmBotFF, setting up motors, servos, and starting the PivotArmController in a separate thread for concurrent operation. It calls parent constructor and initializes hardware components."
         },
         "MRILib.managers.ArmBotFF#initMotors(HardwareMap)": {
             "hash": "2f5a9b90",
-            "description": "Initializes the slide and pivot DcMotorEx components by retrieving them from the HardwareMap, resetting their encoders, setting their directions and run modes, and configuring their zero power behavior to BRAKE. It also resets and updates internal position tracking variables."
+            "description": "Initializes the slide and pivot DC motors by retrieving them from the HardwareMap, resetting their encoders, setting their direction and run modes, and configuring their zero power behavior to BRAKE. It also resets internal position tracking variables and updates current encoder positions."
         },
         "MRILib.managers.ArmBotFF#initServos(HardwareMap)": {
             "hash": "82031329",
-            "description": "Initializes the claw pitch, claw roll, and claw grip servos by retrieving them from the HardwareMap. It does not set initial positions, but prepares them for use."
+            "description": "Initializes the claw pitch, roll, and grip servos by retrieving them from the HardwareMap. It does not set initial positions, but prepares them for use."
         },
         "MRILib.managers.ArmBotFF#setArmMode(DcMotor.RunMode)": {
             "hash": "ae2e0c9a",
-            "description": "Sets the RunMode for both the slide and pivot motors to the specified DcMotor.RunMode, allowing for different control strategies like RUN_TO_POSITION or RUN_WITHOUT_ENCODER."
+            "description": "Sets the RunMode for both the slide and pivot motors to the specified mode, allowing for different control strategies like RUN_TO_POSITION or RUN_WITHOUT_ENCODER."
         },
         "MRILib.managers.ArmBotFF#resetEncoders()": {
             "hash": "5b61009e",
@@ -360,15 +357,15 @@
         },
         "MRILib.managers.ArmBotFF#resetPrevEncoders()": {
             "hash": "7dec2d7a",
-            "description": "Resets the internal variables tracking the previous encoder positions of the slide and pivot motors to zero. It also calls the superclass method to reset drive train previous positions."
+            "description": "Resets the internal tracking variables for the previous encoder positions of the slide and pivot motors to zero. It also calls the superclass method to reset drive train previous positions."
         },
         "MRILib.managers.ArmBotFF#updateControllerState()": {
             "hash": "04849239",
-            "description": "Updates the PivotArmController with the current pivot motor's encoder position and velocity. This method should be called after updating the main encoders to ensure the controller has the latest state information."
+            "description": "Updates the PivotArmController with the current pivot motor's encoder position and velocity. This method should be called in the main OpMode loop after encoder positions have been updated."
         },
         "MRILib.managers.ArmBotFF#updateEncoders()": {
             "hash": "3d3f8c2d",
-            "description": "Updates the current and previous encoder positions for both the drive train motors (via superclass) and the arm motors (slide and pivot). This method should be called once per OpMode loop to maintain accurate position tracking."
+            "description": "Updates the internal tracking of current and previous encoder positions for both drive train (via superclass) and arm motors (slide and pivot). It reads the current encoder positions and stores them, while shifting the previous positions to hold the last known values."
         },
         "MRILib.managers.ArmBotFF#getSlideMotor()": {
             "hash": "1696b7c0",
@@ -396,15 +393,15 @@
         },
         "MRILib.managers.ArmBotFF#getClawPitch()": {
             "hash": "6d933d73",
-            "description": "Returns the Servo instance controlling the pitch of the claw."
+            "description": "Returns the Servo instance controlling the claw's pitch."
         },
         "MRILib.managers.ArmBotFF#getClawRoll()": {
             "hash": "1e07723a",
-            "description": "Returns the Servo instance controlling the roll of the claw."
+            "description": "Returns the Servo instance controlling the claw's roll."
         },
         "MRILib.managers.ArmBotFF#getClaw()": {
             "hash": "5a1c58ad",
-            "description": "Returns the Servo instance controlling the grip of the claw."
+            "description": "Returns the Servo instance controlling the claw's grip."
         },
         "MRILib.managers.ArmBotFF#getClawPitchPos()": {
             "hash": "0cf49ab7",
@@ -432,15 +429,15 @@
         },
         "MRILib.managers.ArmBotFF#setPivot(int)": {
             "hash": "c47bd838",
-            "description": "Sets the pivot motor to run to a specific encoder target position by switching to RUN_TO_POSITION mode and setting a predefined velocity."
+            "description": "Sets the pivot motor to run to a specific encoder target position by switching its mode to RUN_TO_POSITION and setting a predefined velocity."
         },
         "MRILib.managers.ArmBotFF#setPivotPower(double)": {
             "hash": "06bed01e",
-            "description": "Sets the pivot motor power directly by switching to RUN_WITHOUT_ENCODER mode and applying the specified power level."
+            "description": "Sets the pivot motor power directly by switching its mode to RUN_WITHOUT_ENCODER and applying the specified power level."
         },
         "MRILib.managers.ArmBotFF#setSlides(int)": {
             "hash": "1cbfec4e",
-            "description": "Sets the slide motor to run to a specific encoder target position by switching to RUN_TO_POSITION mode and setting a predefined velocity."
+            "description": "Sets the slide motor to run to a specific encoder target position by switching its mode to RUN_TO_POSITION and setting a predefined velocity."
         },
         "MRILib.managers.ArmBotFF#setArm(int,int)": {
             "hash": "8303de74",
@@ -448,43 +445,43 @@
         },
         "MRILib.managers.ArmBotFF#stopMultiThread()": {
             "hash": "0ce6aa6e",
-            "description": "Safely stops the background PivotArmController thread by signaling it to stop and then joining the thread with a short timeout to ensure proper cleanup. It includes error handling for interruptions and logs a warning if the thread does not terminate cleanly."
+            "description": "Safely stops the background PivotArmController thread by signaling it to stop and then joining the thread with a short timeout. It includes error handling for interruptions and logs a warning if the thread does not terminate cleanly."
         },
         "MRILib.managers.RunnableStoppable#stop()": {
             "hash": "",
-            "description": "Stops the execution of the Runnable task. This method is intended to signal the task to terminate its operation gracefully."
+            "description": "Stops the execution of the Runnable task. This method is intended to signal the task to cease its operations gracefully."
         },
         "MRILib.managers.RunnableStoppable#updateCurrentState(int,double)": {
             "hash": "",
-            "description": "Updates the internal state of the task with the provided current position and velocity. This method allows external modification of the task's operational parameters."
+            "description": "Updates the internal state of the object with the provided current position and velocity."
         },
         "MRILib.managers.Bot#Bot(HardwareMap)": {
             "hash": "6950ded5",
-            "description": "Constructs a Bot instance, initializing drive motors, IMU, odometry, and voltage sensor using default hardware map names. It also performs an initial odometry update and sets the starting position."
+            "description": "Constructs a Bot instance, initializing drive motors, IMU, odometry, and voltage sensor using default hardware map names. It also performs an initial odometry update and sets the current and last known positions."
         },
         "MRILib.managers.Bot#initMotors(HardwareMap)": {
             "hash": "23373a5c",
-            "description": "Initializes the drive motors using default hardware map names ('frontLeft', 'frontRight', 'backLeft', 'backRight') by calling an overloaded version."
+            "description": "Initializes the drive motors using default hardware map names ('frontLeft', 'frontRight', 'backLeft', 'backRight') by calling the overloaded version."
         },
         "MRILib.managers.Bot#initMotors(HardwareMap,String,String,String,String)": {
             "hash": "def70451",
-            "description": "Initializes the drive motors with specified hardware map names and sets their directions based on BotValues constants. Motors are configured for operation without encoders initially, and encoder positions are reset and updated."
+            "description": "Initializes the drive motors with specified hardware map names and sets their directions based on BotValues constants. It also resets and updates the initial encoder positions."
         },
         "MRILib.managers.Bot#initIMU(HardwareMap)": {
             "hash": "5f7880f2",
-            "description": "Initializes the Control Hub's IMU using the default hardware map name ('imu') by calling an overloaded version."
+            "description": "Initializes the Control Hub's IMU using the default hardware map name ('imu') by calling the overloaded version."
         },
         "MRILib.managers.Bot#initIMU(HardwareMap,String)": {
             "hash": "27753e39",
-            "description": "Initializes the Control Hub's IMU with a specified hardware map name and configures its orientation using REV Hub Orientation constants. The IMU's yaw angle is then reset to zero."
+            "description": "Initializes the Control Hub's IMU with a specified hardware map name and configures its orientation based on BotValues constants (LOGO_DIR, USB_DIR). It then resets the IMU's yaw to zero."
         },
         "MRILib.managers.Bot#initOdo(HardwareMap)": {
             "hash": "9fd76935",
-            "description": "Initializes the GoBilda Pinpoint Odometry Computer using the default hardware map name ('odo') by calling an overloaded version."
+            "description": "Initializes the GoBilda Pinpoint Odometry Computer using the default hardware map name ('odo') by calling the overloaded version."
         },
         "MRILib.managers.Bot#initOdo(HardwareMap,String)": {
             "hash": "0e088b29",
-            "description": "Initializes the GoBilda Pinpoint Odometry Computer with a specified hardware map name, configuring offsets, encoder resolution, and directions. It then resets the odometry's position and IMU heading to zero."
+            "description": "Initializes the GoBilda Pinpoint Odometry Computer with a specified hardware map name, setting offsets, encoder resolution, and directions. It then resets the odometry's position and IMU reference."
         },
         "MRILib.managers.Bot#update()": {
             "hash": "cc66fe34",
@@ -580,15 +577,15 @@
         },
         "MRILib.managers.Bot#setPosition(double,double,double)": {
             "hash": "ee7fa6bd",
-            "description": "Sets the robot's current position and heading in the odometry system using separate x, y, and heading values. Converts heading to radians for internal Pose2D representation."
+            "description": "Sets the robot's current position and heading in the odometry system using x, y coordinates and a heading in degrees. It converts the heading to radians and calls the Pose2D version."
         },
         "MRILib.managers.Bot#setPosition(Pose2D)": {
             "hash": "3f087ad6",
-            "description": "Overrides the current position tracked by the GoBilda Pinpoint Odometry Computer with a new Pose2D. It then immediately updates the odometry and syncs the Bot's internal position variables."
+            "description": "Overrides the current position tracked by the GoBilda Pinpoint Odometry Computer with a new Pose2D. It then immediately updates the odometry's internal state and the Bot's synchronized position variables."
         },
         "MRILib.managers.Bot#setDirections()": {
             "hash": "424c8333",
-            "description": "Sets the direction of all four drive motors based on the LEFTDIR and RIGHTDIR constants defined in BotValues, ensuring consistent forward motion."
+            "description": "Sets the direction of all four drive motors based on the constants LEFTDIR and RIGHTDIR defined in BotValues, ensuring consistent forward motion."
         },
         "MRILib.managers.Bot#setMode(DcMotor.RunMode)": {
             "hash": "c52cf935",
@@ -596,71 +593,71 @@
         },
         "MRILib.managers.Bot#resetEncoders()": {
             "hash": "25d4c89a",
-            "description": "Resets the drive motor encoders to 0 while preserving their current RunMode. It also resets internal previous encoder position tracking and updates current positions."
+            "description": "Resets the drive motor encoders to 0 without changing their current RunMode. It also resets the stored previous encoder tick values and updates the current values."
         },
         "MRILib.managers.Bot#resetPrevEncoders()": {
             "hash": "dfb4a143",
-            "description": "Resets the stored previous encoder tick values for all drive motors to zero. This is an internal helper method called by resetEncoders()."
+            "description": "Resets the stored previous encoder tick values for all drive motors to zero."
         },
         "MRILib.managers.Bot#enableBrakeMode(boolean)": {
             "hash": "fca18f74",
-            "description": "Enables or disables the 'brake' zero power behavior for all drive motors. When enabled, motors resist movement at zero power; when disabled, they coast."
+            "description": "Enables or disables the 'brake' zero power behavior for all drive motors. When enabled (true), motors resist movement; when disabled (false), they coast."
         },
         "MRILib.managers.Bot#driveXYW(double,double,double)": {
             "hash": "fb220268",
-            "description": "Drives the robot using robot-centric Cartesian coordinates (rx: forward/backward, ry: strafe left/right) and rotational velocity (rw). It calculates the required power for each Mecanum wheel, normalizes them to stay within [-1, 1], and applies voltage compensation."
+            "description": "Drives the robot using robot-centric Cartesian coordinates (rx, ry) and rotational velocity (rw). It calculates the required power for each Mecanum wheel, normalizes the powers to stay within [-1, 1], and compensates for battery voltage."
         },
         "MRILib.managers.Bot#driveFieldXYW(double,double,double)": {
             "hash": "1f88c7f5",
-            "description": "Drives the robot using field-centric coordinates (fx: forward/backward relative to field, fy: strafe left/right relative to field) and robot-centric rotational velocity (fw). It rotates the field-relative movement vector based on the robot's current heading and then calls driveXYW to execute the movement."
+            "description": "Drives the robot using field-centric coordinates (fx, fy) for movement and robot-centric rotation (fw). It rotates the field-relative movement vector based on the robot's current heading (obtained from the IMU) and then calls the robot-centric drive method (driveXYW)."
         },
         "MRILib.managers.PivotArmController#PivotArmController(ArmBotFF)": {
             "hash": "31a39391",
-            "description": "Constructs a PivotArmController instance, initializing it with an ArmBotFF object and obtaining telemetry."
+            "description": "Initializes the PivotArmController with an ArmBotFF instance and retrieves telemetry."
         },
         "MRILib.managers.PivotArmController#run()": {
             "hash": "9c55e3d9",
-            "description": "Executes the main control loop for the pivot arm. It continuously updates the arm's state, calculates feedforward and feedback control outputs, determines the appropriate motor power based on the current pivot mode, and applies the calculated power to the motor. The loop runs asynchronously and is controlled by the 'running' flag."
+            "description": "Executes the main control loop for the pivot arm. It continuously updates the arm's state, calculates feedforward and feedback control signals, determines the appropriate motor power based on the current pivot mode, and applies the calculated power to the motor. The loop runs at a fixed interval, ensuring consistent control."
         },
         "MRILib.managers.PivotArmController#setMotorPower(double)": {
             "hash": "f17c0ce4",
-            "description": "Applies the calculated power to the pivot motor, scaling it based on the current battery voltage to maintain consistent performance. It clips the final power value to a safe range (-0.9 to 1) before setting it on the motor."
+            "description": "Applies the calculated power to the pivot motor, adjusting it based on the robot's current voltage to maintain consistent performance. The power is clipped to a safe range (-0.9 to 1.0)."
         },
         "MRILib.managers.PivotArmController#calculateFeedForward()": {
             "hash": "b8767c6d",
-            "description": "Calculates the feedforward control output to compensate for gravity. It uses pre-defined constants and the current arm's angle and center of mass to estimate the gravitational torque, adjusting the output based on specific arm angle conditions."
+            "description": "Calculates the feedforward compensation for gravitational forces acting on the arm. It uses pre-defined constants and the arm's current position and mass distribution to estimate the required force to counteract gravity."
         },
         "MRILib.managers.PivotArmController#updateCurrentState(double,double,double)": {
             "hash": "2ae7266e",
-            "description": "Updates the internal state of the pivot arm, including its current angular position, angular velocity, and slide position. It also recalculates the arm's center of mass based on the updated slide position. This method is synchronized to prevent race conditions."
+            "description": "Updates the internal state of the pivot arm, including its angular position, angular velocity, and slide position. It also recalculates the arm's center of mass and current arm theta based on the new inputs. Returns the current arm theta in degrees."
         },
         "MRILib.managers.PivotArmController#updateCurrentState(double,double)": {
             "hash": "9a09ed10",
-            "description": "Updates the current arm position and velocity, defaulting the slide position to 0. This is a convenience overload for when the slide position is not relevant."
+            "description": "Updates the internal state of the pivot arm with arm position and velocity, defaulting the slide position to 0."
         },
         "MRILib.managers.PivotArmController#setPivotMode(PivotMode)": {
             "hash": "09b462f7",
-            "description": "Sets the operational mode of the pivot arm controller. The mode determines how the controller behaves, such as holding a position, moving to a target position, or responding to direct power input. This method is synchronized."
+            "description": "Sets the operational mode of the pivot arm controller."
         },
         "MRILib.managers.PivotArmController#setInputPower(double)": {
             "hash": "f3ea9bf8",
-            "description": "Sets the direct input power for the 'RUN_WITH_POWER' pivot mode. This allows external control to directly set the motor power. This method is synchronized."
+            "description": "Sets the input power for the RUN_WITH_POWER mode."
         },
         "MRILib.managers.PivotArmController#setTargetTheta(double,AngleUnit)": {
             "hash": "e1e56250",
-            "description": "Sets the target angular position for the pivot arm, accepting the target angle in either degrees or radians. It then updates the PID controller's target."
+            "description": "Sets the target angular position for the pivot arm, accepting the target angle in either radians or degrees."
         },
         "MRILib.managers.PivotArmController#setTargetTheta(double)": {
             "hash": "e72aa86f",
-            "description": "Sets the target angular position for the pivot arm, defaulting the angle unit to degrees. This is an overload for convenience."
+            "description": "Sets the target angular position for the pivot arm, defaulting the input angle to degrees."
         },
         "MRILib.managers.PivotArmController#setThetaOffset(double)": {
             "hash": "8fd6c0b2",
-            "description": "Sets an offset to be applied to the current arm angle readings, allowing for calibration or adjustment of the arm's zero position. The offset is expected in degrees."
+            "description": "Sets an offset to be applied to the arm's current angle readings, typically used for calibration."
         },
         "MRILib.managers.PivotArmController#stop()": {
             "hash": "498e1b66",
-            "description": "Stops the main control loop by setting the 'running' flag to false, effectively halting the pivot arm's operation."
+            "description": "Stops the execution of the pivot arm controller's main loop."
         },
         "MRILib.motion.HeadingPID#HeadingPID(double,double,double)": {
             "hash": "e40d3f0c",
@@ -668,7 +665,7 @@
         },
         "MRILib.motion.HeadingPID#update(double)": {
             "hash": "ae33b352",
-            "description": "Updates the PID controller for angular/heading control. It calculates the shortest angular error using Mathf.angleWrap, then computes the integral and derivative terms. The integral term includes anti-windup by limiting accumulation based on error magnitude and clamping the total sum. The derivative term is calculated based on the change in wrapped error over time. Finally, it combines these terms to produce a control output and updates the internal state (lastTime, lastError) for the next iteration."
+            "description": "Updates the PID controller for angular values. It calculates the shortest angular error using Mathf.angleWrap, applies integral anti-windup by limiting error summation, computes the derivative of the wrapped error, and returns the total control output. It also handles potential division by zero for deltaTime and updates internal state (lastTime, lastError) for the next iteration."
         },
         "MRILib.motion.PID#PID(double,double,double)": {
             "hash": "46d83bc4",
@@ -676,15 +673,15 @@
         },
         "MRILib.motion.PID#start()": {
             "hash": "7f493ebc",
-            "description": "Resets the internal state of the PID controller. Clears the accumulated integral error sum, the last calculated error, and the last update timestamp. Resets the internal timer to zero."
+            "description": "Resets the internal state of the PID controller. Clears the accumulated integral error, the last calculated error, and the last timestamp. Resets the internal timer to zero, preparing the controller for a new control sequence."
         },
         "MRILib.motion.PID#update(double)": {
             "hash": "a3218234",
-            "description": "Calculates and returns the PID control output based on the current measured value. It computes the error, delta time, integral term (with anti-windup by clamping errorSum and only accumulating if error is within iLimit), derivative term, and combines them using the configured gains (kP, kI, kD). Updates internal state (lastTime, lastError) for the next iteration."
+            "description": "Calculates the PID control output based on the current measured value. It computes the error, delta time, integral term (with anti-windup clamping), and derivative term. Updates internal state (last error, last time) for the next iteration. Returns the combined P, I, and D control output."
         },
         "MRILib.motion.PID#update(double,double)": {
             "hash": "81d4fc2b",
-            "description": "Selects the input value (current1 or current2) that is closer to the target value and then calls the primary `update(double current)` method with the selected value. Returns the calculated PID control output."
+            "description": "Selects the input value (current1 or current2) that is closer to the target value and then calls the primary `update(double current)` method with the selected value. Returns the calculated control output."
         },
         "MRILib.motion.PID#setTarget(double)": {
             "hash": "8177b5a6",
@@ -692,51 +689,51 @@
         },
         "MRILib.motion.PID#setILimit(double)": {
             "hash": "e5218fba",
-            "description": "Sets the integral limit (iLimit). The integral term will only accumulate when the absolute error is less than this specified limit. Ensures the limit is non-negative by taking its absolute value."
+            "description": "Sets the integral limit (iLimit). The integral term will only accumulate when the absolute error is less than this limit, helping to prevent integral windup. Ensures the provided limit is non-negative."
         },
         "MRILib.motion.PID#setIntegralSumLimit(double)": {
             "hash": "5f021979",
-            "description": "Sets the maximum absolute value that the integral error sum (errorSum) is allowed to reach. This acts as a clamping mechanism to prevent integral windup. Ensures the limit is non-negative by taking its absolute value."
+            "description": "Sets the maximum absolute value for the accumulated integral error sum (errorSumTotal). This clamps the integral term to prevent excessive buildup, further aiding in anti-windup. Ensures the provided limit is non-negative."
         },
         "MRILib.motion.PIDController#PIDController(Bot,Telemetry)": {
             "hash": "d8e2e5a5",
-            "description": "Constructs a PIDController, initializing the maxSpeed supplier to return 0.5 and storing references to the provided Bot and Telemetry objects."
+            "description": "Constructs a PIDController, initializing the bot and telemetry interfaces, and setting default maximum speed suppliers."
         },
         "MRILib.motion.PIDController#setPID(PID,PID)": {
             "hash": "3eb5b1f8",
-            "description": "Assigns PID controller instances for the X and Y axes of movement."
+            "description": "Assigns PID controllers for the X and Y axes of movement."
         },
         "MRILib.motion.PIDController#setTurnPID(PID)": {
             "hash": "428a5b6e",
-            "description": "Assigns a PID controller instance for rotational (heading) control."
+            "description": "Assigns the PID controller for rotational (theta) movement. Recommends using HeadingPID for angle wrapping."
         },
         "MRILib.motion.PIDController#start()": {
             "hash": "6c27764f",
-            "description": "Initializes the PID controllers by resetting their internal states and setting the target for the rotational PID based on the last `moveTo` call."
+            "description": "Initializes the PID controllers by resetting their internal states and setting the initial target for the theta PID based on the last `moveTo` call."
         },
         "MRILib.motion.PIDController#update()": {
             "hash": "0e83e88d",
-            "description": "Updates the PID controllers based on the robot's current pose and target values, then commands the robot to drive using field-centric control. It reads current position, calculates PID outputs for X, Y, and Theta, applies dynamic speed limits, and sends the resulting scaled drive commands to the Bot."
+            "description": "Updates the robot's movement based on PID controller outputs. Reads current pose, calculates PID corrections for X, Y, and theta, applies dynamic speed limits, and commands the robot to drive using field-centric coordinates via `bot.driveFieldXYW`."
         },
         "MRILib.motion.PIDController#moveTo(double,double,double)": {
             "hash": "3fb8778b",
-            "description": "Sets the target position and heading for the robot. Updates the target values for the X, Y, and Theta PID controllers, converting the input degrees to radians for the heading target."
+            "description": "Sets the target position (X, Y coordinates) and heading (degrees) for the robot. Updates the targets for the X, Y, and Theta PID controllers."
         },
         "MRILib.motion.PIDController#setMaxSpeed(double)": {
             "hash": "cf502dab",
-            "description": "Sets a constant maximum translational speed limit for the robot, ensuring the value is clipped between 0.0 and 1.0."
+            "description": "Sets a constant maximum translational speed limit for the robot, clipped between 0.0 and 1.0."
         },
         "MRILib.motion.PIDController#setMaxAngSpeed(double)": {
             "hash": "16d49490",
-            "description": "Sets a constant maximum angular (rotational) speed limit for the robot, ensuring the value is clipped between 0.0 and 1.0."
+            "description": "Sets a constant maximum angular (rotational) speed limit for the robot, clipped between 0.0 and 1.0."
         },
         "MRILib.motion.PIDController#getTargetX()": {
             "hash": "988d73ff",
-            "description": "Retrieves the currently set target X-coordinate."
+            "description": "Retrieves the currently set target X-coordinate in inches."
         },
         "MRILib.motion.PIDController#getTargetY()": {
             "hash": "fadc1b76",
-            "description": "Retrieves the currently set target Y-coordinate."
+            "description": "Retrieves the currently set target Y-coordinate in inches."
         },
         "MRILib.motion.PIDController#getTargetRadians()": {
             "hash": "0a6ca227",
@@ -748,11 +745,11 @@
         },
         "MRILib.motion.PIDController#getCurrentDegrees()": {
             "hash": "f2da6e61",
-            "description": "Retrieves the robot's current heading in degrees from the Bot's odometry, potentially applying a negation based on convention."
+            "description": "Retrieves the robot's current heading in degrees from the odometry system, potentially applying a negation based on convention."
         },
         "MRILib.motion.PIDController#getCurrentRadians()": {
             "hash": "1614c2c8",
-            "description": "Retrieves the robot's current heading in radians from the Bot's odometry, converting from degrees and potentially applying a negation based on convention."
+            "description": "Retrieves the robot's current heading in radians from the odometry system, potentially applying a negation based on convention."
         }
     }
 }

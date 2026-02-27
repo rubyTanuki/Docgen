@@ -37,12 +37,12 @@ async def run_cli():
 
     start_time = time.perf_counter()
     
-    # llmClient first for Dependency Injection
+    # Dependency Injection
     llm = GeminiClient(api_key=GEMINI_API_KEY) 
-    
+    registry = MemberRegistry()
     
     print("🔍 Parsing files and linking AST...")
-    parser = JavaParser(target_path, llm)
+    parser = JavaParser(target_path, llm, registry)
     await parser.parse(use_cache=True)
     
     # Write Skeleton
@@ -51,7 +51,7 @@ async def run_cli():
         file.write(toast_string)
 
     # Write Cache
-    method_cache = json.dumps(MemberRegistry.get_cache(), indent=4)
+    method_cache = json.dumps(registry.get_cache(), indent=4)
     with open(target_path / ".toaster_cache.json", "w") as file:
         file.write(method_cache)
         

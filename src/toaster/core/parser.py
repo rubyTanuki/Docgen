@@ -8,8 +8,10 @@ from toaster.core.models import BaseFile
 from toaster.core.registry import MemberRegistry
 
 class BaseParser(ABC):
-    def __init__(self, project_dir: str, llm=None):
+    def __init__(self, project_dir: str, llm=None, registry: MemberRegistry=None):
+        
         self.llm = llm
+        self.registry = registry
         self.files: list[BaseFile] = []
         self.project_dir = project_dir
 
@@ -29,7 +31,7 @@ class BaseParser(ABC):
                 # 1. Create the Object
                 match(suffix):
                     case ".java":
-                        file_obj = JavaFile.from_source(name, code)
+                        file_obj = JavaFile.from_source(name, code, self.registry)
                 
                 # 2. Attach the source path (Critical for distributed context)
                 if file_obj:
@@ -47,7 +49,7 @@ class BaseParser(ABC):
             if cache_file.exists():
                 print(f"Loading cache from {cache_file}")
                 with open(cache_file, 'r', encoding='utf-8') as f:
-                    MemberRegistry.load_cache(json.load(f))
+                    self.registry.load_cache(json.load(f))
         
         # 4. Resolve Descriptions
         self.visited_ucids = set()

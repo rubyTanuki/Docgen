@@ -12,7 +12,9 @@ class BaseFile(ABC):
     Acts as the root container for the dependency graph.
     """
     
-    def __init__(self, ufid: str, imports: List[str], classes: List["BaseClass"]):
+    def __init__(self, ufid: str, imports: List[str], classes: List["BaseClass"], registry: MemberRegistry = None):
+        self.registry = registry
+        
         self.ufid = ufid          # Unique File ID (usually filename or relative path)
         self.imports = imports    # List of import strings
         self.classes = classes    # Top-level classes defined in this file
@@ -22,14 +24,20 @@ class BaseFile(ABC):
         
     @classmethod
     @abstractmethod
-    def from_source(cls, filename: str, source_code: bytes) -> "BaseFile":
+    def from_source(cls, filename: str, source_code: bytes, registry: MemberRegistry = None) -> "BaseFile":
         """Factory method to parse raw source code."""
+        pass
+    
+    @classmethod
+    @abstractmethod
+    def from_file(cls, filepath: str, registry: MemberRegistry = None) -> "BaseFile":
+        """Factory method to parse a file."""
         pass
 
     def resolve_dependencies(self):
         """Triggers dependency resolution for all children."""
-        for cls in self.classes:
-            cls.resolve_dependencies(self.imports)
+        for c in self.classes:
+            c.resolve_dependencies(self.imports)
     
     async def resolve_descriptions(self, llm: "LLMClient", visited_ucids: set[str] = None):
         if visited_ucids is None:
@@ -56,7 +64,9 @@ class BaseClass(ABC):
     Stores Members (Fields/Methods) and Metadata for LLM processing.
     """
     
-    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None):
+    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, registry: MemberRegistry = None):
+        self.registry = registry
+        
         self.ucid = ucid            # Unique Context ID (e.g. "com.pkg.MyClass")
         self.signature = signature  # Display signature (e.g. "public class MyClass extends B")
         self.body = body            # Raw source code
@@ -76,11 +86,11 @@ class BaseClass(ABC):
         
         self.sent_to_llm = False
         
-        MemberRegistry.add_class(self)
+            
 
     @classmethod
     @abstractmethod
-    def from_node(cls, node: Any, scope: str = "") -> "BaseClass":
+    def from_node(cls, node: Any, scope: str = "", registry: MemberRegistry = None) -> "BaseClass":
         """Factory method to parse an AST node."""
         pass
     
@@ -154,7 +164,9 @@ class BaseMethod(ABC):
     This is the primary unit of work for the LLM.
     """
     def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str,
-                 body_hash: str, dependency_names: List[str], line: int, parameters: List[str], node:"Node" = None):
+                 body_hash: str, dependency_names: List[str], line: int, parameters: List[str], node:"Node" = None, registry: MemberRegistry = None):
+        self.registry = registry
+        
         self.node = node
         self.identifier = identifier
         self.return_type = return_type
@@ -182,7 +194,7 @@ class BaseMethod(ABC):
 
     @classmethod
     @abstractmethod
-    def from_node(cls, node: Any, scope: str, dep_query: Any = None) -> "BaseMethod":
+    def from_node(cls, node: Any, scope: str, dep_query: Any = None, registry: MemberRegistry = None) -> "BaseMethod":
         """Factory method to parse an AST node."""
         pass
 
@@ -242,8 +254,8 @@ class BaseEnum(BaseClass):
     """
     Abstract representation of an Enumeration.
     """
-    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, constants: List[str] = None):
-        super().__init__(ucid, signature, body, node)
+    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, registry: MemberRegistry = None, constants: List[str] = None):
+        super().__init__(ucid, signature, body, node, registry)
         self.constants = constants # ["VAL1", "VAL2(args)"]
 
     def __json__(self):

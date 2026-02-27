@@ -9,12 +9,12 @@ from toaster.languages.java.language import JAVA_LANGUAGE
 from toaster.core import BaseFile, BaseClass, BaseMethod, BaseEnum, BaseField, MemberRegistry
 
 class JavaFile(BaseFile):
-    def __init__(self, ufid: str, imports: list[str], classes: list["JavaClass"]):
+    def __init__(self, ufid: str, imports: list[str], classes: list["JavaClass"], registry: MemberRegistry = None):
         # BaseFile init: (ufid, imports, classes)
-        super().__init__(ufid, imports, classes)
+        super().__init__(ufid, imports, classes, registry)
 
     @classmethod
-    def from_source(cls, filename: str, source_code: bytes) -> "JavaFile":
+    def from_source(cls, filename: str, source_code: bytes, registry: MemberRegistry = None) -> "JavaFile":
         parser = Parser()
         parser.language = JAVA_LANGUAGE
         tree = parser.parse(source_code)
@@ -41,30 +41,30 @@ class JavaFile(BaseFile):
                     if grandchild.type in {"scoped_identifier", "identifier"}:
                         imports.append(grandchild.text.decode('utf-8'))
             elif child.type == "class_declaration" or child.type == "interface_declaration":
-                java_class = JavaClass.from_node(child, scope)
+                java_class = JavaClass.from_node(child, scope, registry=registry)
                 classes.append(java_class)
-                # MemberRegistry.add_class(java_class)
+                registry.add_class(java_class)
             elif child.type == "enum_declaration":
-                java_enum = JavaEnum.from_node(child, scope)
+                java_enum = JavaEnum.from_node(child, scope, registry=registry)
                 classes.append(java_enum)
-                # MemberRegistry.add_class(java_enum)
+                registry.add_class(java_enum)
 
-        return cls(filename, imports, classes)
+        return cls(filename, imports, classes, registry)
 
     @classmethod
-    def from_file(cls, filepath: str) -> "JavaFile":
+    def from_file(cls, filepath: str, registry: MemberRegistry = None) -> "JavaFile":
         with open(filepath, "rb") as f:
             source = f.read()
-        return cls.from_source(os.path.basename(filepath), source)
+        return cls.from_source(os.path.basename(filepath), source, registry)
 
 
 class JavaClass(BaseClass):
     
     ACCESS_MODIFIERS = {"public", "protected", "private"}
 
-    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None):
+    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, registry: MemberRegistry = None):
         # BaseClass init: (ucid, signature, body)
-        super().__init__(ucid, signature, body, node)
+        super().__init__(ucid, signature, body, node, registry)
         
         # Override types for Java specifics if needed, but Base dicts work fine
         self.fields: Dict[str, "JavaField"] = {}
@@ -77,7 +77,8 @@ class JavaClass(BaseClass):
         
 
     @classmethod
-    def from_node(cls, node: "Node", scope: str = "") -> "JavaClass":
+    def from_node(cls, node: "Node", scope: str = "", registry: MemberRegistry = None) -> "JavaClass":
+        
         identifier: str = ""
         superclass: str = ""
         modifiers: List[str] = []
@@ -139,7 +140,8 @@ class JavaClass(BaseClass):
         
         final_body = body_node.text.decode('utf-8') if body_node else ""
 
-        instance = cls(ucid, signature, final_body, node)
+        instance = cls(ucid, signature, final_body, node, registry)
+        
 
         # Parse Body
         if body_node:
@@ -147,19 +149,19 @@ class JavaClass(BaseClass):
                 ct = child.type
                 
                 if ct in ("method_declaration", "constructor_declaration"):
-                    method = JavaMethod.from_node(child, instance.ucid)
+                    method = JavaMethod.from_node(child, instance.ucid, registry=registry)
                     instance.methods[method.umid] = method
-                    MemberRegistry.add_method(method)
+                    registry.add_method(method)
                     
                 elif ct == "field_declaration":
                     field = JavaField.from_node(child, instance.ucid)
                     instance.fields[field.ucid] = field
                     
                 elif ct == "class_declaration" or ct == "interface_declaration":
-                    child_class = JavaClass.from_node(child, scope=instance.ucid)
+                    child_class = JavaClass.from_node(child, instance.ucid, registry=registry)
                     instance.child_classes[child_class.ucid] = child_class
                 elif ct == "enum_declaration":
-                    child_class = JavaEnum.from_node(child, scope=instance.ucid)
+                    child_class = JavaEnum.from_node(child, instance.ucid, registry=registry)
                     instance.child_classes[child_class.ucid] = child_class
 
         return instance
@@ -261,12 +263,12 @@ class JavaMethod(BaseMethod):
     ACCESS_MODIFIERS = {"public", "protected", "private"}
     
     def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str, body_hash: str, 
-                 dependency_names: List[str], line: int, parameters: List[str], node:"Node" = None):
+                 dependency_names: List[str], line: int, parameters: List[str], node:"Node" = None, registry: MemberRegistry = None):
         # BaseMethod init: (umid, signature, body, body_hash, dependency_names)
-        super().__init__(identifier, scoped_identifier, return_type, umid, signature, body, body_hash, dependency_names, line, parameters, node)
+        super().__init__(identifier, scoped_identifier, return_type, umid, signature, body, body_hash, dependency_names, line, parameters, node, registry)
     
     @classmethod
-    def from_node(cls, node: "Node", scope: str, dep_query: "Query" = None) -> "JavaMethod":
+    def from_node(cls, node: "Node", scope: str, dep_query: "Query" = None, registry: MemberRegistry = None) -> "JavaMethod":
         line = node.start_point[0]
         
         identifier = "<init>"
@@ -365,9 +367,10 @@ class JavaMethod(BaseMethod):
                     if name == "dependencies":
                         dependency_names.append(d_node.text.decode('utf-8'))
                             
-        return cls(identifier, scoped_identifier, return_type, umid, full_sig_str, body, body_hash, dependency_names, line, parameters=params_full, node=node)
+        return cls(identifier, scoped_identifier, return_type, umid, full_sig_str, body, body_hash, dependency_names, line, parameters=params_full, node=node, registry=registry)
     
     def resolve_dependencies(self, imports: List[str]) -> None:
+            
         if not self.dependency_names:
             return
         
@@ -385,8 +388,8 @@ class JavaMethod(BaseMethod):
             arity = 0 if param_str == '' else len(param_str.split(','))
             # 1. Local Check
             local_fullname = f"{parent_class}.{name}"
-            if local_fullname in MemberRegistry.map_scoped:
-                candidates = [c for c in MemberRegistry.map_scoped[local_fullname] if c.arity == arity]
+            if local_fullname in self.registry.map_scoped:
+                candidates = [c for c in self.registry.map_scoped[local_fullname] if c.arity == arity]
                 if len(candidates) == 1:
                     candidates[0].inbound_dependencies.append(f"#{self.umid.split('#')[-1]}")
                     self.dependencies.append(f"#{candidates[0].umid.split('#')[-1]}")
@@ -404,8 +407,8 @@ class JavaMethod(BaseMethod):
             candidates = []
             for imp in imports:
                 import_fullname = f"{imp}.{name}"
-                if import_fullname in MemberRegistry.map_scoped:
-                    candidates.extend(MemberRegistry.map_scoped[import_fullname])
+                if import_fullname in self.registry.map_scoped:
+                    candidates.extend(self.registry.map_scoped[import_fullname])
             if candidates:
                 if len(candidates) == 1:
                     candidates[0].inbound_dependencies.append(self.umid)
@@ -416,8 +419,8 @@ class JavaMethod(BaseMethod):
                 continue
             
             # 3. Global Name Check
-            if name in MemberRegistry.map_short:
-                candidates = [c for c in MemberRegistry.map_short[name] if c.arity == arity]
+            if name in self.registry.map_short:
+                candidates = [c for c in self.registry.map_short[name] if c.arity == arity]
                 if len(candidates) == 1:
                     candidates[0].inbound_dependencies.append(self.umid)
                     self.dependencies.append(candidates[0].umid)
@@ -440,9 +443,9 @@ class JavaEnum(BaseEnum, JavaClass):
     
     ACCESS_MODIFIERS = {"public", "protected", "private"}
 
-    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, constants: List[str] = None):
+    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, registry: MemberRegistry = None, constants: List[str] = None):
         # BaseEnum init: (ucid, signature, body, constants)
-        super().__init__(ucid, signature, body, node, constants)
+        super().__init__(ucid, signature, body, node, registry, constants)
 
         # BaseClass (parent of BaseEnum) already defines fields/methods dicts
         # We don't need to redefine them unless we want strict typing hints
@@ -450,7 +453,7 @@ class JavaEnum(BaseEnum, JavaClass):
         self.methods: Dict[str, "JavaMethod"] = {}
 
     @classmethod
-    def from_node(cls, node: "Node", scope: str = "") -> "JavaEnum":
+    def from_node(cls, node: "Node", scope: str = "", registry: MemberRegistry = None) -> "JavaEnum":
         identifier: str = ""
         modifiers: List[str] = []
         interfaces: List[str] = []
@@ -492,7 +495,7 @@ class JavaEnum(BaseEnum, JavaClass):
         
         final_body = body_node.text.decode('utf-8') if body_node else ""
         
-        instance = cls(ucid, final_signature, final_body, node, constants)
+        instance = cls(ucid, final_signature, final_body, node, registry, constants)
 
         # Attach members
         if body_node:
@@ -507,7 +510,7 @@ class JavaEnum(BaseEnum, JavaClass):
                     instance.constants.append(const_name)
 
                 elif ct in ("method_declaration", "constructor_declaration"):
-                    method = JavaMethod.from_node(child, instance.ucid)
+                    method = JavaMethod.from_node(child, instance.ucid, registry=registry)
                     # Use UMID key (Flat Dict)
                     instance.methods[method.umid] = method
                     
