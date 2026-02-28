@@ -71,10 +71,6 @@ class JavaClass(BaseClass):
         self.methods: Dict[str, "JavaMethod"] = {}
         self.child_classes: Dict[str, "JavaClass"] = {}
         
-        
-        # if self.node.type == "interface_declaration":
-        #     print('ucid', ucid)
-        
 
     @classmethod
     def from_node(cls, node: "Node", scope: str = "", registry: MemberRegistry = None) -> "JavaClass":

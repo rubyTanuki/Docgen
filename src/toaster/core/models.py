@@ -47,15 +47,9 @@ class BaseFile(ABC):
             coroutine_list.extend([c.resolve_descriptions(llm, self.imports, visited_ucids) for c in class_obj.child_classes.values()])
         await asyncio.gather(*coroutine_list)
 
-    def __json__(self):
-        return {
-            "ufid": self.ufid,
-            "imports": self.imports,
-            "classes": [c.__json__() for c in self.classes]
-        }
-
-    def __repr__(self) -> str:
+    def __str__(self):
         return f"<{self.__class__.__name__}: {self.ufid}>"
+    __repr__=__str__
 
 
 class BaseClass(ABC):
@@ -146,18 +140,9 @@ class BaseClass(ABC):
             print(f"Failed to generate description for {self.ucid}: {e}")
         # determine which methods need second pass
 
-    def __json__(self):
-        return {
-            "ucid": self.ucid,
-            "signature": self.signature,
-            "description": self.description,
-            "fields": [f.__json__() for f in self.fields.values()],
-            "methods": [m.__json__() for m in self.methods.values()],
-            "child_classes": [c.__json__() for c in self.child_classes.values()]
-        }
-
-    def __repr__(self) -> str:
+    def __str__(self):
         return f"<{self.__class__.__name__}: {self.ucid}>"
+    __repr__ = __str__
 
 
 class BaseMethod(ABC):
@@ -206,22 +191,8 @@ class BaseMethod(ABC):
         pass
 
     def __str__(self) -> str:
-        return self.signature
-
-    def __json__(self):
-        return {
-            "umid": self.umid,
-            "return_type": self.return_type if self.return_type else "None",
-            "line": self.line,
-            "signature": self.signature,
-            "body_hash": self.body_hash,
-            "description": self.description,
-            "dependencies": self.dependencies,
-            "unresolved_dependencies": self.unresolved_dependencies
-        }
-
-    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.umid}>"
+    __repr__=__str__
 
 
 class BaseField(ABC):
@@ -240,28 +211,6 @@ class BaseField(ABC):
         pass
 
     def __str__(self) -> str:
-        return self.signature
-
-    def __json__(self):
-        return {
-            "name": self.name,
-            "field_type": self.field_type
-        }
-
-    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.ucid}>"
-
-
-# class BaseEnum(BaseClass):
-#     """
-#     Abstract representation of an Enumeration.
-#     """
-#     def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, registry: MemberRegistry = None, constants: List[str] = None):
-#         super().__init__(ucid, signature, body, node, registry)
-#         self.constants = constants # ["VAL1", "VAL2(args)"]
-
-#     def __json__(self):
-#         data = super().__json__()
-#         data["constants"] = self.constants
-#         return data
+    __repr__ = __str__
     
