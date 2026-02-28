@@ -1,6 +1,6 @@
 from typing import List
 
-from toaster.core.models import BaseFile, BaseClass, BaseMethod, BaseEnum
+from toaster.core.models import BaseFile, BaseClass, BaseMethod
 
 
 class toast:
@@ -21,7 +21,7 @@ class toast:
         
     @classmethod
     def dump_class(cls, c: BaseClass) -> str:
-        is_enum = isinstance(c, BaseEnum)
+        is_enum = c.constants is not []
         output = f"""
 {c.id} | {c.signature} {f"{{{', '.join(c.constants)}}}" if is_enum else ""}
 // {c.description}

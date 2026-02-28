@@ -86,6 +86,8 @@ class BaseClass(ABC):
         
         self.sent_to_llm = False
         
+        self.constants: List[str] = []
+        
             
 
     @classmethod
@@ -250,16 +252,16 @@ class BaseField(ABC):
         return f"<{self.__class__.__name__}: {self.ucid}>"
 
 
-class BaseEnum(BaseClass):
-    """
-    Abstract representation of an Enumeration.
-    """
-    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, registry: MemberRegistry = None, constants: List[str] = None):
-        super().__init__(ucid, signature, body, node, registry)
-        self.constants = constants # ["VAL1", "VAL2(args)"]
+# class BaseEnum(BaseClass):
+#     """
+#     Abstract representation of an Enumeration.
+#     """
+#     def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, registry: MemberRegistry = None, constants: List[str] = None):
+#         super().__init__(ucid, signature, body, node, registry)
+#         self.constants = constants # ["VAL1", "VAL2(args)"]
 
-    def __json__(self):
-        data = super().__json__()
-        data["constants"] = self.constants
-        return data
+#     def __json__(self):
+#         data = super().__json__()
+#         data["constants"] = self.constants
+#         return data
     

@@ -6,7 +6,7 @@ from tree_sitter import Node, Query, QueryCursor, Parser
 
 from toaster.languages.java.queries import DEPENDENCY_QUERY
 from toaster.languages.java.language import JAVA_LANGUAGE
-from toaster.core import BaseFile, BaseClass, BaseMethod, BaseEnum, BaseField, MemberRegistry
+from toaster.core import BaseFile, BaseClass, BaseMethod, BaseField, MemberRegistry
 
 class JavaFile(BaseFile):
     def __init__(self, ufid: str, imports: list[str], classes: list["JavaClass"], registry: MemberRegistry = None):
@@ -439,25 +439,13 @@ class JavaMethod(BaseMethod):
         self.dependencies = [d for d in self.dependencies if d != self_ref]
 
 
-class JavaEnum(BaseEnum, JavaClass):
-    
-    ACCESS_MODIFIERS = {"public", "protected", "private"}
-
-    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, registry: MemberRegistry = None, constants: List[str] = None):
-        # BaseEnum init: (ucid, signature, body, constants)
-        super().__init__(ucid, signature, body, node, registry, constants)
-
-        # BaseClass (parent of BaseEnum) already defines fields/methods dicts
-        # We don't need to redefine them unless we want strict typing hints
-        self.fields: Dict[str, "JavaField"] = {}
-        self.methods: Dict[str, "JavaMethod"] = {}
+class JavaEnum(JavaClass):
 
     @classmethod
     def from_node(cls, node: "Node", scope: str = "", registry: MemberRegistry = None) -> "JavaEnum":
         identifier: str = ""
         modifiers: List[str] = []
         interfaces: List[str] = []
-        constants: List[str] = []
         body_node = None
         
         name_node = node.child_by_field_name('name')
@@ -479,7 +467,7 @@ class JavaEnum(BaseEnum, JavaClass):
             elif child_type == "enum_body":
                 body_node = child
 
-        # Signature 
+        # Signature Construction
         access = "package-private"
         other_mods = []
         for mod in modifiers:
@@ -495,9 +483,10 @@ class JavaEnum(BaseEnum, JavaClass):
         
         final_body = body_node.text.decode('utf-8') if body_node else ""
         
-        instance = cls(ucid, final_signature, final_body, node, registry, constants)
+        # Instantiate the object
+        instance = cls(ucid, final_signature, final_body, node, registry)
 
-        # Attach members
+        # Attach members (Constants, Methods, Fields)
         if body_node:
             for child in body_node.children:
                 ct = child.type
@@ -511,8 +500,8 @@ class JavaEnum(BaseEnum, JavaClass):
 
                 elif ct in ("method_declaration", "constructor_declaration"):
                     method = JavaMethod.from_node(child, instance.ucid, registry=registry)
-                    # Use UMID key (Flat Dict)
                     instance.methods[method.umid] = method
+                    registry.add_method(method)
                     
                 elif ct == "field_declaration":
                     field = JavaField.from_node(child, instance.ucid)
