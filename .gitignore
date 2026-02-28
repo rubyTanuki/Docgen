@@ -209,4 +209,4 @@ __marimo__/
 */DS_Store
 .DS_Store
 
-/TestCode/*
+/tests/test_code/*
