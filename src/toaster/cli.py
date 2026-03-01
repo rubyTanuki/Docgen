@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from toaster.llm import GeminiClient
-from toaster.core import MemberRegistry, toast
+from toaster.core import MemberRegistry, toast, Verbosity
 from toaster.languages.java import JavaParser
 
 
@@ -46,7 +46,7 @@ async def run_cli():
     await parser.parse(use_cache=True)
     
     # Write Skeleton
-    toast_string = toast.dump_project(parser)
+    toast_string = toast.dump_project(parser, verbosity=Verbosity.SIMPLE)
     with open(target_path / "skeleton.toast", "w") as file:
         file.write(toast_string)
 
