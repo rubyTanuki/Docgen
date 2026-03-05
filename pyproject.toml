@@ -10,8 +10,9 @@ dependencies = [
     "tree-sitter",
     "tree-sitter-java",
     "google.genai",
-    "pydantic"
+    "pydantic",
+    "typer"
 ]
 
 [project.scripts]
-toaster = "toaster.cli:main"
+toaster = "toaster.cli:app"

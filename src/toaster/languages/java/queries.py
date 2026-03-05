@@ -40,9 +40,7 @@ METHOD_QUERY = """
 
 DEPENDENCY_QUERY = """
     (
-        (method_invocation
-            name: (identifier) @dependencies
-        )
+        (method_invocation) @dependencies
     )
 """
 

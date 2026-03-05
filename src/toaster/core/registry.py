@@ -4,19 +4,23 @@ from typing import List, Dict, Optional
 class MemberRegistry:
     def __init__(self):
         # "com.pkg.Class#method(int)" -> Method
-        self.map_umid: Dict[str, "JavaMethod"] = {}   
+        self.map_umid: Dict[str, "BaseMethod"] = {}
         
         # "com.pkg.Class.method" -> [Method(int), Method(str)]
-        self.map_scoped: Dict[str, List["JavaMethod"]] = defaultdict(list)
+        self.map_scoped: Dict[str, List["BaseMethod"]] = defaultdict(list)
         
         # "method" -> [Method(ClassA), Method(ClassB)]
-        self.map_short: Dict[str, List["JavaMethod"]] = defaultdict(list)
+        self.map_short: Dict[str, List["BaseMethod"]] = defaultdict(list)
         
         # "com.pkg.Class" -> Class
         self.map_class = {}
+        
+        self.map_id: Dict[str, "BaseStruct"] = {}
     
     def add_method(self, method):
         self.map_umid[method.umid] = method
+        
+        self.map_id[method.id] = method
         
         self.map_scoped[method.scoped_identifier].append(method)
         
@@ -24,6 +28,7 @@ class MemberRegistry:
     
     def add_class(self, class_obj):
         self.map_class[class_obj.ucid] = class_obj
+        self.map_id[class_obj.id] = class_obj
     
     def get_method_cache(self):
         return { m.umid: {
@@ -59,3 +64,6 @@ class MemberRegistry:
             cached_data = class_cache.get(c.ucid)
             if cached_data and cached_data.get('description'):
                 c.description = cached_data['description']
+                
+    def get_struct_by_id(self, id: str) -> Optional["BaseStruct"]:
+        return self.map_id.get(id, None)

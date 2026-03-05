@@ -156,9 +156,11 @@ class JavaClass(BaseClass):
                 elif ct == "class_declaration" or ct == "interface_declaration":
                     child_class = JavaClass.from_node(child, instance.ucid, registry=registry)
                     instance.child_classes[child_class.ucid] = child_class
+                    registry.add_class(child_class)
                 elif ct == "enum_declaration":
                     child_class = JavaEnum.from_node(child, instance.ucid, registry=registry)
                     instance.child_classes[child_class.ucid] = child_class
+                    registry.add_class(child_class)
 
         return instance
     
@@ -299,7 +301,7 @@ class JavaMethod(BaseMethod):
         
         
         # UMID Construction
-        umid = f"{scope}#{identifier}({','.join(params_types)})"
+        umid = f"{scope}#{identifier}({','.join(params_full)})"
         scoped_identifier = f"{scope}.{identifier}"
         
         modifiers = []
@@ -354,85 +356,84 @@ class JavaMethod(BaseMethod):
             captures = cursor.captures(body_node)
             # Tree-sitter python bindings vary by version. 
             # This handles the common case: dict of {name: [nodes]}
-            if isinstance(captures, dict) and "dependencies" in captures:
+            if "dependencies" in captures:
                 for d_node in captures["dependencies"]:
-                    dependency_names.append(d_node.text.decode('utf-8'))
-            # Handle list of tuples case [(node, name)]
-            elif isinstance(captures, list):
-                for d_node, name in captures:
-                    if name == "dependencies":
-                        dependency_names.append(d_node.text.decode('utf-8'))
+                    dependency_names.append((d_node.text.decode('utf-8'), d_node.child_by_field_name('name').text.decode('utf-8')))
                             
         return cls(identifier, scoped_identifier, return_type, umid, full_sig_str, body, body_hash, dependency_names, line, parameters=params_full, node=node, registry=registry)
     
-    def resolve_dependencies(self, imports: List[str]) -> None:
+    def _link_dependencies(self, candidates: list, is_local: bool) -> None:
+        """Helper to consistently format and append inbound/outbound dependency relationships."""
+        
+        # Define formatting rules based on whether the target is in the same class
+        self_ref = f"{self.id}|#{self.umid.split('#')[-1]}" if is_local else f"{self.id}|{self.umid}"
+        
+        def target_ref(c):
+            return f"{c.id}|#{c.umid.split('#')[-1]}" if is_local else f"{c.id}|{c.umid}"
+
+        def fallback_ref(c):
+            return f"~#{c.identifier}(?)" if is_local else f"~{c.identifier}(?)"
+
+        # 1. Exact Match
+        if len(candidates) == 1:
+            c = candidates[0]
+            c.inbound_dependencies.append(self_ref)
+            self.dependencies.append(target_ref(c))
+            return
+
+        # 2. Fuzzy Matches (Overloaded Methods)
+        for c in candidates:
+            c.inbound_dependencies.append(f"~{self_ref}")
             
+        if len(candidates) <= 3:
+            self.dependencies.extend([f"~{target_ref(c)}" for c in candidates])
+        else:
+            self.dependencies.append(fallback_ref(candidates[0]))
+
+
+    def resolve_dependencies(self, imports: list[str]) -> None:
         if not self.dependency_names:
             return
         
-        unique_names = set(self.dependency_names)
+        parent_class = self.umid.split('#')[0] if '#' in self.umid else self.umid.rsplit('.', 1)[0]
         
-        if '#' in self.umid:
-            parent_class = self.umid.split('#')[0]
-        else:
-            parent_class = self.umid.rsplit('.', 1)[0]
-        
-        
-        
-        for name in unique_names:
-            param_str = name.split('(')[-1].strip(')')
-            arity = 0 if param_str == '' else len(param_str.split(','))
-            # 1. Local Check
-            local_fullname = f"{parent_class}.{name}"
-            if local_fullname in self.registry.map_scoped:
-                candidates = [c for c in self.registry.map_scoped[local_fullname] if c.arity == arity]
-                if len(candidates) == 1:
-                    candidates[0].inbound_dependencies.append(f"#{self.umid.split('#')[-1]}")
-                    self.dependencies.append(f"#{candidates[0].umid.split('#')[-1]}")
-                else:
-                    for candidate in candidates: 
-                        candidate.inbound_dependencies.append(f"~#{self.umid.split('#')[-1]}")
-                    if len(candidates) <= 3:
-                        self.dependencies.extend([f"~#{c.umid.split('#')[-1]}" for c in candidates])    
-                    else:
-                        self.dependencies.append(f"~#{candidates[0].identifier}(?)")
+        for text, identifier in set(self.dependency_names):
+            # Calculate Arity
+            param_str = text.split('(')[-1].strip(')')
+            arity = 0 if not param_str else len(param_str.split(','))
+            
+            # Local Check
+            local_name = f"{parent_class}.{identifier}"
+            local_candidates = [c for c in self.registry.map_scoped.get(local_name, []) if c.arity == arity]
+            
+            if local_candidates:
+                self._link_dependencies(local_candidates, is_local=True)
                 continue
             
-            # 2. Import Check
-            resolved_via_import = False
-            candidates = []
+            # Import Check
+            import_candidates = []
             for imp in imports:
-                import_fullname = f"{imp}.{name}"
-                if import_fullname in self.registry.map_scoped:
-                    candidates.extend(self.registry.map_scoped[import_fullname])
-            if candidates:
-                if len(candidates) == 1:
-                    candidates[0].inbound_dependencies.append(self.umid)
-                    self.dependencies.append(candidates[0].umid)
-                else:
-                    for c in candidates: c.inbound_dependencies.append(f"~{self.umid}")
-                    self.dependencies.extend([f"~{c.umid}" for c in candidates if c.arity == arity])
+                import_name = f"{imp}.{identifier}"
+                import_candidates.extend(self.registry.map_scoped.get(import_name, []))
+                
+            import_candidates = [c for c in import_candidates if c.arity == arity]
+            
+            if import_candidates:
+                self._link_dependencies(import_candidates, is_local=False)
                 continue
             
-            # 3. Global Name Check
-            if name in self.registry.map_short:
-                candidates = [c for c in self.registry.map_short[name] if c.arity == arity]
-                if len(candidates) == 1:
-                    candidates[0].inbound_dependencies.append(self.umid)
-                    self.dependencies.append(candidates[0].umid)
-                else:
-                    self.dependencies.extend([f"~{c.umid}" for c in candidates])
-                    if len(candidates) <= 3:
-                        for c in candidates: c.inbound_dependencies.append(f"~{self.umid}")
-                    else:
-                        self.dependencies.append(f"~{candidates[0].identifier}(?)")
+            # Global Name Check
+            global_candidates = [c for c in self.registry.map_short.get(identifier, []) if c.arity == arity]
+            
+            if global_candidates:
+                self._link_dependencies(global_candidates, is_local=False)
                 continue
             
-            self.unresolved_dependencies.append(name)
-        # remove duplicates
+            # Fallback
+            self.unresolved_dependencies.append(identifier)
+            
+        # Remove duplicates
         self.dependencies = list(set(self.dependencies))
-        self_ref = f"#{self.umid.split('#')[-1]}"
-        self.dependencies = [d for d in self.dependencies if d != self_ref]
 
 
 class JavaEnum(JavaClass):

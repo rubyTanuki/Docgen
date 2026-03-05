@@ -6,6 +6,8 @@ import json
 
 from toaster.core.models import BaseFile
 from toaster.core.registry import MemberRegistry
+from toaster.core.serializer import toast, Verbosity
+
 
 class BaseParser(ABC):
     def __init__(self, project_dir: str, llm=None, registry: MemberRegistry=None):
@@ -13,6 +15,7 @@ class BaseParser(ABC):
         self.registry = registry
         self.files: list[BaseFile] = []
         self.project_dir = project_dir
+        self.path = Path(self.project_dir)
 
     async def parse(self, use_cache=True):
         self.parse_filetree()
@@ -29,9 +32,8 @@ class BaseParser(ABC):
         await self.resolve_descriptions()
 
     def parse_filetree(self):
-        path = Path(self.project_dir)
         
-        for filepath in path.rglob("*"):
+        for filepath in self.path.rglob("*"):
             if filepath.is_file():
                 code = filepath.read_bytes()
                 suffix = filepath.suffix
@@ -64,3 +66,13 @@ class BaseParser(ABC):
         self.visited_ucids = set()
         coroutine_list = [file.resolve_descriptions(self.llm, self.visited_ucids) for file in self.files]
         result = await asyncio.gather(*coroutine_list)
+        
+    def write_skeleton(self):
+        toast_string = toast.dump_project(self, verbosity=Verbosity.SIMPLE)
+        with open(self.path / "skeleton.toast", "w") as file:
+            file.write(toast_string)
+            
+    def write_cache(self):
+        method_cache = json.dumps(self.registry.get_cache(), indent=4)
+        with open(self.path / ".toaster_cache.json", "w") as file:
+            file.write(method_cache)
