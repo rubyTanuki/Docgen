@@ -1,38 +1,29 @@
+from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
+import re
 import json
 import asyncio
 import hashlib
 
 from toaster.core.registry import MemberRegistry
 
+@dataclass
 class BaseFile(ABC):
     """
     Abstract representation of a source code file.
     Acts as the root container for the dependency graph.
     """
+    ufid: str # Unique File ID (usually filename or relative path)
+    imports: List[str]
+    classes: List["BaseClass"]
+    registry: MemberRegistry = None
     
-    def __init__(self, ufid: str, imports: List[str], classes: List["BaseClass"], registry: MemberRegistry = None):
-        self.registry = registry
-        
-        self.ufid = ufid          # Unique File ID (usually filename or relative path)
-        self.imports = imports    # List of import strings
-        self.classes = classes    # Top-level classes defined in this file
+    id: str = field(init=False)
 
+    def __post_init__(self):
         id_hash = hashlib.md5(self.ufid.encode('utf-8')).hexdigest()[:4]
         self.id = f"F-{id_hash}"
-        
-    @classmethod
-    @abstractmethod
-    def from_source(cls, filename: str, source_code: bytes, registry: MemberRegistry = None) -> "BaseFile":
-        """Factory method to parse raw source code."""
-        pass
-    
-    @classmethod
-    @abstractmethod
-    def from_file(cls, filepath: str, registry: MemberRegistry = None) -> "BaseFile":
-        """Factory method to parse a file."""
-        pass
 
     def resolve_dependencies(self):
         """Triggers dependency resolution for all children."""
@@ -52,49 +43,42 @@ class BaseFile(ABC):
     __repr__=__str__
 
 
+@dataclass
 class BaseClass(ABC):
     """
     Abstract representation of a Class.
     Stores Members (Fields/Methods) and Metadata for LLM processing.
     """
+    ucid: str
+    signature: str
+    body: str
+    start_line: int
+    node: Any = None
+    registry: MemberRegistry = None
     
-    def __init__(self, ucid: str, signature: str, body: str, node: "Node" = None, registry: MemberRegistry = None):
-        self.registry = registry
-        
-        self.ucid = ucid            # Unique Context ID (e.g. "com.pkg.MyClass")
-        self.signature = signature  # Display signature (e.g. "public class MyClass extends B")
-        self.body = body            # Raw source code
-        self.node = node            # AST Tree-sitter Node
-        self.line = node.start_point[0] if node else 0
-        
-        self.body_hash = ""         # Hash for diffing
-        self.description = ""       # LLM Output
-
-        # Children (Keyed by ID for O(1) access)
-        self.fields: Dict[str, "BaseField"] = {}
-        self.methods: Dict[str, "BaseMethod"] = {}
-        self.child_classes: Dict[str, "BaseClass"] = {}
-        
-        id_hash = hashlib.md5(self.ucid.encode('utf-8')).hexdigest()[:4]
-        self.id = f"C-{id_hash}"
-        
-        self.sent_to_llm = False
-        
-        self.constants: List[str] = []
-        
-            
-
-    @classmethod
-    @abstractmethod
-    def from_node(cls, node: Any, scope: str = "", registry: MemberRegistry = None) -> "BaseClass":
-        """Factory method to parse an AST node."""
-        pass
+    # computed
+    end_line: int = field(init=False)
+    id: str = field(init=False)
+    description: str = ""
+    sent_to_llm: bool = False
+    constants: List[str] = field(default_factory=list)
+    confidence: float = 0.0
     
+    fields: Dict[str, "BaseField"] = field(default_factory=dict)
+    methods: Dict[str, "BaseMethod"] = field(default_factory=dict)
+    child_classes: Dict[str, "BaseClass"] = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.end_line = self.start_line + self.body.count('\n')
+        self.id = f"C-{hashlib.md5(self.ucid.encode('utf-8')).hexdigest()[:4]}"
+        
     @abstractmethod
     def skeletonize(self) -> str:
         pass
 
-    def resolve_dependencies(self, imports: List[str] = []):
+    def resolve_dependencies(self, imports: List[str] = None):
+        if imports is None:
+            imports = []
         """Passes context to methods to link dependencies."""
         for method in self.methods.values():
             method.resolve_dependencies(imports)
@@ -109,10 +93,8 @@ class BaseClass(ABC):
             return
         visited_ucids.add(self.ucid)
         
-        
         needs_description = any([not method.description for method in self.methods.values()]) or not self.description
         if not needs_description:
-            # print(f"No changes in {self.ucid}, skipping llm call")
             return
         
         try:
@@ -124,66 +106,63 @@ class BaseClass(ABC):
                 return
             
             self.description = response_obj["description"]
-            # print(self.description)
             self.confidence = response_obj["confidence"]
-            # extract method level descriptions
             for method_obj in response_obj["methods"]:
                 returned_umid = method_obj["umid"]
-                
                 method = self.methods.get(returned_umid)
-                
                 if method:
                     method.description = method_obj["description"]
                     method.confidence = method_obj["confidence"]
             
         except Exception as e:
             print(f"Failed to generate description for {self.ucid}: {e}")
-        # determine which methods need second pass
 
     def __str__(self):
         return f"<{self.__class__.__name__}: {self.ucid}>"
     __repr__ = __str__
 
 
+@dataclass
 class BaseMethod(ABC):
     """
     Abstract representation of a Function/Method.
     This is the primary unit of work for the LLM.
     """
-    def __init__(self, identifier: str, scoped_identifier: str, return_type: str, umid: str, signature: str, body: str,
-                 body_hash: str, dependency_names: List[str], line: int, parameters: List[str], node:"Node" = None, registry: MemberRegistry = None):
-        self.registry = registry
-        
-        self.node = node
-        self.identifier = identifier
-        self.return_type = return_type
-        self.scoped_identifier = scoped_identifier
-        self.umid = umid            # Unique Method ID (e.g. "com.pkg.Class#method(int)")
-        self.signature = signature  # Display signature (e.g. "public void method(int a)")
-        self.body = body            # Raw source code
-        self.body_hash = body_hash  # Hash for diffing
-        self.line = line #line number in file
-        self.parameters = parameters
+    identifier: str
+    scoped_identifier: str
+    return_type: str
+    umid: str
+    signature: str
+    body: str
+    dependency_names: List[str]
+    start_line: int
+    parameters: List[str]
+    node: Any = None
+    registry: MemberRegistry = None
+    file: BaseFile = None
+    parent_class: BaseClass = None
+    
+    # computed
+    arity: int = field(init=False)
+    body_hash: str = field(init=False)
+    id: str = field(init=False)
+    end_line: int = field(init=False)
+    description: str = ""
+    confidence: float = 0.0
+    dependencies: List[str] = field(default_factory=list)
+    unresolved_dependencies: List[str] = field(default_factory=list)
+    inbound_dependencies: List[str] = field(default_factory=list)
+
+    @property
+    def impact_score(self) -> int:
+        return len(self.inbound_dependencies) * 2 + len(self.dependencies)
+
+    def __post_init__(self):
         self.arity = len(self.parameters)
-        id_hash = hashlib.md5(self.umid.encode('utf-8')).hexdigest()[:5]
-        self.id = f"M-{id_hash}"
-        
-        # LLM Output
-        self.description = ""
-        self.confidence = 0         # 0-100 score
-
-        # Graph Links
-        self.dependency_names = dependency_names # Raw strings found in parsing
-        self.dependencies: List["BaseMethod"] = [] # Resolved object references
-        self.unresolved_dependencies: List[str] = []
-        
-        self.inbound_dependencies: List["BaseMethod"] = []
-
-    @classmethod
-    @abstractmethod
-    def from_node(cls, node: Any, scope: str, dep_query: Any = None, registry: MemberRegistry = None) -> "BaseMethod":
-        """Factory method to parse an AST node."""
-        pass
+        clean_body = re.sub(r'\s+', '', self.body)
+        self.body_hash = hashlib.sha256(clean_body.encode('utf-8')).hexdigest()[:8]
+        self.id = f"M-{hashlib.md5(self.umid.encode('utf-8')).hexdigest()[:5]}" 
+        self.end_line = self.start_line + self.body.count('\n')
 
     @abstractmethod
     def resolve_dependencies(self, imports: List[str]):
@@ -195,22 +174,16 @@ class BaseMethod(ABC):
     __repr__=__str__
 
 
+@dataclass
 class BaseField(ABC):
     """
     Abstract representation of a variable/property.
     """
-    def __init__(self, ucid: str, name: str, signature: str, field_type: str):
-        self.ucid = ucid            # Unique ID (e.g. "com.pkg.Class.myField")
-        self.name = name            # Short name (e.g. "myField")
-        self.signature = signature  # Display string (e.g. "private int myField = 5")
-        self.field_type = field_type
-
-    @classmethod
-    @abstractmethod
-    def from_node(cls, node: Any, scope: str = "") -> "BaseField":
-        pass
+    ucid: str
+    name: str
+    signature: str
+    field_type: str
 
     def __str__(self) -> str:
         return f"<{self.__class__.__name__}: {self.ucid}>"
     __repr__ = __str__
-    
