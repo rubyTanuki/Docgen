@@ -14,42 +14,39 @@ class toast:
     
     @classmethod
     def dumps(cls, obj: "BaseStruct", verbosity: Verbosity=Verbosity.SIMPLE) -> str:
-        if isinstance(obj, BaseFile):
-            return cls.dump_file(obj, verbosity=verbosity)
-        elif isinstance(obj, BaseClass):
-            return cls.dump_class(obj, verbosity=verbosity)
-        elif isinstance(obj, BaseMethod):
-            return cls.dump_method(obj, verbosity=verbosity)
-        else:
-            raise TypeError(f"Unsupported type: {type(obj)}")
+        match obj:
+            case BaseFile():
+                return cls.dump_file(obj, verbosity=verbosity)
+            case BaseClass():
+                return cls.dump_class(obj, verbosity=verbosity)
+            case BaseMethod():
+                return cls.dump_method(obj, verbosity=verbosity)
+            case _:
+                raise TypeError(f"Unsupported type: {type(obj)}")
     
     @classmethod
-    def dump_method(cls, m: BaseMethod, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
-        line_text = f"@L{m.line}"
-        if verbosity >= Verbosity.SIMPLE: line_text += f"-{m.node.end_point[0]}"
-        output = f"\n{m.id} {line_text} | {m.signature}"
+    def dump_method(cls, m: BaseMethod, verbosity: Verbosity = Verbosity.SIMPLE) -> str:
+        line_range = f"@L{m.start_line}-{m.end_line}"
         
+        parts = [f"{m.id} {line_range} | {m.signature}"]
+
         if verbosity >= Verbosity.SIMPLE:
-            # append description
-            output+= f"\n// {m.description}"
-            # append outbound dependencies
+            parts.append(f"// {m.description}")
             if m.dependencies:
-                output += '\n> ' + ', '.join(m.dependencies)
-            
+                parts.append(f"> {', '.join(m.dependencies)}")
+
         if verbosity >= Verbosity.VERBOSE:
-            # append inbound dependencies
             if m.inbound_dependencies:
-                output += '\n< ' + ', '.join(m.inbound_dependencies)
-        
+                parts.append(f"< {', '.join(m.inbound_dependencies)}")
+            parts.append(f"# impact score: {m.impact_score}")
+
         if verbosity >= Verbosity.FULL:
             if m.unresolved_dependencies:
-                output += '\n# unresolved dependencies: ' + ', '.join(m.unresolved_dependencies)
-            # append full body
-            output += '\njava ```'
-            output += f"\n{m.body}"
-            output += '\n```'
-        
-        return output
+                parts.append(f"# unresolved dependencies: {', '.join(m.unresolved_dependencies)}")
+            
+            parts.append(f"java ```\n{m.body}\n```")
+
+        return "\n" + "\n".join(parts)
         
     @classmethod
     def dump_class(cls, c: BaseClass, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
