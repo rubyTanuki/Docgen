@@ -24,63 +24,19 @@ class toast:
             case _:
                 raise TypeError(f"Unsupported type: {type(obj)}")
 
-    @classmethod
-    def dump_dict(cls, d: dict, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
-        struct_id = d.get("id", "")
-        if struct_id.startswith("M-"):
-            line_range = f"@L{d.get('start_line')}-{d.get('end_line')}"
-            
-            parts = []
-            if "_file_source_path" in d:
-                parts.append(f"/{d['_file_source_path']}")
-            if "_class_ucid" in d:
-                parts.append(f"{d['_class_ucid']}")
-                
-            parts.append(f"{struct_id} {line_range} | {d.get('signature')}")
-            if verbosity >= Verbosity.SIMPLE:
-                desc = d.get('description')
-                if desc:
-                    parts.append(f"// {desc}")
-                deps = d.get('dependencies', [])
-                if deps:
-                    flat_deps = []
-                    for dep in deps:
-                        if isinstance(dep, list):
-                            flat_deps.append(dep[-1] if len(dep) > 1 else dep[0])
-                        else:
-                            flat_deps.append(str(dep))
-                    parts.append(f"> {', '.join(flat_deps)}")
-            if verbosity >= Verbosity.FULL:
-                body = d.get("body")
-                if body:
-                    parts.append(f"```\n{body}\n```")
-            return "\n" + "\n".join(parts)
-            
-        elif struct_id.startswith("C-"):
-            output = f"\n{struct_id} | {d.get('signature')}"
-            if verbosity > Verbosity.MINIMAL:
-                constants = d.get("constants", [])
-                if constants:
-                    output += f" {{{', '.join(constants)}}}"
-                desc = d.get('description')
-                if desc:
-                    output += f"\n// {desc}"
-            return output
-            
-        elif struct_id.startswith("F-"):
-            output = f"\n{struct_id} | {d.get('ufid')}\n"
-            imports = d.get('imports', [])
-            if imports:
-                output += f"imports: {', '.join(imports)}"
-            return output
-            
-        return json.dumps(d, indent=4)
+
     
     @classmethod
     def dump_method(cls, m: BaseMethod, verbosity: Verbosity = Verbosity.SIMPLE) -> str:
         line_range = f"@L{m.start_line}-{m.end_line}"
         
-        parts = [f"{m.id} {line_range} | {m.signature}"]
+        parts = []
+        if m.file and m.file.source_path:
+            parts.append(f"/{m.file.source_path}")
+        if m.parent_class and m.parent_class.ucid:
+            parts.append(f"{m.parent_class.ucid}")
+            
+        parts.append(f"{m.id} {line_range} | {m.signature}")
 
         if verbosity >= Verbosity.SIMPLE:
             parts.append(f"// {m.description}")

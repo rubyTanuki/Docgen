@@ -68,7 +68,7 @@ class MemberRegistry:
                 """,
                 (method.id, class_obj.id, method.identifier, method.scoped_identifier, method.return_type, 
                  method.umid, method.signature, method.body, method.body_hash, method.start_line, method.end_line, 
-                 json.dumps(method.parameters), json.dumps(method.dependency_names), method.description)
+                 json.dumps(method.parameters), json.dumps(method.dependencies), method.description)
             )
             
         for child_class in class_obj.child_classes.values():
@@ -106,8 +106,117 @@ class MemberRegistry:
     def get_struct_by_id(self, id: str) -> Optional["BaseStruct"]:
         return self.map_id.get(id, None)
 
-    def get_struct_from_db(self, id: str) -> Optional[dict]:
-        """Direct SQLite lookup without memory cache parsing."""
+    def _parse_row(self, row, is_method=False):
+        if not row: return None
+        row_dict = dict(row)
+        for json_field in ['imports', 'constants', 'parameters', 'dependencies']:
+            if json_field in row_dict and row_dict[json_field]:
+                try:
+                    row_dict[json_field] = json.loads(row_dict[json_field])
+                except Exception:
+                    pass
+        return row_dict
+
+    def _create_method(self, d: dict) -> "BaseMethod":
+        from toaster.languages.java.models import JavaMethod
+        from toaster.languages.csharp.models import CSharpMethod
+        
+        path = d.get("_file_source_path", "")
+        method_cls = CSharpMethod if path.endswith(".cs") else JavaMethod
+        
+        m = method_cls(
+            identifier=d['identifier'],
+            scoped_identifier=d['scoped_identifier'],
+            return_type=d['return_type'],
+            umid=d['umid'],
+            signature=d['signature'],
+            body=d['body'],
+            dependency_names=[],
+            start_line=d['start_line'],
+            parameters=d.get('parameters', [])
+        )
+        m.description = d.get('description', '')
+        m.dependencies = d.get('dependencies', [])
+        m.id = d['id']
+        m.end_line = d['end_line']
+        m.body_hash = d['body_hash']
+        
+        # Inject the mock file for file path resolution in serialization
+        from toaster.core.models import BaseFile
+        class MockFile(BaseFile):
+            def resolve_dependencies(self): pass
+            
+        mf = MockFile(ufid=path, imports=[], classes=[])
+        mf.source_path = path
+        m.file = mf
+        
+        # Inject mock class for resolution
+        from toaster.core.models import BaseClass
+        class MockClass(BaseClass):
+            def skeletonize(self): pass
+        mc = MockClass(ucid=d.get('_class_ucid', ''), signature='', body='', start_line=0, child_classes={}, methods={})
+        m.parent_class = mc
+        
+        return m
+
+    def _create_class(self, d: dict) -> "BaseClass":
+        from toaster.languages.java.models import JavaClass
+        from toaster.languages.csharp.models import CSharpClass
+        
+        path = d.get("_file_source_path", "unknown.java")
+        class_cls = CSharpClass if path.endswith(".cs") else JavaClass
+        
+        c = class_cls(
+            ucid=d['ucid'],
+            signature=d['signature'],
+            body=d['body'],
+            start_line=d['start_line'],
+            child_classes={},
+            methods={}
+        )
+        c.description = d.get('description', '')
+        c.constants = d.get('constants', [])
+        c.id = d['id']
+        c.end_line = d['end_line']
+        
+        for md in d.get("methods", []):
+            md["_file_source_path"] = path
+            md["_class_ucid"] = c.ucid
+            m = self._create_method(md)
+            m.parent_class = c
+            c.methods[m.umid] = m
+            
+        for cd in d.get("child_classes", []):
+            cd["_file_source_path"] = path
+            child = self._create_class(cd)
+            c.child_classes[child.ucid] = child
+            
+        return c
+
+    def _create_file(self, d: dict) -> "BaseFile":
+        from toaster.languages.java.models import JavaFile
+        from toaster.languages.csharp.models import CSharpFile
+        
+        path = d.get("source_path") or d.get("ufid", "")
+        file_cls = CSharpFile if path.endswith(".cs") else JavaFile
+        
+        f = file_cls(
+            ufid=d['ufid'],
+            imports=d.get('imports', []),
+            classes=[]
+        )
+        f.source_path = path
+        f.id = d['id']
+        
+        for cd in d.get("classes", []):
+            cd["_file_source_path"] = path
+            child = self._create_class(cd)
+            f.classes.append(child)
+            
+        return f
+
+    def get_struct_from_db(self, id: str) -> Optional["BaseStruct"]:
+        """Direct SQLite lookup that returns hydrated BaseStruct objects."""
         with self.db.get_connection() as conn:
             if id.startswith("M-"):
                 query = """
@@ -118,20 +227,33 @@ class MemberRegistry:
                     WHERE m.id = ?
                 """
                 row = conn.execute(query, (id,)).fetchone()
+                if not row: return None
+                return self._create_method(self._parse_row(row))
+                
             elif id.startswith("C-"):
-                row = conn.execute("SELECT * FROM classes WHERE id = ?", (id,)).fetchone()
+                query = """
+                    SELECT c.*, f.source_path as _file_source_path
+                    FROM classes c
+                    JOIN files f ON c.file_id = f.id
+                    WHERE c.id = ?
+                """
+                row = conn.execute(query, (id,)).fetchone()
+                if not row: return None
+                row_dict = self._parse_row(row)
+                
+                m_rows = conn.execute("SELECT * FROM methods WHERE class_id = ?", (id,)).fetchall()
+                row_dict["methods"] = [self._parse_row(r) for r in m_rows]
+                
+                c_rows = conn.execute("SELECT * FROM classes WHERE parent_class_id = ?", (id,)).fetchall()
+                row_dict["child_classes"] = [self._parse_row(c) for c in c_rows]
+                return self._create_class(row_dict)
+                
             elif id.startswith("F-"):
                 row = conn.execute("SELECT * FROM files WHERE id = ?", (id,)).fetchone()
-            else:
-                return None
-            
-            if row:
-                row_dict = dict(row)
-                for json_field in ['imports', 'constants', 'parameters', 'dependencies']:
-                    if json_field in row_dict and row_dict[json_field]:
-                        try:
-                            row_dict[json_field] = json.loads(row_dict[json_field])
-                        except:
-                            pass
-                return row_dict
+                if not row: return None
+                row_dict = self._parse_row(row)
+                c_rows = conn.execute("SELECT * FROM classes WHERE file_id = ? AND parent_class_id IS NULL", (id,)).fetchall()
+                row_dict["classes"] = [self._parse_row(c) for c in c_rows]
+                return self._create_file(row_dict)
+                
             return None
