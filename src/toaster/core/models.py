@@ -107,12 +107,15 @@ class BaseClass(ABC):
             
             self.description = response_obj["description"]
             self.confidence = response_obj["confidence"]
-            for method_obj in response_obj["methods"]:
-                returned_umid = method_obj["umid"]
+            for method_obj in response_obj.get("methods", []):
+                returned_umid = method_obj.get("umid")
+                if not returned_umid:
+                    continue
+                    
                 method = self.methods.get(returned_umid)
                 if method:
-                    method.description = method_obj["description"]
-                    method.confidence = method_obj["confidence"]
+                    method.description = method_obj.get("description", "")
+                    method.confidence = method_obj.get("confidence", 0)
             
         except Exception as e:
             print(f"Failed to generate description for {self.ucid}: {e}")

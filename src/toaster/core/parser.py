@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 import asyncio
 import json
+import time
 
 from toaster.core.models import BaseFile
 from toaster.core.registry import MemberRegistry
@@ -15,14 +16,22 @@ class BaseParser(ABC):
         self.registry = registry
         self.files: list[BaseFile] = []
         self.project_dir = project_dir
-        self.path = Path(self.project_dir)
-
     async def parse(self, use_cache=True):
-        self.parse_filetree()
-        print("✅ Parsed Project Files")
+        self.path = Path(self.project_dir)
+        print(f"🔍 Parsing files in '{self.project_dir}' and linking AST...")
         
+        start_time = time.time()
+        
+        t_parse = time.time()
+        await self.parse_filetree()
+        print(f"✅ Parsed Project Files in {time.time() - t_parse:.2f} seconds")
+        
+        t_resolve = time.time()
         self.resolve_dependencies()
-        print("✅ Resolved Dependencies")
+        print(f"✅ Resolved Dependencies in {time.time() - t_resolve:.2f} seconds")
+        
+        end_time = time.time()
+        print(f"Took {end_time - start_time:.2f} seconds to parse project files")
         
         if use_cache:
             self.load_cache()
@@ -31,20 +40,21 @@ class BaseParser(ABC):
         
         await self.resolve_descriptions()
 
-    def parse_filetree(self):
-        
-        for filepath in self.path.rglob("*"):
-            if filepath.is_file():
-                code = filepath.read_bytes()
-                suffix = filepath.suffix
-                name = filepath.name
-                
-                file_obj = self.parse_file(name, code)
-            
-                if file_obj:
-                    file_obj.source_path = filepath 
-                    self.files.append(file_obj)
-        
+    async def _parse_single_file(self, filepath):
+        if filepath.is_file():
+            code = filepath.read_bytes()
+            name = filepath.name
+            file_obj = await asyncio.to_thread(self.parse_file, name, code)
+            if file_obj:
+                file_obj.source_path = filepath
+                return file_obj
+        return None
+
+    async def parse_filetree(self):
+        tasks = [self._parse_single_file(filepath) for filepath in self.path.rglob("*")]
+        results = await asyncio.gather(*tasks)
+        self.files.extend(filter(None, results))
+
     @abstractmethod
     def parse_file(self, name: str, code: bytes) -> BaseFile:
         pass
@@ -56,9 +66,11 @@ class BaseParser(ABC):
     def load_cache(self):
         cache_file = Path(self.project_dir) / ".toaster_cache.json"
         print(f"Attempting to load cache from {cache_file}")
+        t_cache = time.time()
         if cache_file.exists():
             with open(cache_file, 'r', encoding='utf-8') as f:
                 self.registry.load_cache(json.load(f))
+            print(f"✅ Loaded Cache in {time.time() - t_cache:.2f} seconds")
         else:
             print(f"Cache not found at {cache_file}")
                     

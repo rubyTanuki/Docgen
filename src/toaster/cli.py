@@ -9,6 +9,7 @@ from typing import Annotated
 from toaster.llm import GeminiClient
 from toaster.core import MemberRegistry, toast, Verbosity
 from toaster.languages.java import JavaParser
+from toaster.languages.csharp import CSharpParser
 
 # Initialize the Typer app
 app = typer.Typer(
@@ -28,7 +29,18 @@ async def _init_ast_async(target_path: Path, use_cache: bool = True) -> BasePars
     registry = MemberRegistry()
     
     print(f"🔍 Parsing files in '{target_path}' and linking AST...")
-    parser = JavaParser(target_path, llm, registry)
+    
+    # Simple language routing
+    has_java = any(target_path.rglob("*.java"))
+    has_cs = any(target_path.rglob("*.cs"))
+    
+    parser_class = JavaParser
+    if has_cs and not has_java:
+        parser_class = CSharpParser
+    elif has_cs and has_java:
+        print("⚠️ Warning: Mixed language project found. Defaulting to Java.")
+        
+    parser = parser_class(target_path, llm, registry)
     await parser.parse(use_cache=use_cache)
     
     return parser
