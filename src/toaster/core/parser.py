@@ -46,7 +46,7 @@ class BaseParser(ABC):
             name = filepath.name
             file_obj = await asyncio.to_thread(self.parse_file, name, code)
             if file_obj:
-                file_obj.source_path = filepath
+                file_obj.source_path = filepath.relative_to(self.path)
                 return file_obj
         return None
 
@@ -64,15 +64,10 @@ class BaseParser(ABC):
             file.resolve_dependencies()
     
     def load_cache(self):
-        cache_file = Path(self.project_dir) / ".toaster_cache.json"
-        print(f"Attempting to load cache from {cache_file}")
+        print("Attempting to load cache from SQLite database...")
         t_cache = time.time()
-        if cache_file.exists():
-            with open(cache_file, 'r', encoding='utf-8') as f:
-                self.registry.load_cache(json.load(f))
-            print(f"✅ Loaded Cache in {time.time() - t_cache:.2f} seconds")
-        else:
-            print(f"Cache not found at {cache_file}")
+        self.registry.load_cache()
+        print(f"✅ Loaded Cache in {time.time() - t_cache:.2f} seconds")
                     
     async def resolve_descriptions(self):
         self.visited_ucids = set()
@@ -85,6 +80,5 @@ class BaseParser(ABC):
             file.write(toast_string)
             
     def write_cache(self):
-        method_cache = json.dumps(self.registry.get_cache(), indent=4)
-        with open(self.path / ".toaster_cache.json", "w") as file:
-            file.write(method_cache)
+        print("Writing AST to SQLite database...")
+        self.registry.save_to_db(self.files)

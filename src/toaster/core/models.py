@@ -33,9 +33,9 @@ class BaseFile(ABC):
     async def resolve_descriptions(self, llm: "LLMClient", visited_ucids: set[str] = None):
         if visited_ucids is None:
             visited_ucids = set()
-        coroutine_list = [cls.resolve_descriptions(llm, self.imports, visited_ucids) for cls in self.classes]
+        coroutine_list = [cls.resolve_descriptions(llm, self.imports, visited_ucids, self.registry) for cls in self.classes]
         for class_obj in self.classes:
-            coroutine_list.extend([c.resolve_descriptions(llm, self.imports, visited_ucids) for c in class_obj.child_classes.values()])
+            coroutine_list.extend([c.resolve_descriptions(llm, self.imports, visited_ucids, self.registry) for c in class_obj.child_classes.values()])
         await asyncio.gather(*coroutine_list)
 
     def __str__(self):
@@ -85,9 +85,10 @@ class BaseClass(ABC):
         for child in self.child_classes.values():
             child.resolve_dependencies(imports)
     
-    async def resolve_descriptions(self, llm: "LLMClient", imports: List[str] = None, visited_ucids: set[str] = None):
+    async def resolve_descriptions(self, llm: "LLMClient", imports: List[str] = None, visited_ucids: set[str] = None, registry=None):
         if imports is None: imports = []
         if visited_ucids is None: visited_ucids = set()
+        self.registry = registry or self.registry
         
         if self.ucid in visited_ucids:
             return
@@ -107,6 +108,10 @@ class BaseClass(ABC):
             
             self.description = response_obj["description"]
             self.confidence = response_obj["confidence"]
+            
+            if self.registry:
+                self.registry.update_class_description(self)
+                
             for method_obj in response_obj.get("methods", []):
                 returned_umid = method_obj.get("umid")
                 if not returned_umid:
@@ -116,6 +121,8 @@ class BaseClass(ABC):
                 if method:
                     method.description = method_obj.get("description", "")
                     method.confidence = method_obj.get("confidence", 0)
+                    if self.registry:
+                        self.registry.update_method_description(method)
             
         except Exception as e:
             print(f"Failed to generate description for {self.ucid}: {e}")

@@ -26,7 +26,7 @@ async def _init_ast_async(target_path: Path, use_cache: bool = True) -> BasePars
     
     # Dependency Injection
     llm = GeminiClient(api_key=GEMINI_API_KEY) 
-    registry = MemberRegistry()
+    registry = MemberRegistry(str(target_path))
     
     print(f"🔍 Parsing files in '{target_path}' and linking AST...")
     
@@ -95,17 +95,17 @@ def init(
 
 
 async def _inspect_async(id:str, target_path: Path, include_body: bool = False):
-    parser = await _init_ast_async(target_path, use_cache=True)
-    
-    struct = parser.registry.get_struct_by_id(id=id)
-    if struct is None:
+    registry = MemberRegistry(str(target_path))
+    row_data = registry.get_struct_from_db(id)
+    if row_data is None:
         print(f"❌ Error: Struct not found with id {id}.")
         raise typer.Exit(code=1)
     
-    if include_body:
-        print(toast.dumps(struct, verbosity=Verbosity.FULL))
-    else:
-        print(toast.dumps(struct, verbosity=Verbosity.VERBOSE))
+    if not include_body and "body" in row_data:
+        del row_data["body"]
+        
+    verb = Verbosity.FULL if include_body else Verbosity.VERBOSE
+    print(toast.dump_dict(row_data, verbosity=verb))
     
 
 # You can easily add more commands here later!
@@ -131,8 +131,8 @@ def inspect(
             )
         ] = False
 ):
-    if not (path / ".toaster_cache.json").exists():
-        print("❌ Error: Cache not found. Run 'toaster init' first.")
+    if not (path / ".toaster.db").exists():
+        print("❌ Error: Database not found. Run 'toaster init' first.")
         raise typer.Exit(code=1)
     # Wrap the async call in asyncio.run
     asyncio.run(_inspect_async(id, path, include_body))
