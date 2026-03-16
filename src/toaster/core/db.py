@@ -69,6 +69,7 @@ class SQLiteCache:
                     end_line INTEGER,
                     parameters JSON,
                     dependencies JSON,
+                    inbound_dependencies JSON,
                     description TEXT,
                     FOREIGN KEY(class_id) REFERENCES classes(id)
                 )

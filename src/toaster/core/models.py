@@ -1,12 +1,14 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union, TYPE_CHECKING
 import re
 import json
 import asyncio
 import hashlib
+from importlib import import_module
 
-from toaster.core.registry import MemberRegistry
+if TYPE_CHECKING:
+    from toaster.core.registry import MemberRegistry
 
 @dataclass
 class BaseFile(ABC):
@@ -17,9 +19,29 @@ class BaseFile(ABC):
     ufid: str # Unique File ID (usually filename or relative path)
     imports: List[str]
     classes: List["BaseClass"]
-    registry: MemberRegistry = None
+    registry: "MemberRegistry" = None
     
     id: str = field(init=False)
+
+    @staticmethod
+    def from_dict(d: dict) -> "BaseFile":
+        path = d.get("source_path") or d.get("ufid", "")
+        file_cls = get_language_model(path, "file")
+        
+        f = file_cls(
+            ufid=d['ufid'],
+            imports=d.get('imports', []),
+            classes=[]
+        )
+        f.source_path = path
+        f.id = d['id']
+        
+        for cd in d.get("classes", []):
+            cd["_file_source_path"] = path
+            child = BaseClass.from_dict(cd)
+            f.classes.append(child)
+            
+        return f
 
     def __post_init__(self):
         id_hash = hashlib.md5(self.ufid.encode('utf-8')).hexdigest()[:4]
@@ -54,7 +76,7 @@ class BaseClass(ABC):
     body: str
     start_line: int
     node: Any = None
-    registry: MemberRegistry = None
+    registry: "MemberRegistry" = None
     
     # computed
     end_line: int = field(init=False)
@@ -67,6 +89,38 @@ class BaseClass(ABC):
     fields: Dict[str, "BaseField"] = field(default_factory=dict)
     methods: Dict[str, "BaseMethod"] = field(default_factory=dict)
     child_classes: Dict[str, "BaseClass"] = field(default_factory=dict)
+
+    @staticmethod
+    def from_dict(d: dict) -> "BaseClass":
+        path = d.get("_file_source_path", "unknown.java")
+        class_cls = get_language_model(path, "class")
+        
+        c = class_cls(
+            ucid=d['ucid'],
+            signature=d['signature'],
+            body=d['body'],
+            start_line=d['start_line'],
+            child_classes={},
+            methods={}
+        )
+        c.description = d.get('description', '')
+        c.constants = d.get('constants', [])
+        c.id = d['id']
+        c.end_line = d['end_line']
+        
+        for md in d.get("methods", []):
+            md["_file_source_path"] = path
+            md["_class_ucid"] = c.ucid
+            m = BaseMethod.from_dict(md)
+            m.parent_class = c
+            c.methods[m.umid] = m
+            
+        for cd in d.get("child_classes", []):
+            cd["_file_source_path"] = path
+            child = BaseClass.from_dict(cd)
+            c.child_classes[child.ucid] = child
+            
+        return c
 
     def __post_init__(self):
         self.end_line = self.start_line + self.body.count('\n')
@@ -138,6 +192,48 @@ class BaseMethod(ABC):
     Abstract representation of a Function/Method.
     This is the primary unit of work for the LLM.
     """
+    @staticmethod
+    def from_dict(d: dict) -> "BaseMethod":
+        path = d.get("_file_source_path", "")
+        method_cls = get_language_model(path, "method")
+        
+        m = method_cls(
+            identifier=d['identifier'],
+            scoped_identifier=d['scoped_identifier'],
+            return_type=d['return_type'],
+            umid=d['umid'],
+            signature=d['signature'],
+            body=d['body'],
+            dependency_names=[],
+            start_line=d['start_line'],
+            parameters=d.get('parameters', [])
+        )
+        m.description = d.get('description', '')
+        raw_deps = d.get('dependencies', [])
+        m.dependencies = [
+            dep if isinstance(dep, str) else dep[-1] if isinstance(dep, list) and dep else str(dep)
+            for dep in raw_deps
+        ]
+        raw_inbound = d.get('inbound_dependencies', [])
+        m.inbound_dependencies = [
+            dep if isinstance(dep, str) else dep[-1] if isinstance(dep, list) and dep else str(dep)
+            for dep in (raw_inbound or [])
+        ]
+        m.id = d['id']
+        m.end_line = d['end_line']
+        m.body_hash = d['body_hash']
+        
+        # Inject the mock file for file path resolution in serialization
+        mf = MockFile(ufid=path, imports=[], classes=[])
+        mf.source_path = path
+        m.file = mf
+        
+        # Inject mock class for resolution
+        mc = MockClass(ucid=d.get('_class_ucid', ''), signature='', body='', start_line=0, child_classes={}, methods={})
+        m.parent_class = mc
+        
+        return m
+
     identifier: str
     scoped_identifier: str
     return_type: str
@@ -148,7 +244,7 @@ class BaseMethod(ABC):
     start_line: int
     parameters: List[str]
     node: Any = None
-    registry: MemberRegistry = None
+    registry: "MemberRegistry" = None
     file: BaseFile = None
     parent_class: BaseClass = None
     
@@ -197,3 +293,39 @@ class BaseField(ABC):
     def __str__(self) -> str:
         return f"<{self.__class__.__name__}: {self.ucid}>"
     __repr__ = __str__
+
+
+@dataclass
+class MockFile(BaseFile):
+    def resolve_dependencies(self):
+        pass
+
+
+@dataclass
+class MockClass(BaseClass):
+    def skeletonize(self) -> str:
+        return ""
+
+
+BaseStruct = Union[BaseFile, BaseClass, BaseMethod]
+
+LANGUAGE_REGISTRY = {
+    "java": {
+        "module": "toaster.languages.java.models",
+        "file": "JavaFile",
+        "class": "JavaClass",
+        "method": "JavaMethod"
+    },
+    "cs": {
+        "module": "toaster.languages.csharp.models",
+        "file": "CSharpFile",
+        "class": "CSharpClass",
+        "method": "CSharpMethod"
+    }
+}
+
+def get_language_model(path: str, model_type: str):
+    ext = path.split(".")[-1].lower()
+    config = LANGUAGE_REGISTRY.get(ext, LANGUAGE_REGISTRY["java"])
+    module = import_module(config["module"])
+    return getattr(module, config[model_type])

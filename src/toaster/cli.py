@@ -135,5 +135,70 @@ def inspect(
     asyncio.run(_inspect_async(id, path, include_body))
 
 
+async def _skeleton_async(subpath: str, target_path: Path):
+    registry = MemberRegistry(str(target_path))
+    files = registry.get_files_by_path(subpath)
+    if not files:
+        print(f"❌ Error: No files found matching path '{subpath}'.")
+        raise typer.Exit(code=1)
+    
+    for f in files:
+        print(toast.dumps(f, verbosity=Verbosity.SIMPLE))
+
+@app.command()
+def skeleton(
+    subpath: Annotated[
+        str, 
+        typer.Argument(help="File or directory path relative to the project root to generate a skeleton for")
+    ],
+    path: Path = typer.Argument(
+        ".", 
+        help="Path to the project directory to scan",
+        exists=True,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True
+    )
+):
+    """Output the .toast skeleton format for all files matching a specific subpath."""
+    if not (path / ".toaster.db").exists():
+        print("❌ Error: Database not found. Run 'toaster init' first.")
+        raise typer.Exit(code=1)
+    asyncio.run(_skeleton_async(subpath, path))
+
+@app.command()
+def resolve(
+    name: Annotated[
+        str, 
+        typer.Argument(help="Method or Class name to search for (partial match)")
+    ],
+    path: Path = typer.Argument(
+        ".", 
+        help="Path to the project directory to scan",
+        exists=True,
+        file_okay=False,
+        dir_okay=True,
+        resolve_path=True
+    )
+):
+    """Find the ID of a struct by its name or identifier."""
+    if not (path / ".toaster.db").exists():
+        print("❌ Error: Database not found. Run 'toaster init' first.")
+        raise typer.Exit(code=1)
+        
+    registry = MemberRegistry(str(path))
+    results = registry.resolve_name(name)
+    
+    if not results:
+        print(f"No results found for '{name}'.")
+        return
+        
+    for res in results:
+        print(f"[{res['type']}] {res['id']} | {res['signature']}")
+        if res.get('description'):
+            print(f"    // {res['description']}")
+        print()
+
+
 if __name__ == "__main__":
     app()
