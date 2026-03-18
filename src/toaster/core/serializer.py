@@ -5,7 +5,7 @@ from toaster.core.models import BaseFile, BaseClass, BaseMethod
 from enum import IntEnum
 
 class Verbosity(IntEnum):
-    MINIMAL = 1
+    SKELETON = 1
     SIMPLE = 2
     VERBOSE = 3
     FULL = 4
@@ -31,15 +31,14 @@ class toast:
         line_range = f"@L{m.start_line}-{m.end_line}"
         
         parts = []
-        if m.file and m.file.source_path:
-            parts.append(f"/{m.file.source_path}")
-        if m.parent_class and m.parent_class.ucid:
-            parts.append(f"{m.parent_class.ucid}")
-            
         parts.append(f"{m.id} {line_range} | {m.signature}")
+        parts.append(f"// {m.description}")
 
         if verbosity >= Verbosity.SIMPLE:
-            parts.append(f"// {m.description}")
+            if m.parent_class and m.parent_class.ucid:
+                parts.insert(0, f"{m.parent_class.ucid}")
+            if m.file and m.file.source_path:
+                parts.insert(0, f"/{m.file.source_path}")
             if m.dependencies:
                 parts.append(f"> {', '.join(m.dependencies)}")
 
@@ -54,45 +53,58 @@ class toast:
             
             parts.append(f"java ```\n{m.body}\n```")
 
-        return "\n" + "\n".join(parts)
+        return "\n".join(parts)
         
     @classmethod
     def dump_class(cls, c: BaseClass, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
         is_enum = len(c.constants)>0
-        output = f"\n{c.id} | {c.signature}"
-        if verbosity > Verbosity.MINIMAL:
-            # append enum constants
-            if is_enum:
-                output += f" {{{', '.join(c.constants)}}}"
-
-            # append description
-            output += f"\n// {c.description}"
+        
+        parts = []
+        
+        header_str = f"{c.id} | {c.signature}"
+        # append enum constants
+        if is_enum:
+            header_str += f" {{{', '.join(c.constants)}}}"
+        parts.append(header_str)
+        
+        # append description
+        parts.append(f"// {c.description}")
+        
+        if verbosity > Verbosity.SKELETON:
+            if c.file and c.file.ufid:
+                parts.insert(0, f"/{c.file.ufid}")
 
             # append fields
             if c.fields:
-                output += f"fields: {', '.join(c.fields.keys())}"
+                parts.append(f"fields: {', '.join(c.fields.keys())}")
                 
             # append methods
-            for method in c.methods.values():
-                output += cls.dump_method(method, verbosity)
+            if c.methods:
+                parts.append("\n" + "\n".join([cls.dump_method(m, Verbosity.SKELETON) for m in c.methods.values()]))
             # append child classes
             for class_obj in c.child_classes.values():
-                output += cls.dump_class(class_obj, verbosity)
-        return output
+                parts.append(cls.dump_class(class_obj, verbosity))
+        return "\n".join(parts)
         
         
     @classmethod
     def dump_file(cls, f: BaseFile, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
-        output = f"""
-{f.id} | {f.ufid}
-"""
-        if f.imports:
-            output += f"imports: {', '.join(f.imports)}"
+        parts = []
+        
+        parts.append(f"{f.id} | {f.ufid}")
+        if verbosity > Verbosity.SKELETON:
+            if f.imports:
+                parts.append(f"imports: {', '.join(f.imports)}")
+                
         for c in f.classes:
-            output += cls.dump_class(c, verbosity)
-        return output
+            parts.append(cls.dump_class(c, verbosity))
+        return "\n".join(parts)
     
     @classmethod
     def dump_project(cls, project: BaseParser, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
-        return '\n'.join([cls.dump_file(f, verbosity) for f in project.files])
+        return '\n\n'.join([cls.dump_file(f, verbosity) for f in project.files])
+    
+    @classmethod
+    def dump_files(cls, files: list[BaseFile], verbosity: Verbosity=Verbosity.SIMPLE)->str:
+        return '\n' + '\n\n'.join([cls.dump_file(f, verbosity) for f in files])
     

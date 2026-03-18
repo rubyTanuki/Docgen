@@ -20,6 +20,7 @@ class BaseFile(ABC):
     imports: List[str]
     classes: List["BaseClass"]
     registry: "MemberRegistry" = None
+    source_path: str = ""
     
     id: str = field(init=False)
 
@@ -77,6 +78,7 @@ class BaseClass(ABC):
     start_line: int
     node: Any = None
     registry: "MemberRegistry" = None
+    file: BaseFile = None
     
     # computed
     end_line: int = field(init=False)
@@ -107,6 +109,7 @@ class BaseClass(ABC):
         c.constants = d.get('constants', [])
         c.id = d['id']
         c.end_line = d['end_line']
+        c.file = d.get('file', MockFile(ufid=path, imports=[], classes=[]))
         
         for md in d.get("methods", []):
             md["_file_source_path"] = path

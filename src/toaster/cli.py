@@ -142,8 +142,7 @@ async def _skeleton_async(subpath: str, target_path: Path):
         print(f"❌ Error: No files found matching path '{subpath}'.")
         raise typer.Exit(code=1)
     
-    for f in files:
-        print(toast.dumps(f, verbosity=Verbosity.SIMPLE))
+    print(toast.dump_files(files, verbosity=Verbosity.SKELETON))
 
 @app.command()
 def skeleton(
