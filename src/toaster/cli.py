@@ -10,6 +10,9 @@ from toaster.llm import GeminiClient
 from toaster.core import MemberRegistry, toast, Verbosity
 from toaster.languages.java import JavaParser
 from toaster.languages.csharp import CSharpParser
+from toaster.exceptions import ToasterError
+
+from toaster.commands import _init_async, _inspect_async, _skeleton_async, _resolve_async
 
 # Initialize the Typer app
 app = typer.Typer(
@@ -17,52 +20,6 @@ app = typer.Typer(
     help="AST scraper for LLM RAG context generation.",
     add_completion=False # Optional: Turns off the auto-generated completion install command for cleaner help menus
 )
-
-async def _init_ast_async(target_path: Path, use_cache: bool = True) -> BaseParser:
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    if GEMINI_API_KEY is None:
-        print("❌ Error: API key not found. Set the GEMINI_API_KEY environment variable.")
-        raise typer.Exit(code=1)
-    
-    # Dependency Injection
-    llm = GeminiClient(api_key=GEMINI_API_KEY) 
-    registry = MemberRegistry(str(target_path))
-    
-    print(f"🔍 Parsing files in '{target_path}' and linking AST...")
-    
-    # Simple language routing
-    has_java = any(target_path.rglob("*.java"))
-    has_cs = any(target_path.rglob("*.cs"))
-    
-    parser_class = JavaParser
-    if has_cs and not has_java:
-        parser_class = CSharpParser
-    elif has_cs and has_java:
-        print("⚠️ Warning: Mixed language project found. Defaulting to Java.")
-        
-    parser = parser_class(target_path, llm, registry)
-    await parser.parse(use_cache=use_cache)
-    
-    return parser
-
-async def _run_init_async(target_path: Path, use_cache: bool = True, skeleton: bool = True):
-    """Core asynchronous logic for scraping and parsing."""
-    start_time = time.perf_counter()
-    
-    parser = await _init_ast_async(target_path, use_cache=use_cache)
-    
-    # Write Skeleton
-    if skeleton:
-        parser.write_skeleton()
-        
-    # Write Cache
-    parser.write_cache()
-        
-    end_time = time.perf_counter()
-    elapsed_time = end_time - start_time
-
-    print(f"✅ Success! Initialization saved in {elapsed_time:.4f} seconds.")
-
 
 @app.command()
 def init(
@@ -81,7 +38,7 @@ def init(
             help="Load cache if it exists"
             )
         ] = True,
-    skeleton: Annotated[
+    write_skeleton: Annotated[
         bool, 
         typer.Option(
             "--skeleton/--no-skeleton", 
@@ -90,22 +47,15 @@ def init(
     ] = True
 ):
     """Parse files and generate RAG context."""
-    # Wrap the async call in asyncio.run
-    asyncio.run(_run_init_async(path, use_cache, skeleton))
-
-
-async def _inspect_async(id:str, target_path: Path, include_body: bool = False):
-    registry = MemberRegistry(str(target_path))
-    struct_obj = registry.get_struct_from_db(id)
-    if struct_obj is None:
-        print(f"❌ Error: Struct not found with id {id}.")
-        raise typer.Exit(code=1)
+    start_time = time.perf_counter()
     
-    verb = Verbosity.FULL if include_body else Verbosity.VERBOSE
-    print(toast.dumps(struct_obj, verbosity=verb))
+    asyncio.run(_init_async(path, use_cache, write_skeleton))
     
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    typer.secho(f"✅ Success! Initialization saved in {elapsed_time:.4f} seconds.", fg="green")
 
-# You can easily add more commands here later!
+
 @app.command()
 def inspect(
     id: Annotated[
@@ -129,20 +79,15 @@ def inspect(
         ] = False
 ):
     if not (path / ".toaster.db").exists():
-        print("❌ Error: Database not found. Run 'toaster init' first.")
+        typer.secho("❌ Error: Database not found. Run 'toaster init' first.", fg="red", err=True)
         raise typer.Exit(code=1)
-    # Wrap the async call in asyncio.run
-    asyncio.run(_inspect_async(id, path, include_body))
-
-
-async def _skeleton_async(subpath: str, target_path: Path):
-    registry = MemberRegistry(str(target_path))
-    files = registry.get_files_by_path(subpath)
-    if not files:
-        print(f"❌ Error: No files found matching path '{subpath}'.")
+    try:
+        result = asyncio.run(_inspect_async(id, path, include_body))
+        print(result)
+    except ToasterError as e:
+        typer.secho(f"❌ Error: {e}", fg="red", err=True)
         raise typer.Exit(code=1)
-    
-    print(toast.dump_files(files, verbosity=Verbosity.SKELETON))
+
 
 @app.command()
 def skeleton(
@@ -161,9 +106,16 @@ def skeleton(
 ):
     """Output the .toast skeleton format for all files matching a specific subpath."""
     if not (path / ".toaster.db").exists():
-        print("❌ Error: Database not found. Run 'toaster init' first.")
+        typer.secho("❌ Error: Database not found. Run 'toaster init' first.", fg="red", err=True)
         raise typer.Exit(code=1)
-    asyncio.run(_skeleton_async(subpath, path))
+    
+    try:
+        result = asyncio.run(_skeleton_async(subpath, path))
+        print(result)
+    except ToasterError as e:
+        typer.secho(f"❌ Error: {e}", fg="red", err=True)
+        raise typer.Exit(code=1)
+
 
 @app.command()
 def resolve(
@@ -182,21 +134,15 @@ def resolve(
 ):
     """Find the ID of a struct by its name or identifier."""
     if not (path / ".toaster.db").exists():
-        print("❌ Error: Database not found. Run 'toaster init' first.")
+        typer.secho("❌ Error: Database not found. Run 'toaster init' first.", fg="red", err=True)
         raise typer.Exit(code=1)
-        
-    registry = MemberRegistry(str(path))
-    results = registry.resolve_name(name)
-    
-    if not results:
-        print(f"No results found for '{name}'.")
-        return
-        
-    for res in results:
-        print(f"[{res['type']}] {res['id']} | {res['signature']}")
-        if res.get('description'):
-            print(f"    // {res['description']}")
-        print()
+       
+    try: 
+        result = asyncio.run(_resolve_async(name, path))
+        print(result)
+    except ToasterError as e:
+        typer.secho(f"❌ Error: {e}", fg="red", err=True)
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

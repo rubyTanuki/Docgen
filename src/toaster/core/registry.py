@@ -186,22 +186,6 @@ class RegistryHydrator:
         """Queries the SQLite database for structs matching a given name."""
         results = []
         with self.db.get_connection() as conn:
-            # Search methods
-            m_rows = conn.execute(
-                "SELECT id, signature, description FROM methods WHERE identifier LIKE ? OR scoped_identifier LIKE ? OR umid LIKE ?",
-                (f"%{name}%", f"%{name}%", f"%{name}%")
-            ).fetchall()
-            for r in m_rows:
-                results.append({"id": r["id"], "type": "Method", "signature": r["signature"], "description": r["description"]})
-                
-            # Search classes
-            c_rows = conn.execute(
-                "SELECT id, signature, description FROM classes WHERE ucid LIKE ?",
-                (f"%{name}%",)
-            ).fetchall()
-            for r in c_rows:
-                results.append({"id": r["id"], "type": "Class", "signature": r["signature"], "description": r["description"]})
-                
             # Search files
             f_rows = conn.execute(
                 "SELECT id, source_path as signature FROM files WHERE ufid LIKE ? OR source_path LIKE ?",
@@ -209,6 +193,22 @@ class RegistryHydrator:
             ).fetchall()
             for r in f_rows:
                 results.append({"id": r["id"], "type": "File", "signature": r["signature"], "description": ""})
+            
+            # Search classes
+            c_rows = conn.execute(
+                "SELECT id, signature, description FROM classes WHERE ucid LIKE ?",
+                (f"%{name}%",)
+            ).fetchall()
+            for r in c_rows:
+                results.append({"id": r["id"], "type": "Class", "signature": r["signature"], "description": r["description"]})
+             
+            # Search methods
+            m_rows = conn.execute(
+                "SELECT id, signature, description FROM methods WHERE identifier LIKE ? OR scoped_identifier LIKE ? OR umid LIKE ?",
+                (f"%{name}%", f"%{name}%", f"%{name}%")
+            ).fetchall()
+            for r in m_rows:
+                results.append({"id": r["id"], "type": "Method", "signature": r["signature"], "description": r["description"]})
                 
         return results
 

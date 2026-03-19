@@ -9,7 +9,6 @@ from toaster.core.models import BaseFile
 from toaster.core.registry import MemberRegistry
 from toaster.core.serializer import toast, Verbosity
 
-
 class BaseParser(ABC):
     def __init__(self, project_dir: str, llm=None, registry: MemberRegistry=None):
         self.llm = llm
@@ -18,25 +17,25 @@ class BaseParser(ABC):
         self.project_dir = project_dir
     async def parse(self, use_cache=True):
         self.path = Path(self.project_dir)
-        print(f"🔍 Parsing files in '{self.project_dir}' and linking AST...")
+        # print(f"🔍 Parsing files in '{self.project_dir}' and linking AST...")
         
-        start_time = time.time()
+        # start_time = time.time()
         
-        t_parse = time.time()
+        # t_parse = time.time()
         await self.parse_filetree()
-        print(f"✅ Parsed Project Files in {time.time() - t_parse:.2f} seconds")
+        # print(f"✅ Parsed Project Files in {time.time() - t_parse:.2f} seconds")
         
-        t_resolve = time.time()
+        # t_resolve = time.time()
         self.resolve_dependencies()
-        print(f"✅ Resolved Dependencies in {time.time() - t_resolve:.2f} seconds")
+        # print(f"✅ Resolved Dependencies in {time.time() - t_resolve:.2f} seconds")
         
-        end_time = time.time()
-        print(f"Took {end_time - start_time:.2f} seconds to parse project files")
+        # end_time = time.time()
+        # print(f"Took {end_time - start_time:.2f} seconds to parse project files")
         
         if use_cache:
             self.load_cache()
-        else:
-            print("❌ Skipping cache load")
+        # else:
+        #     print("❌ Skipping cache load")
         
         await self.resolve_descriptions()
 
@@ -64,10 +63,10 @@ class BaseParser(ABC):
             file.resolve_dependencies()
     
     def load_cache(self):
-        print("Attempting to load cache from SQLite database...")
-        t_cache = time.time()
+        # print("Attempting to load cache from SQLite database...")
+        # t_cache = time.time()
         self.registry.load_cache()
-        print(f"✅ Loaded Cache in {time.time() - t_cache:.2f} seconds")
+        # print(f"✅ Loaded Cache in {time.time() - t_cache:.2f} seconds")
                     
     async def resolve_descriptions(self):
         self.visited_ucids = set()
@@ -80,5 +79,5 @@ class BaseParser(ABC):
             file.write(toast_string)
             
     def write_cache(self):
-        print("Writing AST to SQLite database...")
+        # print("Writing AST to SQLite database...")
         self.registry.save_to_db(self.files)
