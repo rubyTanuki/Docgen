@@ -8,11 +8,9 @@ from typing import Annotated
 
 from toaster.llm import GeminiClient
 from toaster.core import MemberRegistry, toast, Verbosity
-from toaster.languages.java import JavaParser
-from toaster.languages.csharp import CSharpParser
 from toaster.exceptions import ToasterError
 
-from toaster.commands import _init_async, _inspect_async, _skeleton_async, _resolve_async
+from toaster.commands import init_async, inspect_async, skeleton_async, resolve_async
 
 # Initialize the Typer app
 app = typer.Typer(
@@ -46,14 +44,18 @@ def init(
             )
     ] = True
 ):
-    """Parse files and generate RAG context."""
-    start_time = time.perf_counter()
-    
-    asyncio.run(_init_async(path, use_cache, write_skeleton))
-    
-    end_time = time.perf_counter()
-    elapsed_time = end_time - start_time
-    typer.secho(f"✅ Success! Initialization saved in {elapsed_time:.4f} seconds.", fg="green")
+    """Parse files and setup SQLite database."""
+    try:
+        start_time = time.perf_counter()
+        
+        asyncio.run(init_async(path, use_cache, write_skeleton))
+        
+        end_time = time.perf_counter()
+        elapsed_time = end_time - start_time
+        typer.secho(f"✅ Success! Initialization saved in {elapsed_time:.4f} seconds.", fg="green")
+    except ToasterError as e:
+        typer.secho(f"❌ Error: {e}", fg="red", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.command()
@@ -78,11 +80,9 @@ def inspect(
             )
         ] = False
 ):
-    if not (path / ".toaster.db").exists():
-        typer.secho("❌ Error: Database not found. Run 'toaster init' first.", fg="red", err=True)
-        raise typer.Exit(code=1)
+    """Output the AST details for a specific struct ID."""
     try:
-        result = asyncio.run(_inspect_async(id, path, include_body))
+        result = asyncio.run(inspect_async(id, path, include_body))
         print(result)
     except ToasterError as e:
         typer.secho(f"❌ Error: {e}", fg="red", err=True)
@@ -105,12 +105,8 @@ def skeleton(
     )
 ):
     """Output the .toast skeleton format for all files matching a specific subpath."""
-    if not (path / ".toaster.db").exists():
-        typer.secho("❌ Error: Database not found. Run 'toaster init' first.", fg="red", err=True)
-        raise typer.Exit(code=1)
-    
     try:
-        result = asyncio.run(_skeleton_async(subpath, path))
+        result = asyncio.run(skeleton_async(subpath, path))
         print(result)
     except ToasterError as e:
         typer.secho(f"❌ Error: {e}", fg="red", err=True)
@@ -133,12 +129,8 @@ def resolve(
     )
 ):
     """Find the ID of a struct by its name or identifier."""
-    if not (path / ".toaster.db").exists():
-        typer.secho("❌ Error: Database not found. Run 'toaster init' first.", fg="red", err=True)
-        raise typer.Exit(code=1)
-       
     try: 
-        result = asyncio.run(_resolve_async(name, path))
+        result = asyncio.run(resolve_async(name, path))
         print(result)
     except ToasterError as e:
         typer.secho(f"❌ Error: {e}", fg="red", err=True)

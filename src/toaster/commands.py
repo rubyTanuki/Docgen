@@ -8,7 +8,11 @@ from typing import Annotated
 from toaster.llm import GeminiClient
 from toaster.core import MemberRegistry, toast, Verbosity, ParserProvider
 
-from toaster.exceptions import APIKeyError, StructNotFoundError, ResolveError
+from toaster.exceptions import APIKeyError, StructNotFoundError, ResolveError, DatabaseNotFoundError, TargetFileNotFoundError
+
+def _verify_db_exists(target_path: Path):
+    if not os.path.exists(target_path):
+        raise DatabaseNotFoundError("Database not found. Run 'toaster init' first.")
 
 async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BaseParser:
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -24,7 +28,7 @@ async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BasePar
     
     return parser
 
-async def _init_async(target_path: Path, use_cache: bool = True, write_skeleton: bool = True):
+async def init_async(target_path: Path, use_cache: bool = True, write_skeleton: bool = True):
     """Core asynchronous logic for scraping and parsing."""
     
     parser = await _build_ast_async(target_path, use_cache=use_cache)
@@ -36,7 +40,9 @@ async def _init_async(target_path: Path, use_cache: bool = True, write_skeleton:
     # Write Cache
     parser.write_cache()
     
-async def _inspect_async(id:str, target_path: Path, include_body: bool = False):
+async def inspect_async(id:str, target_path: Path, include_body: bool = False):
+    _verify_db_exists(target_path)
+    
     registry = MemberRegistry(str(target_path))
     struct_obj = registry.get_struct_from_db(id)
     if struct_obj is None:
@@ -45,7 +51,9 @@ async def _inspect_async(id:str, target_path: Path, include_body: bool = False):
     verb = Verbosity.FULL if include_body else Verbosity.VERBOSE
     return toast.dumps(struct_obj, verbosity=verb)
     
-async def _skeleton_async(subpath: str, target_path: Path):
+async def skeleton_async(subpath: str, target_path: Path):
+    _verify_db_exists(target_path)
+    
     registry = MemberRegistry(str(target_path))
     files = registry.get_files_by_path(subpath)
     if not files:
@@ -53,7 +61,9 @@ async def _skeleton_async(subpath: str, target_path: Path):
     
     return toast.dump_files(files, verbosity=Verbosity.SKELETON)
     
-async def _resolve_async(name: str, target_path: Path):
+async def resolve_async(name: str, target_path: Path):
+    _verify_db_exists(target_path)
+    
     registry = MemberRegistry(str(target_path))
     results = registry.resolve_name(name)
     

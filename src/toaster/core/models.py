@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, Union, TYPE_CHECKING
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 import re
 import json
 import asyncio
 import hashlib
 from importlib import import_module
+
+from toaster.core.providers import StructProvider
 
 if TYPE_CHECKING:
     from toaster.core.registry import MemberRegistry
@@ -27,7 +29,7 @@ class BaseFile(ABC):
     @staticmethod
     def from_dict(d: dict) -> "BaseFile":
         path = d.get("source_path") or d.get("ufid", "")
-        file_cls = get_language_model(path, "file")
+        file_cls = StructProvider.get_struct_class(path, "file")
         
         f = file_cls(
             ufid=d['ufid'],
@@ -95,7 +97,7 @@ class BaseClass(ABC):
     @staticmethod
     def from_dict(d: dict) -> "BaseClass":
         path = d.get("_file_source_path", "unknown.java")
-        class_cls = get_language_model(path, "class")
+        class_cls = StructProvider.get_struct_class(path, "class")
         
         c = class_cls(
             ucid=d['ucid'],
@@ -198,7 +200,7 @@ class BaseMethod(ABC):
     @staticmethod
     def from_dict(d: dict) -> "BaseMethod":
         path = d.get("_file_source_path", "")
-        method_cls = get_language_model(path, "method")
+        method_cls = StructProvider.get_struct_class(path, "method")
         
         m = method_cls(
             identifier=d['identifier'],
@@ -308,27 +310,3 @@ class MockFile(BaseFile):
 class MockClass(BaseClass):
     def skeletonize(self) -> str:
         return ""
-
-
-BaseStruct = Union[BaseFile, BaseClass, BaseMethod]
-
-LANGUAGE_REGISTRY = {
-    "java": {
-        "module": "toaster.languages.java.models",
-        "file": "JavaFile",
-        "class": "JavaClass",
-        "method": "JavaMethod"
-    },
-    "cs": {
-        "module": "toaster.languages.csharp.models",
-        "file": "CSharpFile",
-        "class": "CSharpClass",
-        "method": "CSharpMethod"
-    }
-}
-
-def get_language_model(path: str, model_type: str):
-    ext = path.split(".")[-1].lower()
-    config = LANGUAGE_REGISTRY.get(ext, LANGUAGE_REGISTRY["java"])
-    module = import_module(config["module"])
-    return getattr(module, config[model_type])
