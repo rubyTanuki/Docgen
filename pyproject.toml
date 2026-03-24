@@ -11,7 +11,8 @@ dependencies = [
     "tree-sitter-java",
     "google.genai",
     "pydantic",
-    "typer"
+    "typer",
+    "watchfiles"
 ]
 
 [project.scripts]

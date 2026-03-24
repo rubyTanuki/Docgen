@@ -10,7 +10,7 @@ from toaster.llm import GeminiClient
 from toaster.core import MemberRegistry, toast, Verbosity
 from toaster.exceptions import ToasterError
 
-from toaster.commands import init_async, inspect_async, skeleton_async, resolve_async
+from toaster.commands import init_async, inspect_async, skeleton_async, resolve_async, watch_async
 
 # Initialize the Typer app
 app = typer.Typer(
@@ -18,6 +18,24 @@ app = typer.Typer(
     help="AST scraper for LLM RAG context generation.",
     add_completion=False # Optional: Turns off the auto-generated completion install command for cleaner help menus
 )
+
+@app.command()
+def watch(
+    path: Path = typer.Argument(
+        ".", 
+        help="Path to the project directory to scan",
+        exists=True,       # Typer automatically checks if the path exists
+        file_okay=False,   # Typer blocks files, only allowing directories
+        dir_okay=True,
+        resolve_path=True  # Converts relative paths to absolute paths automatically
+    )
+):
+    """Watch for changes to files and update the SQLite database."""
+    try:
+        asyncio.run(watch_async(path))
+    except ToasterError as e:
+        typer.secho(f"❌ Error: {e}", fg="red", err=True)
+        raise typer.Exit(code=1)
 
 @app.command()
 def init(

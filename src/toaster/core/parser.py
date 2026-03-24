@@ -15,14 +15,15 @@ class BaseParser(ABC):
         self.registry = registry
         self.files: list[BaseFile] = []
         self.project_dir = project_dir
-    async def parse(self, use_cache=True):
         self.path = Path(self.project_dir)
+    async def parse(self, use_cache=True, subpath=None):
         # print(f"🔍 Parsing files in '{self.project_dir}' and linking AST...")
         
         # start_time = time.time()
         
         # t_parse = time.time()
-        await self.parse_filetree()
+        
+        await self.parse_relative_path(subpath)
         # print(f"✅ Parsed Project Files in {time.time() - t_parse:.2f} seconds")
         
         # t_resolve = time.time()
@@ -32,14 +33,14 @@ class BaseParser(ABC):
         # end_time = time.time()
         # print(f"Took {end_time - start_time:.2f} seconds to parse project files")
         
-        if use_cache:
+        if use_cache and self.registry:
             self.load_cache()
         # else:
         #     print("❌ Skipping cache load")
         
         await self.resolve_descriptions()
 
-    async def _parse_single_file(self, filepath):
+    async def _parse_single_file(self, filepath: Path):
         if filepath.is_file():
             code = filepath.read_bytes()
             name = filepath.name
@@ -48,11 +49,28 @@ class BaseParser(ABC):
                 file_obj.source_path = filepath.relative_to(self.path)
                 return file_obj
         return None
-
-    async def parse_filetree(self):
-        tasks = [self._parse_single_file(filepath) for filepath in self.path.rglob("*")]
-        results = await asyncio.gather(*tasks)
-        self.files.extend(filter(None, results))
+    
+    async def parse_path(self, path: Path):
+        if path.is_file():
+            self.files.append(await self._parse_single_file(path))
+        else:
+            tasks = [self._parse_single_file(filepath) for filepath in path.rglob("*")]
+            results = await asyncio.gather(*tasks)
+            self.files.extend(filter(None, results))
+    
+    async def parse_relative_path(self, subpath):
+        path = self.path / subpath if subpath else self.path
+        await self.parse_path(path)
+    
+    async def parse_filetree(self, subpath=None):
+        path = self.path / subpath if subpath else self.path
+        
+        if self.path.is_file():
+            self.files.append(await self._parse_single_file(path))
+        else:
+            tasks = [self._parse_single_file(filepath) for filepath in path.rglob("*")]
+            results = await asyncio.gather(*tasks)
+            self.files.extend(filter(None, results))
 
     @abstractmethod
     def parse_file(self, name: str, code: bytes) -> BaseFile:
@@ -72,6 +90,7 @@ class BaseParser(ABC):
         self.visited_ucids = set()
         coroutine_list = [file.resolve_descriptions(self.llm, self.visited_ucids) for file in self.files]
         result = await asyncio.gather(*coroutine_list)
+        
         
     def write_skeleton(self):
         toast_string = toast.dump_project(self, verbosity=Verbosity.SIMPLE)

@@ -6,6 +6,8 @@ from contextlib import contextmanager
 class SQLiteCache:
     def __init__(self, db_path: Path | str):
         self.db_path = Path(db_path)
+        if not self.db_path.parent.exists():
+            self.db_path.parent.mkdir(parents=True)
         self.init_db()
 
     @contextmanager

@@ -22,7 +22,14 @@ class GeminiClient:
     def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-lite"):
         self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
-        self.semaphore = asyncio.Semaphore(200)
+        self._semaphore = None
+    
+    @property
+    def semaphore(self):
+        # 2. Create it exactly once, the first time it is requested
+        if self._semaphore is None:
+            self._semaphore = asyncio.Semaphore(200)
+        return self._semaphore
     
     async def generate_description(self, class_obj: "BaseClass", imports: list[str]) -> dict:
         system_instruction = """

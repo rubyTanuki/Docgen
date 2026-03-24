@@ -4,6 +4,7 @@ import time
 import json
 from pathlib import Path
 from typing import Annotated
+from watchfiles import awatch, Change
 
 from toaster.llm import GeminiClient
 from toaster.core import MemberRegistry, toast, Verbosity, ParserProvider
@@ -14,13 +15,15 @@ def _verify_db_exists(target_path: Path):
     if not os.path.exists(target_path):
         raise DatabaseNotFoundError("Database not found. Run 'toaster init' first.")
 
-async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BaseParser:
+def get_llm_client():
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     if GEMINI_API_KEY is None:
         raise APIKeyError("API key not found.")
     
-    # Dependency Injection
-    llm = GeminiClient(api_key=GEMINI_API_KEY) 
+    return GeminiClient(api_key=GEMINI_API_KEY)
+
+async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BaseParser:
+    llm = get_llm_client()
     registry = MemberRegistry(str(target_path))
     
     parser = ParserProvider.get_parser(target_path, llm, registry)
@@ -77,3 +80,75 @@ async def resolve_async(name: str, target_path: Path):
             result_list.append(res['description'])
     
     return '\n'.join(result_list)
+
+active_tasks: dict[Path, asyncio.Task] = {}
+
+async def watch_async(target_path: Path):
+    llm = get_llm_client()
+    
+    print("Starting Listener")
+    try:
+        async for changes in awatch(target_path):
+            for change_type, path in changes:
+                path = Path(path)
+                if ".toaster" in str(path):
+                    continue
+                
+                existing_task = active_tasks.get(path)
+                if existing_task and not existing_task.done():
+                    existing_task.cancel()
+                
+                match change_type:
+                    case Change.modified:
+                        print(f"File modified: {path}")
+                        
+                        new_task = asyncio.create_task(
+                            process_single_file(target_path, path, llm)
+                        )
+                        active_tasks[path] = new_task
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        print("\n🛑 Stopping listener...")
+
+async def process_single_file(project_dir: Path, filepath: Path, llm_client: GeminiClient):
+    print(f"Processing file {filepath}")
+    try:
+        registry = MemberRegistry(str(project_dir))
+        parser = ParserProvider.get_parser(project_dir, llm_client, registry)
+        await parser.parse_path(filepath)
+        parser.resolve_dependencies()
+        print("✅ Resolved Dependencies")
+        print(toast.dump_project(parser))
+        parser.load_cache()
+        # mark the descriptions as stale here
+        await asyncio.to_thread(parser.write_cache)
+        print("✅ Wrote Cache #1")
+        
+        # now resolve the descriptions and do the second cache write
+        print("Resolving Descriptions...")
+        await parser.resolve_descriptions()
+        await asyncio.to_thread(parser.write_cache)
+        print("✅ Wrote Cache #2")
+        print(toast.dump_project(parser))
+    except asyncio.CancelledError:
+        print(f"Task cancelled on {filepath}")
+        pass
+    except Exception as e:
+        print(f"Error processing file {filepath}: {e}")
+    finally:
+        if active_tasks.get(filepath) == asyncio.current_task():
+            del active_tasks[filepath]
+
+                        
+                        
+    
+    # print("Starting listener...")
+    # try:
+    #     while True:
+    #         await asyncio.sleep(1)
+    # except (KeyboardInterrupt, asyncio.CancelledError):
+    #     print("\nStopping listener...")
+    #     pass
+    # finally:
+    #     observer.stop()
+    #     observer.join(timeout=2.0)
+    #     print("Listener stopped cleanly.")

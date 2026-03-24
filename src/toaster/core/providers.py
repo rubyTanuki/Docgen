@@ -16,7 +16,9 @@ class ParserProvider:
             (file.suffix for file in path.rglob("*") if file.suffix in cls.parser_map), 
             None
         )
-
+        if path.is_file() and path.suffix in cls.parser_map:
+            found_ext = path.suffix
+        
         if not found_ext:
             raise LanguageNotSupportedError(f"No supported language files found in {path}")
 
@@ -26,7 +28,7 @@ class ParserProvider:
         module = import_module(module_path)
         parser_class = getattr(module, class_name)
         
-        return parser_class(path, llm, registry)
+        return parser_class(str(path), llm, registry)
 
 
 class StructProvider:

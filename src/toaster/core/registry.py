@@ -66,7 +66,7 @@ class RegistryStorage:
                    (id, class_id, identifier, scoped_identifier, return_type, umid, signature, body, body_hash, start_line, end_line, parameters, dependencies, inbound_dependencies, description)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(id) DO UPDATE SET
-                   signature=excluded.signature, body=excluded.body, body_hash=excluded.body_hash, dependencies=excluded.dependencies, inbound_dependencies=excluded.inbound_dependencies, description=COALESCE(excluded.description, methods.description)
+                   signature=excluded.signature, body=excluded.body, body_hash=excluded.body_hash, dependencies=excluded.dependencies, inbound_dependencies=excluded.inbound_dependencies, description=COALESCE(NULLIF(excluded.description, ''), methods.description)
                 """,
                 (method.id, class_obj.id, method.identifier, method.scoped_identifier, method.return_type, 
                  method.umid, method.signature, method.body, method.body_hash, method.start_line, method.end_line, 
@@ -238,7 +238,7 @@ class MemberRegistry:
     Maintains the existing API for backward compatibility.
     """
     def __init__(self, project_dir: str = "."):
-        self.db_path = Path(project_dir) / ".toaster.db"
+        self.db_path = Path(project_dir) / ".toaster" / "cache.db"
         self.db = SQLiteCache(self.db_path)
         
         self.state = RegistryMemoryState()
