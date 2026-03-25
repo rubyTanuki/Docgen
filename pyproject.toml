@@ -9,10 +9,13 @@ description = "Token-Optimized AST Generator"
 dependencies = [
     "tree-sitter",
     "tree-sitter-java",
+    "tree-sitter-csharp",
     "google.genai",
     "pydantic",
     "typer",
-    "watchfiles"
+    "watchfiles",
+    "loguru",
+    "fastmcp"
 ]
 
 [project.scripts]

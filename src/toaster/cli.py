@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import typer
 from typing import Annotated
+from loguru import logger
+from threading import Thread
 
 from toaster.llm import GeminiClient
 from toaster.core import MemberRegistry, toast, Verbosity
@@ -12,12 +14,38 @@ from toaster.exceptions import ToasterError
 
 from toaster.commands import init_async, inspect_async, skeleton_async, resolve_async, watch_async
 
+from toaster.mcp import mcp
+
+from toaster.core.logger import configure_logging
+
+
 # Initialize the Typer app
 app = typer.Typer(
     name="toaster",
     help="AST scraper for LLM RAG context generation.",
     add_completion=False # Optional: Turns off the auto-generated completion install command for cleaner help menus
 )
+
+def _run_watcher_thread(target_path: Path):
+    """
+    Sets up an isolated async environment for the background thread.
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        logger.info(f"Background watcher started on {target_path}")
+        loop.run_until_complete(watch_async(target_path))
+    except Exception as e:
+        logger.exception(f"Fatal error in background watcher: {e}")
+    finally:
+        loop.close()
+        logger.info("Background watcher shut down.")
+
+@app.command("start-mcp")
+def start_mcp():
+    """Start the bare MCP server. Awaits agent initialization."""
+    mcp.run()
 
 @app.command()
 def watch(

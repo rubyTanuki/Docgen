@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Annotated
 from watchfiles import awatch, Change
+from loguru import logger
 
 from toaster.llm import GeminiClient
 from toaster.core import MemberRegistry, toast, Verbosity, ParserProvider
@@ -31,7 +32,7 @@ async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BasePar
     
     return parser
 
-async def init_async(target_path: Path, use_cache: bool = True, write_skeleton: bool = True):
+async def init_async(target_path: Path, use_cache: bool = True, write_skeleton: bool = False):
     """Core asynchronous logic for scraping and parsing."""
     
     parser = await _build_ast_async(target_path, use_cache=use_cache)
@@ -86,7 +87,7 @@ active_tasks: dict[Path, asyncio.Task] = {}
 async def watch_async(target_path: Path):
     llm = get_llm_client()
     
-    print("Starting Listener")
+    logger.info("Starting Listener")
     try:
         async for changes in awatch(target_path):
             for change_type, path in changes:
@@ -100,55 +101,40 @@ async def watch_async(target_path: Path):
                 
                 match change_type:
                     case Change.modified:
-                        print(f"File modified: {path}")
+                        logger.info(f"File modified: {path}")
                         
                         new_task = asyncio.create_task(
                             process_single_file(target_path, path, llm)
                         )
                         active_tasks[path] = new_task
     except (KeyboardInterrupt, asyncio.CancelledError):
-        print("\n🛑 Stopping listener...")
+        logger.info("\n🛑 Stopping listener...")
 
 async def process_single_file(project_dir: Path, filepath: Path, llm_client: GeminiClient):
-    print(f"Processing file {filepath}")
+    logger.info(f"Processing file {filepath}")
     try:
         registry = MemberRegistry(str(project_dir))
         parser = ParserProvider.get_parser(project_dir, llm_client, registry)
         await parser.parse_path(filepath)
         parser.resolve_dependencies()
-        print("✅ Resolved Dependencies")
-        print(toast.dump_project(parser))
+        logger.debug("✅ Resolved Dependencies")
+        logger.trace(toast.dump_project(parser))
         parser.load_cache()
         # mark the descriptions as stale here
         await asyncio.to_thread(parser.write_cache)
-        print("✅ Wrote Cache #1")
+        logger.debug("✅ Wrote Cache #1")
         
         # now resolve the descriptions and do the second cache write
-        print("Resolving Descriptions...")
+        logger.debug("Resolving Descriptions...")
         await parser.resolve_descriptions()
         await asyncio.to_thread(parser.write_cache)
-        print("✅ Wrote Cache #2")
-        print(toast.dump_project(parser))
+        logger.debug("✅ Wrote Cache #2")
+        logger.trace(toast.dump_project(parser))
     except asyncio.CancelledError:
-        print(f"Task cancelled on {filepath}")
+        logger.warning(f"Task cancelled on {filepath}")
         pass
     except Exception as e:
-        print(f"Error processing file {filepath}: {e}")
+        logger.warning(f"Error processing file {filepath}: {e}")
     finally:
         if active_tasks.get(filepath) == asyncio.current_task():
             del active_tasks[filepath]
-
-                        
-                        
-    
-    # print("Starting listener...")
-    # try:
-    #     while True:
-    #         await asyncio.sleep(1)
-    # except (KeyboardInterrupt, asyncio.CancelledError):
-    #     print("\nStopping listener...")
-    #     pass
-    # finally:
-    #     observer.stop()
-    #     observer.join(timeout=2.0)
-    #     print("Listener stopped cleanly.")

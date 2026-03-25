@@ -1,89 +1,137 @@
-import time
+import threading
+import asyncio
 from pathlib import Path
 from fastmcp import FastMCP
+from loguru import logger
 
 from toaster.exceptions import ToasterError
-from toaster.commands import init_async, inspect_async, skeleton_async, resolve_async
 
-# Initialize the FastMCP server
+from toaster.commands import (
+    init_async, 
+    inspect_async, 
+    skeleton_async, 
+    resolve_async, 
+    watch_async
+)
+from toaster.core.logger import configure_logging
+
+_is_initialized = False
+_current_project_dir = None
+
 mcp = FastMCP("Toaster")
 
-@mcp.tool()
-async def init(path: str = ".", use_cache: bool = True, write_skeleton: bool = True) -> str:
+# --- THE SYNCHRONOUS BRIDGE ---
+def _run_watcher_thread(target_path: Path):
     """
-    Parse files and setup the Toaster SQLite database for a project.
-    Always run this first if the database does not exist.
+    Sets up an isolated async environment for the background thread,
+    then runs your watch_async loop inside it.
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
-    Args:
-        path: Path to the project root directory to scan.
-        use_cache: Load cache if it exists.
-        write_skeleton: Build skeleton files if they don't exist.
-    """
     try:
-        start_time = time.perf_counter()
-        target_path = Path(path).resolve()
-        
-        await init_async(target_path, use_cache, write_skeleton)
-        
-        elapsed = time.perf_counter() - start_time
-        return f"✅ Success! Initialization saved in {elapsed:.4f} seconds."
-    except ToasterError as e:
-        return f"❌ Error: {e}"
-
+        # This calls your exact watch_async function!
+        loop.run_until_complete(watch_async(target_path))
+    except Exception as e:
+        logger.exception(f"Fatal error in background watcher: {e}")
+    finally:
+        loop.close()
+        logger.info("Background watcher shut down cleanly.")
 
 @mcp.tool()
-async def inspect(id: str, path: str = ".", include_body: bool = False) -> str:
+async def init(workspace_path: str, use_cache: bool = True) -> str:
+    # ... docstrings ...
+    global _is_initialized, _current_project_dir
+    project_dir = Path(workspace_path).resolve()
+    
+    if _is_initialized and _current_project_dir == project_dir:
+        return f"Status: Already initialized for {project_dir}."
+        
+    try:
+        configure_logging(project_dir)
+        
+        await init_async(project_dir, use_cache)
+
+        watcher_thread = threading.Thread(
+            target=_run_watcher_thread,
+            args=(project_dir,),
+            daemon=True
+        )
+        watcher_thread.start()
+        
+        _is_initialized = True
+        _current_project_dir = project_dir
+        
+        return f"Success: Toaster initialized. Cache is built at {project_dir}/.toaster/cache.db. Background watcher is now actively listening on {project_dir}"
+        
+    except Exception as e:
+        return f"Fatal Error Initializing Toaster: {str(e)}"
+
+@mcp.tool()
+async def inspect(id: str, include_body: bool = False) -> str:
     """
     Output the AST details and code for a specific struct ID.
     Use this when you need the full implementation details of a specific function or class.
     
     Args:
         id: The unique Toaster ID of the struct to inspect.
-        path: Path to the project root directory.
         include_body: Include the raw code body in the output.
     """
+    global _is_initialized, _current_project_dir
+    
+    if not _is_initialized:
+        return "Error: Toaster is not initialized. You must call 'init' with the absolute workspace path before querying the database."
+    
     try:
-        target_path = Path(path).resolve()
-        result = await inspect_async(id, target_path, include_body)
+        # 3. THE FIX: Rely strictly on the globally saved state, not Path(".")
+        result = await inspect_async(id, _current_project_dir, include_body)
         return str(result)
     except ToasterError as e:
-        return f"❌ Error: {e}"
+        return f"Error: {e}"
 
 
 @mcp.tool()
-async def skeleton(subpath: str, path: str = ".") -> str:
+async def skeleton(subpath: str) -> str:
     """
     Output the .toast skeleton format for all files matching a specific subpath.
     Use this to understand the high-level architecture, classes, and function signatures of a file or directory without reading the full code.
     
     Args:
         subpath: File or directory path relative to the project root to generate a skeleton for.
-        path: Path to the project root directory.
     """
+    global _is_initialized, _current_project_dir
+    
+    if not _is_initialized:
+        return "Error: Toaster is not initialized. You must call 'init' with the absolute workspace path before querying the database."
+    
     try:
-        target_path = Path(path).resolve()
-        result = await skeleton_async(subpath, target_path)
+        # 3. THE FIX
+        result = await skeleton_async(subpath, _current_project_dir)
         return str(result)
     except ToasterError as e:
-        return f"❌ Error: {e}"
+        return f"Error: {e}"
 
 
 @mcp.tool()
-async def resolve(name: str, path: str = ".") -> str:
+async def resolve(name: str) -> str:
     """
     Find the exact ID of a struct by searching its name or identifier.
     Use this when you know the name of a method or class but need its ID for the 'inspect' tool.
     
     Args:
         name: Method or Class name to search for (partial matches allowed).
-        path: Path to the project root directory.
     """
+    global _is_initialized, _current_project_dir
+    
+    if not _is_initialized:
+        return "Error: Toaster is not initialized. You must call 'init' with the absolute workspace path before querying the database."
+    
     try:
-        target_path = Path(path).resolve()
-        result = await resolve_async(name, target_path)
+        # 3. THE FIX
+        result = await resolve_async(name, _current_project_dir)
         return str(result)
     except ToasterError as e:
-        return f"❌ Error: {e}"
+        return f"Error: {e}"
 
 
 if __name__ == "__main__":

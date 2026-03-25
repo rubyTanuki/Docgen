@@ -1,0 +1,53 @@
+import sys
+import logging
+from pathlib import Path
+from loguru import logger
+
+class InterceptHandler(logging.Handler):
+    """
+    Intercepts standard Python logging messages and routes them to Loguru.
+    This prevents dependencies from leaking text into the MCP stdio stream.
+    """
+    def emit(self, record):
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find the origin of the log message for accurate line numbers
+        frame, depth = sys._getframe(6), 6
+        while frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+def configure_logging(project_dir: Path | str):
+    """
+    Configures the global logger. Call this exactly once at the entry point of your CLI/MCP server.
+    """
+    project_path = Path(project_dir)
+    log_dir = project_path / ".toaster"
+    log_dir.mkdir(exist_ok=True)
+    
+    log_file = log_dir / "toaster.log"
+
+    # 1. Remove all default handlers (CRITICAL: This stops output to stdout/stderr)
+    logger.remove()
+
+    # 2. Add the file handler with rotation and retention
+    logger.add(
+        str(log_file),
+        rotation="5 MB",      # Create a new file when it hits 5MB
+        retention="3 days",   # Automatically clean up old logs
+        level="DEBUG",        # Capture everything
+        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {thread.name: <15} | {name}:{function}:{line} - {message}",
+        enqueue=True          # Makes logging strictly thread-safe and async-safe!
+    )
+
+    # 3. Intercept all standard library logs from dependencies
+    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+    
+    # Optional: specifically quiet down noisy third-party libraries
+    logging.getLogger("watchfiles").setLevel(logging.INFO)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)

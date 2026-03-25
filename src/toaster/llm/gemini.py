@@ -3,6 +3,7 @@ import json
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
+from loguru import logger
 import time
 
 class MethodDescription(BaseModel):
@@ -61,7 +62,7 @@ Reference methods by their provided integer `method_id`.
             "method_ids_to_signatures": {idx: m.signature for idx, m in method_lookup.items()}
         }
         
-        print(f"Generating Description for {class_obj.ucid}...")
+        logger.info(f"Generating Description for {class_obj.ucid}...")
         start_time = time.perf_counter()
         
         max_retries = 3
@@ -83,7 +84,7 @@ Reference methods by their provided integer `method_id`.
                     )
                     end_time = time.perf_counter()
                     elapsed_time = end_time - start_time
-                    print(f"✅ Generated Description for {class_obj.ucid} in {elapsed_time:.4f} seconds.")
+                    logger.info(f"✅ Generated Description for {class_obj.ucid} in {elapsed_time:.4f} seconds.")
                     
                     parsed_data = response.parsed
                     
@@ -93,8 +94,6 @@ Reference methods by their provided integer `method_id`.
                         if m_id in method_lookup:
                             method_result["umid"] = method_lookup[m_id].umid
                             
-                    # if not parsed_data["description"]:
-                    #     print("no class level description found")
                     return parsed_data
                     
                 except Exception as e:
@@ -102,7 +101,7 @@ Reference methods by their provided integer `method_id`.
                     if "503" in error_str or "429" in error_str:
                         if attempt < max_retries - 1:
                             sleep_time = base_delay * (2 ** attempt)
-                            print(f"⏳ Server busy (503/429) on {class_obj.ucid}. Retrying in {sleep_time}s...")
+                            logger.warning(f"⏳ Server busy (503/429) on {class_obj.ucid}. Retrying in {sleep_time}s...")
                             await asyncio.sleep(sleep_time)
                             continue 
                             
