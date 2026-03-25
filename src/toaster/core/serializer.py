@@ -4,6 +4,8 @@ from toaster.core.models import BaseFile, BaseClass, BaseMethod
 
 from enum import IntEnum
 
+_INDENT_TAB = "   "
+
 class Verbosity(IntEnum):
     SKELETON = 1
     SIMPLE = 2
@@ -27,7 +29,9 @@ class toast:
 
     
     @classmethod
-    def dump_method(cls, m: BaseMethod, verbosity: Verbosity = Verbosity.SIMPLE) -> str:
+    def dump_method(cls, m: BaseMethod, verbosity: Verbosity = Verbosity.SIMPLE, indent: int = 0) -> str:
+        indent_str = _INDENT_TAB*indent
+        
         line_range = f"@L{m.start_line}-{m.end_line}"
         
         parts = []
@@ -53,13 +57,15 @@ class toast:
             
             parts.append(f"java ```\n{m.body}\n```")
 
-        return "\n".join(parts)
+        return indent_str + f"\n{indent_str}".join(parts)
         
     @classmethod
-    def dump_class(cls, c: BaseClass, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
+    def dump_class(cls, c: BaseClass, verbosity: Verbosity=Verbosity.SIMPLE, indent: int = 0) -> str:
         is_enum = len(c.constants)>0
         
         parts = []
+        
+        indent_str = _INDENT_TAB*indent
         
         header_str = f"{c.id} | {c.signature}"
         # append enum constants
@@ -80,25 +86,25 @@ class toast:
                 
             # append methods
             if c.methods:
-                parts.append("\n" + "\n".join([cls.dump_method(m, Verbosity.SKELETON) for m in c.methods.values()]))
+                parts.append("\n" + "\n".join([cls.dump_method(m, Verbosity.SKELETON, indent=indent+1) for m in c.methods.values()]))
             # append child classes
             for class_obj in c.child_classes.values():
-                parts.append(cls.dump_class(class_obj, verbosity))
-        return "\n".join(parts)
+                parts.append(cls.dump_class(class_obj, verbosity, indent=indent+1))
+        return indent_str + f"\n{indent_str}".join(parts)
         
         
     @classmethod
-    def dump_file(cls, f: BaseFile, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
+    def dump_file(cls, f: BaseFile, verbosity: Verbosity=Verbosity.SIMPLE, indent: int = 0) -> str:
         parts = []
-        
+        indent_str = _INDENT_TAB*indent
         parts.append(f"{f.id} | {f.ufid}")
         if verbosity > Verbosity.SKELETON:
             if f.imports:
                 parts.append(f"imports: {', '.join(f.imports)}")
                 
         for c in f.classes:
-            parts.append(cls.dump_class(c, verbosity))
-        return "\n".join(parts)
+            parts.append(cls.dump_class(c, verbosity, indent=indent+1))
+        return indent_str + f"\n{indent_str}".join(parts)
     
     @classmethod
     def dump_project(cls, project: BaseParser, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
@@ -107,4 +113,3 @@ class toast:
     @classmethod
     def dump_files(cls, files: list[BaseFile], verbosity: Verbosity=Verbosity.SIMPLE)->str:
         return '\n' + '\n\n'.join([cls.dump_file(f, verbosity) for f in files])
-    
