@@ -82,10 +82,7 @@ class JavaMethod(BaseMethod):
         
         parent_class = self.umid.split('#')[0] if '#' in self.umid else self.umid.rsplit('.', 1)[0]
         
-        for text, identifier in set(self.dependency_names):
-            param_str = text.split('(')[-1].strip(')')
-            arity = 0 if not param_str else len(param_str.split(','))
-            
+        for identifier, arity in set(self.dependency_names):
             local_name = f"{parent_class}.{identifier}"
             local_candidates = [c for c in self.registry.map_scoped.get(local_name, []) if c.arity == arity]
             

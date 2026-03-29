@@ -42,6 +42,11 @@ class BaseParser(ABC):
 
     async def _parse_single_file(self, filepath: Path):
         if filepath.is_file():
+            # Filter out ignored directories
+            ignore_list = {"venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster"}
+            if any(part in filepath.parts for part in ignore_list):
+                return None
+
             code = filepath.read_bytes()
             name = filepath.name
             file_obj = await asyncio.to_thread(self.parse_file, name, code)

@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 import time
 import json
 from pathlib import Path
@@ -22,6 +23,13 @@ def get_llm_client():
         raise APIKeyError("API key not found.")
     
     return GeminiClient(api_key=GEMINI_API_KEY)
+
+def clean_db(target_path: Path):
+    if os.path.exists(target_path / ".toaster"):
+        shutil.rmtree(target_path / ".toaster")
+        logger.info("Database cleaned.")
+    else:
+        logger.warning("No database found to clean.")
 
 async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BaseParser:
     llm = get_llm_client()

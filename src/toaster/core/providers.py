@@ -7,17 +7,23 @@ from toaster.exceptions import LanguageNotSupportedError
 class ParserProvider:
     parser_map = {
         ".java": "toaster.languages.java.JavaParser",
-        ".cs": "toaster.languages.csharp.CSharpParser"
+        ".cs": "toaster.languages.csharp.CSharpParser",
+        ".py": "toaster.languages.python.PythonParser"
     }
     
     @classmethod
     def get_parser(cls, path: Path, llm: "GeminiClient", registry: "MemberRegistry") -> "BaseParser":
-        found_ext = next(
-            (file.suffix for file in path.rglob("*") if file.suffix in cls.parser_map), 
-            None
-        )
         if path.is_file() and path.suffix in cls.parser_map:
             found_ext = path.suffix
+        else:
+            # Look for supported files, but ignore common noise directories
+            ignore_list = {"venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster"}
+            found_ext = None
+            for file in path.rglob("*"):
+                if file.suffix in cls.parser_map:
+                    if not any(part in file.parts for part in ignore_list):
+                        found_ext = file.suffix
+                        break
         
         if not found_ext:
             raise LanguageNotSupportedError(f"No supported language files found in {path}")
@@ -37,14 +43,23 @@ class StructProvider:
             "module": "toaster.languages.java.models",
             "file": "JavaFile",
             "class": "JavaClass",
-            "method": "JavaMethod"
+            "method": "JavaMethod",
+            "field": "JavaField",
         },
         ".cs": {
             "module": "toaster.languages.csharp.models",
             "file": "CSharpFile",
             "class": "CSharpClass",
-            "method": "CSharpMethod"
-        }
+            "method": "CSharpMethod",
+            "field": "CSharpField",
+        },
+        ".py": {
+            "module": "toaster.languages.python.models",
+            "file": "PythonFile",
+            "class": "PythonClass",
+            "method": "PythonMethod",
+            "field": "PythonField",
+        },
     }
     
     @classmethod

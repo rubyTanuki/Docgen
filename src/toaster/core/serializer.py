@@ -55,7 +55,13 @@ class toast:
             if m.unresolved_dependencies:
                 parts.append(f"# unresolved dependencies: {', '.join(m.unresolved_dependencies)}")
             
-            parts.append(f"java ```\n{m.body}\n```")
+            # Detect language for markdown block
+            lang = "java"
+            if m.file and m.file.ufid.endswith(".py"):
+                lang = "python"
+            elif m.file and m.file.ufid.endswith(".cs"):
+                lang = "csharp"
+            parts.append(f"{lang} ```\n{m.body}\n```")
 
         return indent_str + f"\n{indent_str}".join(parts)
         
@@ -101,13 +107,21 @@ class toast:
         if verbosity > Verbosity.SKELETON:
             if f.imports:
                 parts.append(f"imports: {', '.join(f.imports)}")
+            
+            # Module-level fields
+            if f.fields:
+                parts.append(f"fields: {', '.join(f.fields.keys())}")
+            
+            # Module-level methods
+            if f.methods:
+                 parts.append("\n" + "\n".join([cls.dump_method(m, Verbosity.SKELETON, indent=indent+1) for m in f.methods.values()]))
                 
         for c in f.classes:
             parts.append(cls.dump_class(c, verbosity, indent=indent+1))
         return indent_str + f"\n{indent_str}".join(parts)
     
     @classmethod
-    def dump_project(cls, project: BaseParser, verbosity: Verbosity=Verbosity.SIMPLE) -> str:
+    def dump_project(cls, project: "BaseParser", verbosity: Verbosity=Verbosity.SIMPLE) -> str:
         return '\n\n'.join([cls.dump_file(f, verbosity) for f in project.files])
     
     @classmethod

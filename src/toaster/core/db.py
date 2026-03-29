@@ -59,7 +59,8 @@ class SQLiteCache:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS methods (
                     id TEXT PRIMARY KEY,
-                    class_id TEXT NOT NULL,
+                    class_id TEXT,
+                    file_id TEXT,
                     identifier TEXT,
                     scoped_identifier TEXT,
                     return_type TEXT,
@@ -73,13 +74,32 @@ class SQLiteCache:
                     dependencies JSON,
                     inbound_dependencies JSON,
                     description TEXT,
-                    FOREIGN KEY(class_id) REFERENCES classes(id)
+                    FOREIGN KEY(class_id) REFERENCES classes(id),
+                    FOREIGN KEY(file_id) REFERENCES files(id)
+                )
+            """)
+
+            # Fields Table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS fields (
+                    id TEXT PRIMARY KEY,
+                    class_id TEXT,
+                    file_id TEXT,
+                    ucid TEXT UNIQUE NOT NULL,
+                    name TEXT,
+                    signature TEXT,
+                    field_type TEXT,
+                    FOREIGN KEY(class_id) REFERENCES classes(id),
+                    FOREIGN KEY(file_id) REFERENCES files(id)
                 )
             """)
 
             # Indexes for querying speed
             conn.execute("CREATE INDEX IF NOT EXISTS idx_classes_file ON classes(file_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_methods_class ON methods(class_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_methods_file ON methods(file_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_methods_identifier ON methods(identifier)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_fields_class ON fields(class_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_fields_file ON fields(file_id)")
             
             conn.commit()

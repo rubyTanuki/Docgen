@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from toaster.core.db import SQLiteCache
-from toaster.core.models import BaseFile, BaseClass, BaseMethod
+from toaster.core.models import BaseFile, BaseClass, BaseMethod, BaseField
 
 if TYPE_CHECKING:
     from toaster.core.models import BaseStruct
@@ -43,6 +43,14 @@ class RegistryStorage:
                     (file.id, file.ufid, source_path_str, json.dumps(file.imports))
                 )
                 
+                # Save module-level methods
+                for method in file.methods.values():
+                    self._save_method(conn, method, file_id=file.id)
+
+                # Save module-level fields
+                for field_obj in file.fields.values():
+                    self._save_field(conn, field_obj, file_id=file.id)
+
                 for class_obj in file.classes:
                     self._save_class_recursive(conn, class_obj, file.id)
 
@@ -61,20 +69,37 @@ class RegistryStorage:
         )
         
         for method in class_obj.methods.values():
-            conn.execute(
-                """INSERT INTO methods
-                   (id, class_id, identifier, scoped_identifier, return_type, umid, signature, body, body_hash, start_line, end_line, parameters, dependencies, inbound_dependencies, description)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                   ON CONFLICT(id) DO UPDATE SET
-                   signature=excluded.signature, body=excluded.body, body_hash=excluded.body_hash, dependencies=excluded.dependencies, inbound_dependencies=excluded.inbound_dependencies, description=COALESCE(NULLIF(excluded.description, ''), methods.description)
-                """,
-                (method.id, class_obj.id, method.identifier, method.scoped_identifier, method.return_type, 
-                 method.umid, method.signature, method.body, method.body_hash, method.start_line, method.end_line, 
-                 json.dumps(method.parameters), json.dumps(method.dependencies), json.dumps(method.inbound_dependencies), method.description)
-            )
+            self._save_method(conn, method, class_id=class_obj.id, file_id=file_id)
+
+        for field_obj in class_obj.fields.values():
+            self._save_field(conn, field_obj, class_id=class_obj.id, file_id=file_id)
             
         for child_class in class_obj.child_classes.values():
             self._save_class_recursive(conn, child_class, file_id, class_obj.id)
+
+    def _save_method(self, conn, method, class_id=None, file_id=None):
+        conn.execute(
+            """INSERT INTO methods
+                (id, class_id, file_id, identifier, scoped_identifier, return_type, umid, signature, body, body_hash, start_line, end_line, parameters, dependencies, inbound_dependencies, description)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                signature=excluded.signature, body=excluded.body, body_hash=excluded.body_hash, dependencies=excluded.dependencies, inbound_dependencies=excluded.inbound_dependencies, description=COALESCE(NULLIF(excluded.description, ''), methods.description)
+            """,
+            (method.id, class_id, file_id, method.identifier, method.scoped_identifier, method.return_type, 
+                method.umid, method.signature, method.body, method.body_hash, method.start_line, method.end_line, 
+                json.dumps(method.parameters), json.dumps(method.dependencies), json.dumps(method.inbound_dependencies), method.description)
+        )
+
+    def _save_field(self, conn, field_obj, class_id=None, file_id=None):
+        conn.execute(
+            """INSERT INTO fields
+                (id, class_id, file_id, ucid, name, signature, field_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                signature=excluded.signature, field_type=excluded.field_type
+            """,
+            (field_obj.id, class_id, file_id, field_obj.ucid, field_obj.name, field_obj.signature, field_obj.field_type)
+        )
 
     def update_method_description(self, method: "BaseMethod"):
         """Used by the LLM client to update descriptions in real-time."""
@@ -117,8 +142,8 @@ class RegistryHydrator:
                 query = """
                     SELECT m.*, c.ucid as _class_ucid, f.source_path as _file_source_path
                     FROM methods m
-                    JOIN classes c ON m.class_id = c.id
-                    JOIN files f ON c.file_id = f.id
+                    LEFT JOIN classes c ON m.class_id = c.id
+                    JOIN files f ON (c.file_id = f.id OR m.file_id = f.id)
                     WHERE m.id = ?
                 """
                 row = conn.execute(query, (id,)).fetchone()
@@ -139,6 +164,9 @@ class RegistryHydrator:
                 m_rows = conn.execute("SELECT * FROM methods WHERE class_id = ?", (id,)).fetchall()
                 row_dict["methods"] = [self._parse_row(r) for r in m_rows]
                 
+                f_rows = conn.execute("SELECT * FROM fields WHERE class_id = ?", (id,)).fetchall()
+                row_dict["fields"] = [self._parse_row(r) for r in f_rows]
+                
                 c_rows = conn.execute("SELECT * FROM classes WHERE parent_class_id = ?", (id,)).fetchall()
                 row_dict["child_classes"] = [self._parse_row(c) for c in c_rows]
                 return BaseClass.from_dict(row_dict)
@@ -147,9 +175,29 @@ class RegistryHydrator:
                 row = conn.execute("SELECT * FROM files WHERE id = ?", (id,)).fetchone()
                 if not row: return None
                 row_dict = self._parse_row(row)
+                
                 c_rows = conn.execute("SELECT * FROM classes WHERE file_id = ? AND parent_class_id IS NULL", (id,)).fetchall()
                 row_dict["classes"] = [self._parse_row(c) for c in c_rows]
+                
+                m_rows = conn.execute("SELECT * FROM methods WHERE file_id = ? AND class_id IS NULL", (id,)).fetchall()
+                row_dict["methods"] = [self._parse_row(m) for m in m_rows]
+
+                f_rows = conn.execute("SELECT * FROM fields WHERE file_id = ? AND class_id IS NULL", (id,)).fetchall()
+                row_dict["fields"] = [self._parse_row(f) for f in f_rows]
+                
                 return BaseFile.from_dict(row_dict)
+            
+            elif id.startswith("V-"):
+                query = """
+                    SELECT fi.*, c.ucid as _class_ucid, f.source_path as _file_source_path
+                    FROM fields fi
+                    LEFT JOIN classes c ON fi.class_id = c.id
+                    JOIN files f ON (c.file_id = f.id OR fi.file_id = f.id)
+                    WHERE fi.id = ?
+                """
+                row = conn.execute(query, (id,)).fetchone()
+                if not row: return None
+                return BaseField.from_dict(self._parse_row(row))
                 
             return None
 
@@ -169,15 +217,32 @@ class RegistryHydrator:
             results = []
             for row in rows:
                 row_dict = self._parse_row(row)
-                c_rows = conn.execute("SELECT * FROM classes WHERE file_id = ? AND parent_class_id IS NULL", (row_dict['id'],)).fetchall()
+                fid = row_dict['id']
+                
+                # Classes
+                c_rows = conn.execute("SELECT * FROM classes WHERE file_id = ? AND parent_class_id IS NULL", (fid,)).fetchall()
                 class_dicts = []
                 for c_row in c_rows:
                     c_dict = self._parse_row(c_row)
+                    # Methods
                     m_rows = conn.execute("SELECT * FROM methods WHERE class_id = ?", (c_dict['id'],)).fetchall()
                     c_dict["methods"] = [self._parse_row(r) for r in m_rows]
+                    # Fields
+                    f_rows = conn.execute("SELECT * FROM fields WHERE class_id = ?", (c_dict['id'],)).fetchall()
+                    c_dict["fields"] = [self._parse_row(r) for r in f_rows]
+                    
                     c_dict["child_classes"] = []
                     class_dicts.append(c_dict)
                 row_dict["classes"] = class_dicts
+                
+                # Module-level methods
+                m_rows = conn.execute("SELECT * FROM methods WHERE file_id = ? AND class_id IS NULL", (fid,)).fetchall()
+                row_dict["methods"] = [self._parse_row(m) for m in m_rows]
+
+                # Module-level fields
+                f_rows = conn.execute("SELECT * FROM fields WHERE file_id = ? AND class_id IS NULL", (fid,)).fetchall()
+                row_dict["fields"] = [self._parse_row(f) for f in f_rows]
+                
                 results.append(BaseFile.from_dict(row_dict))
                 
             return results
@@ -209,6 +274,14 @@ class RegistryHydrator:
             ).fetchall()
             for r in m_rows:
                 results.append({"id": r["id"], "type": "Method", "signature": r["signature"], "description": r["description"]})
+
+            # Search fields
+            fi_rows = conn.execute(
+                "SELECT id, signature, name FROM fields WHERE name LIKE ? OR ucid LIKE ?",
+                (f"%{name}%", f"%{name}%")
+            ).fetchall()
+            for r in fi_rows:
+                results.append({"id": r["id"], "type": "Field", "signature": r["signature"], "description": ""})
                 
         return results
 

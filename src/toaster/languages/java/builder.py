@@ -293,9 +293,20 @@ class JavaBuilder:
             
             if "dependencies" in captures:
                 for d_node in captures["dependencies"]:
+                    name_node = d_node.child_by_field_name('name')
+                    if not name_node:
+                        continue
+                    
+                    # Count arguments properly
+                    args_node = d_node.child_by_field_name('arguments')
+                    arity = 0
+                    if args_node:
+                        # Tree-sitter-java's argument_list children include symbols
+                        arity = len([c for c in args_node.children if c.is_named])
+                    
                     dependency_names.append((
-                        d_node.text.decode('utf-8'), 
-                        d_node.child_by_field_name('name').text.decode('utf-8')
+                        name_node.text.decode('utf-8'),
+                        arity
                     ))
                             
         instance = JavaMethod(

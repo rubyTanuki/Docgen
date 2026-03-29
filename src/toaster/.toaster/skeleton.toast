@@ -1,0 +1,374 @@
+F-743b | __init__.py
+
+F-b151 | cli.py
+imports: asyncio, os, time, json, pathlib, typer, typing, loguru, threading, toaster.llm, toaster.core, toaster.exceptions, toaster.commands, toaster.mcp, toaster.core.logger
+fields: app
+
+   M-4639a @L28-41 | def _run_watcher_thread(target_path: Path)
+   // 
+
+F-a941 | mcp.py
+imports: threading, asyncio, pathlib, fastmcp, loguru, toaster.exceptions, toaster.commands, toaster.core.logger
+fields: _is_initialized, _current_project_dir, mcp
+
+   M-4639a @L23-37 | def _run_watcher_thread(target_path: Path)
+   // 
+
+F-c280 | exceptions.py
+   C-1df7 | class ToasterError(Exception)
+   // Provides a base exception class for all errors specific to the Toaster domain, allowing for centralized error handling and categorization.
+   C-bef6 | class StructNotFoundError(ToasterError)
+   // Custom exception class to indicate that a requested structure was not found. It inherits from ToasterError, suggesting it's part of a larger error-handling hierarchy within the Toaster system.
+   C-249b | class APIKeyError(ToasterError)
+   // Represents an error specific to API key handling, inheriting from a base ToasterError class. It signifies issues related to invalid, expired, or missing API keys within the system.
+   C-05b2 | class ResolveError(ToasterError)
+   // Represents an error that occurs during the resolution process, inheriting from ToasterError.
+   C-ee44 | class LanguageNotSupportedError(ToasterError)
+   // Custom exception class to indicate that a requested language is not supported by the system. It inherits from ToasterError, suggesting a broader error hierarchy within the Toaster system.
+   C-ac12 | class TargetFileNotFoundError(ToasterError)
+   // Custom exception class to indicate that a target file was not found during processing. It inherits from ToasterError, suggesting it's part of a larger error handling hierarchy within the 'Toaster' system.
+   C-f2ab | class DatabaseNotFoundError(ToasterError)
+   // Custom exception class to indicate that a requested database was not found. It inherits from ToasterError, suggesting a broader error handling hierarchy within the application.
+
+F-bca6 | commands.py
+imports: asyncio, os, time, json, pathlib, typing, watchfiles, loguru, toaster.llm, toaster.core, toaster.exceptions
+fields: active_tasks
+
+   M-20021 @L14-15 | def _verify_db_exists(target_path: Path)
+   // 
+   M-5608f @L18-22 | def get_llm_client()
+   // 
+   M-2f71a @L25-31 | async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BaseParser
+   // 
+   M-570c4 @L34-43 | async def init_async(target_path: Path, use_cache: bool = True, write_skeleton: bool = False)
+   // 
+   M-89a55 @L46-54 | async def inspect_async(id:str, target_path: Path, include_body: bool = False)
+   // 
+   M-84a00 @L57-64 | async def skeleton_async(subpath: str, target_path: Path)
+   // 
+   M-891b8 @L67-81 | async def resolve_async(name: str, target_path: Path)
+   // 
+   M-2a3f3 @L86-109 | async def watch_async(target_path: Path)
+   // 
+   M-a96fb @L112-138 | async def process_single_file(project_dir: Path, filepath: Path, llm_client: GeminiClient)
+   // 
+
+F-743b | __init__.py
+imports: .gemini
+
+F-b7bf | gemini.py
+imports: asyncio, json, google, google.genai, pydantic, loguru, time
+   C-aed3 | class MethodDescription(BaseModel)
+   // Represents the documentation for a single method, including its description, confidence score, and context dependency. This class is likely used to structure and store metadata about analyzed methods for documentation generation or analysis purposes.
+   fields: MethodDescription.method_id, MethodDescription.description, MethodDescription.confidence, MethodDescription.needs_context
+   C-e9c6 | class DescriptionResult(BaseModel)
+   // Represents the analysis result for a class, including its description, confidence, context needs, and a list of its method descriptions.
+   fields: DescriptionResult.ucid, DescriptionResult.description, DescriptionResult.confidence, DescriptionResult.needs_context, DescriptionResult.methods
+   C-016f | class GeminiClient
+   // A client for interacting with the Gemini API to generate documentation for code. It handles API key management, model selection, and asynchronous generation requests with retry logic for server busy errors.
+   fields: GeminiClient.client, GeminiClient.model_name, GeminiClient._semaphore
+   
+      M-2152e @L22-24 | def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-lite")
+      // Initializes the GeminiClient with an API key and an optional model name. It sets up the client for interacting with the Gemini API and initializes a semaphore for controlling concurrent requests.
+      M-aaae7 @L34-110 | async def generate_description(self, class_obj: "BaseClass", imports: list[str]) -> dict
+      // Generates documentation descriptions for a given class object by sending its code and method signatures to the Gemini API. It constructs input data, invokes the Gemini API with a system instruction and JSON schema for structured output, and handles potential API errors with retries. The method returns a JSON object containing the generated descriptions or an error message.
+
+F-e890 | db.py
+imports: sqlite3, json, pathlib, contextlib
+   C-8ae5 | class SQLiteCache
+   // Manages a SQLite database for caching code artifacts such as files, classes, methods, and fields. It provides methods to initialize the database schema, enable Write-Ahead Logging (WAL) for concurrent access, and manage database connections optimized for read/write operations.
+   fields: SQLiteCache.db_path
+   
+      M-8ea5f @L6-9 | def __init__(self, db_path: Path | str)
+      // Initializes the SQLiteCache instance by setting the database path and creating the parent directory if it doesn't exist. It then calls init_db to set up the database schema.
+      M-96ce6 @L22-103 | def init_db(self)
+      // Initializes the SQLite database schema by creating tables for files, classes, methods, and fields if they do not already exist. It also enables Write-Ahead Logging (WAL) and sets synchronous mode to NORMAL for improved performance in concurrent environments. Indexes are created on relevant columns to speed up queries.
+
+F-f219 | models.py
+imports: dataclasses, abc, typing, re, json, asyncio, hashlib, importlib, toaster.core.providers
+
+F-dafc | registry.py
+imports: collections, typing, json, pathlib, toaster.core.db, toaster.core.models
+   C-7ca6 | class RegistryMemoryState
+   // Manages in-memory storage and retrieval of parsed code elements like methods and classes, using various dictionaries keyed by unique identifiers, scoped identifiers, short identifiers, and class UCIDs.
+   fields: RegistryMemoryState.map_umid, RegistryMemoryState.map_scoped, RegistryMemoryState.map_short, RegistryMemoryState.map_class, RegistryMemoryState.map_id
+   
+      M-fcd70 @L13-17 | def __init__(self)
+      // Initializes the RegistryMemoryState with empty dictionaries to store methods and classes, keyed by unique method IDs (umid), scoped identifiers, short identifiers, class UCIDs, and general struct IDs.
+      M-f6eb3 @L20-23 | def add_method(self, method: "BaseMethod")
+      // Adds a BaseMethod object to the registry, populating the internal maps (map_umid, map_id, map_scoped, map_short) using the method's unique ID, general ID, scoped identifier, and short identifier.
+      M-bb57d @L26-27 | def add_class(self, class_obj: "BaseClass")
+      // Adds a BaseClass object to the registry, populating the internal maps (map_class, map_id) using the class's UCID and general ID.
+   C-d9f4 | class RegistryStorage
+   // Handles the persistence of Abstract Syntax Tree (AST) graphs and associated metadata to an SQLite database. It provides methods to save file, class, method, and field information, including their relationships and attributes, and supports real-time updates for descriptions.
+   fields: RegistryStorage.db
+   
+      M-1e91d @L32-32 | def __init__(self, db: SQLiteCache)
+      // Initializes the RegistryStorage with an SQLiteCache instance for database operations.
+      M-32c93 @L35-55 | def save_to_db(self, files: List["BaseFile"])
+      // Saves a list of BaseFile objects to the SQLite database, persisting file metadata, methods, fields, and recursively saving nested classes. It handles insertions and updates based on existing IDs.
+      M-f8222 @L58-76 | def _save_class_recursive(self, conn, class_obj, file_id, parent_id=None)
+      // Recursively saves class information to the database, including its metadata, methods, fields, and child classes. It manages parent-child relationships for classes and handles insertions or updates.
+      M-b478d @L79-89 | def _save_method(self, conn, method, class_id=None, file_id=None)
+      // Saves method information to the database, handling both module-level and class-level methods. It supports insertions and updates, including method signatures, bodies, hashes, dependencies, and descriptions.
+      M-77aa6 @L92-100 | def _save_field(self, conn, field_obj, class_id=None, file_id=None)
+      // Saves field information to the database, supporting both module-level and class-level fields. It handles insertions and updates for field signatures and types.
+      M-23836 @L103-106 | def update_method_description(self, method: "BaseMethod")
+      // Updates the description of a specific method in the database in real-time, identified by its ID.
+      M-89285 @L109-112 | def update_class_description(self, class_obj: "BaseClass")
+      // Updates the description of a specific class in the database in real-time, identified by its ID.
+   C-cbbc | class RegistryHydrator
+   // Provides functionality to load and reconstruct various code structures (methods, classes, files, fields) from a persistent SQLite database cache into memory representations. It supports loading cached descriptions back into the active state and retrieving specific structures or collections of structures based on IDs or path prefixes.
+   fields: RegistryHydrator.db
+   
+      M-48a2c @L117-117 | def __init__(self, db: SQLiteCache)
+      // Initializes the RegistryHydrator with a reference to the SQLiteCache for database interactions.
+      M-9e722 @L120-134 | def load_cache_into_state(self, state: RegistryMemoryState)
+      // Loads descriptions for methods and classes from the SQLite database into the provided RegistryMemoryState. It iterates through database rows, retrieves corresponding objects from the state's mappings, and updates their 'description' attribute if the 'body_hash' matches, ensuring data consistency.
+      M-cf93d @L137-200 | def get_struct_from_db(self, id: str) -> Optional["BaseStruct"]
+      // Retrieves and hydrates a BaseStruct object (BaseMethod, BaseClass, BaseFile, or BaseField) from the SQLite database based on a given ID. It constructs specific SQL queries based on the ID prefix ('M-', 'C-', 'F-', 'V-') and uses the _parse_row helper to convert the database row into a dictionary before creating the object via its respective 'from_dict' class method. For classes and files, it also fetches and includes associated methods, fields, and child classes.
+      M-78bd1 @L203-246 | def get_files_by_path(self, subpath: str) -> List["BaseFile"]
+      // Retrieves and hydrates a list of BaseFile objects from the SQLite database that match a given path prefix. It normalizes the input path, queries the 'files' table, and for each matching file, it recursively fetches associated classes (including their methods and fields) and module-level methods and fields. The results are then used to construct BaseFile objects via 'from_dict'.
+      M-7df1b @L249-284 | def resolve_name(self, name: str) -> List[Dict[str, Any]]
+      // Queries the SQLite database to find code structures (files, classes, methods, fields) whose names or identifiers match the provided search string. It performs separate LIKE queries against relevant tables and returns a list of dictionaries, each containing the ID, type, signature, and description of the matching struct.
+   C-5982 | class MemberRegistry
+   // A facade class that orchestrates in-memory state management, persistent storage operations, and data hydration. It provides a unified interface to interact with registry data, maintaining backward compatibility while managing different aspects of data lifecycle including addition, saving, loading, and retrieval.
+   fields: MemberRegistry.db_path, MemberRegistry.db, MemberRegistry.state, MemberRegistry.storage, MemberRegistry.hydrator
+   
+      M-e5260 @L312-317 | def __init__(self, project_dir: str = ".")
+      // Initializes the MemberRegistry with a specified project directory, setting up the cache database path and instantiating internal components for state management, storage, and hydration.
+      M-1d42a @L331-331 | def add_method(self, method: "BaseMethod")
+      // Adds a BaseMethod object to the in-memory state of the registry.
+      M-04dee @L334-334 | def add_class(self, class_obj: "BaseClass")
+      // Adds a BaseClass object to the in-memory state of the registry.
+      M-0fb84 @L337-337 | def add_file(self, file_obj: "BaseFile")
+      // Placeholder method for adding a BaseFile object; currently does not implement any logic.
+      M-e8720 @L340-340 | def save_to_db(self, files: List["BaseFile"])
+      // Saves a list of BaseFile objects to the persistent storage (database).
+      M-07a51 @L343-343 | def load_cache(self)
+      // Loads cached data from the database and populates the in-memory state.
+      M-634d4 @L346-346 | def update_method_description(self, method: "BaseMethod")
+      // Updates the description of a given BaseMethod in the persistent storage.
+      M-c6a55 @L349-349 | def update_class_description(self, class_obj: "BaseClass")
+      // Updates the description of a given BaseClass object in the persistent storage.
+      M-6da2c @L352-354 | def get_struct_by_id(self, id: str) -> Optional["BaseStruct"]:
+        # Check memory first, then DB
+      // Retrieves a BaseStruct object by its ID, first checking the in-memory state and then querying the database if not found in memory.
+      M-466a8 @L358-358 | def get_struct_from_db(self, id: str) -> Optional["BaseStruct"]
+      // Retrieves a BaseStruct object directly from the database using its ID.
+      M-ed04b @L361-361 | def get_files_by_path(self, subpath: str) -> List["BaseFile"]
+      // Retrieves a list of BaseFile objects from the database that match the given subpath.
+      M-95c8a @L364-364 | def resolve_name(self, name: str) -> List[Dict[str, Any]]
+      // Resolves a given name to a list of dictionaries, each containing information about the resolved entity, by querying the hydrator.
+
+F-743b | __init__.py
+imports: .models, .parser, .registry, .serializer, .providers
+
+F-3000 | logger.py
+imports: sys, logging, pathlib, loguru
+
+   M-f892c @L24-51 | def configure_logging(project_dir: Path | str)
+   // 
+   C-8923 | class InterceptHandler(logging.Handler)
+   // Intercepts standard Python logging messages and routes them to Loguru, preventing dependencies from leaking text into the MCP stdio stream. It determines the log level and identifies the origin of the log message for accurate line numbers before logging with Loguru.
+   
+      M-9a904 @L10-21 | def emit(self, record)
+      // Emits a log record by converting the logging level to its Loguru equivalent and determining the origin of the log message. It then logs the message using Loguru's logger, including exception information if present and adjusting the call stack depth for accurate line numbers.
+
+F-9fb2 | parser.py
+imports: pathlib, abc, collections, asyncio, json, time, toaster.core.models, toaster.core.registry, toaster.core.serializer
+   C-7cea | class BaseParser(ABC)
+   // An abstract base class for parsing project files, resolving dependencies, and managing a registry of members. It handles file traversal, caching, and description resolution, providing a framework for language-specific parsers.
+   fields: BaseParser.llm, BaseParser.registry, BaseParser.files, BaseParser.project_dir, BaseParser.path, BaseParser.visited_ucids
+   
+      M-b6544 @L12-16 | def __init__(self, project_dir: str, llm=None, registry: MemberRegistry=None)
+      // Initializes the parser with a project directory, an optional language model, and a member registry. It sets up internal state for storing files and the project path.
+      M-32b3e @L18-33 | async def parse(self, use_cache=True, subpath=None):
+        # print(f"🔍 Parsing files in '{self.project_dir}' and linking AST...")
+        
+        # start_time = time.time()
+        
+        # t_parse = time.time()
+      // Parses the project files, resolves dependencies, and optionally loads cache data. It orchestrates file parsing, dependency resolution, and description resolution, with an option to use cached data if available and a registry is present.
+      M-912b8 @L42-54 | async def _parse_single_file(self, filepath: Path)
+      // Parses a single file asynchronously, filtering out ignored directories and returning a BaseFile object if parsing is successful. It reads file content, determines the file name, and uses an asynchronous thread for the actual file parsing.
+      M-1f162 @L57-62 | async def parse_path(self, path: Path)
+      // Parses all files within a given path asynchronously. If the path is a file, it parses that single file; otherwise, it recursively parses all files in the directory and its subdirectories.
+      M-1e60d @L65-66 | async def parse_relative_path(self, subpath)
+      // Parses files relative to the project directory. If a subpath is provided, it parses files within that subpath; otherwise, it parses files in the root project directory.
+      M-b1c78 @L69-76 | async def parse_filetree(self, subpath=None)
+      // Parses the entire file tree starting from a given subpath or the project root. It recursively traverses directories and parses individual files, collecting them into the `files` list.
+      M-259ae @L83-84 | def resolve_dependencies(self) -> None
+      // Resolves dependencies for all parsed files by calling the `resolve_dependencies` method on each file object.
+      M-82f3a @L87-88 | def load_cache(self):
+        # print("Attempting to load cache from SQLite database...")
+        # t_cache = time.time()
+      // Loads cached data from the member registry. This method is intended to populate the registry with previously saved information, likely from a database.
+      M-8aeaa @L93-95 | async def resolve_descriptions(self)
+      // Resolves descriptions for all parsed files asynchronously. It iterates through each file, calling its `resolve_descriptions` method with the language model and a set to track visited UCIDs.
+      M-ef190 @L99-103 | def write_skeleton(self)
+      // Writes a simplified skeleton of the project structure and parsed information to a '.toaster/skeleton.toast' file. It uses the `toast.dump_project` utility for serialization.
+      M-193cb @L106-106 | def write_cache(self):
+        # print("Writing AST to SQLite database...")
+      // Writes the current state of parsed files and their associated data to the member registry's database. This is typically used for caching or persistence.
+
+F-d6b0 | providers.py
+imports: pathlib, importlib, toaster.exceptions
+   C-4859 | class ParserProvider
+   // Provides a mechanism to dynamically load and instantiate parsers for different programming languages based on file extensions. It supports Java, C#, and Python, and can search recursively within a directory to find the appropriate parser if not directly specified. It handles import errors and language not supported exceptions.
+   fields: ParserProvider.parser_map
+   C-21fe | class StructProvider
+   // Provides a mapping from file extensions to language-specific model classes (structs) for representing code elements like files, classes, and methods. It dynamically imports these model classes based on the file extension and requested struct type.
+   fields: StructProvider.struct_map
+
+F-a509 | serializer.py
+imports: typing, toaster.core.models, enum
+fields: _INDENT_TAB
+   C-6b1e | class Verbosity(IntEnum)
+   // An enumeration representing different levels of verbosity for output or logging, ranging from minimal (SKELETON) to exhaustive (FULL).
+   fields: Verbosity.SKELETON, Verbosity.SIMPLE, Verbosity.VERBOSE, Verbosity.FULL
+   C-4f29 | class toast
+   // A utility class for serializing various code structure objects (files, classes, methods) into a human-readable string format. It supports different verbosity levels to control the amount of detail included in the output, such as dependencies, impact scores, and code bodies.
+
+F-743b | __init__.py
+
+F-f219 | models.py
+imports: dataclasses, toaster.core.models
+
+F-743b | __init__.py
+imports: .models, .parser
+
+F-83ae | builder.py
+imports: os, tree_sitter, toaster.languages.python.models, toaster.core.registry, toaster.languages.python.queries, toaster.languages.python.language
+   C-bdae | class PythonBuilder
+   // Parses Python source code using tree-sitter to build an Abstract Syntax Tree (AST) and extract information about files, classes, methods, and fields. It utilizes a MemberRegistry to store and manage the parsed entities and resolves dependencies within methods.
+   fields: PythonBuilder.registry, PythonBuilder._dep_query
+   
+      M-4af18 @L9-10 | def __init__(self, registry: MemberRegistry)
+      // Initializes the PythonBuilder with a MemberRegistry and a dependency query.
+      M-95965 @L13-15 | def parse_file(self, filepath: str) -> PythonFile
+      // Reads the source code from a given file path and delegates parsing to `parse_source`.
+      M-d3a85 @L18-65 | def parse_source(self, filename: str, source_code: bytes) -> PythonFile
+      // Parses Python source code from a string, extracting imports, classes, methods, and fields by traversing the AST. It populates a PythonFile object and then calls `_plumb_context` to establish relationships between parsed entities.
+      M-5bf8d @L68-74 | def _plumb_context(self, file_obj: PythonFile)
+      // Recursively sets the file and parent class context for methods and classes within a PythonFile object.
+      M-88482 @L77-82 | def _plumb_class(
+        self, class_obj: PythonClass, file_obj: PythonFile, parent_class: PythonClass
+    )
+      // Recursively sets the file and parent class context for methods and child classes within a given class object.
+      M-1ca56 @L87-135 | def parse_class(self, node: Node, scope: str = "") -> PythonClass
+      // Parses a class definition node from the AST, extracting its name, signature, and body. It then recursively parses nested methods, child classes, and fields within the class body, registering the created PythonClass instance with the MemberRegistry.
+      M-80fe0 @L138-172 | def _extract_self_fields(self, method_node: Node, class_instance: PythonClass):
+        # Simple traversal to find self.X = ...
+      // Traverses the body of a method node to find and extract instance variable assignments (e.g., `self.X = ...`). It identifies fields, their types, and updates the class instance's fields if they are newly discovered or if a more specific type is found.
+      M-abb9d @L176-270 | def parse_method(self, node: Node, scope: str) -> PythonMethod
+      // Parses a method definition node from the AST, extracting its identifier, parameters, return type, signature, and body. It also identifies and records method dependencies by analyzing function calls within the method body using a pre-defined query. The created PythonMethod is registered with the MemberRegistry.
+      M-6d9d8 @L273-287 | def parse_field(self, node: Node, scope: str = "") -> PythonField
+      // Parses a field definition node, extracting the field's name, type, and signature. It constructs a unique class identifier (ucid) for the field based on its scope and returns a PythonField object.
+
+F-9fb2 | parser.py
+imports: toaster.core, toaster.languages.python.builder
+   C-7684 | class PythonParser(BaseParser)
+   // Parses Python files by delegating to a PythonBuilder. It filters files based on the '.py' extension.
+   
+      M-5f2c3 @L4-10 | def parse_file(self, name: str, code: bytes)
+      // Parses the given Python code if the filename ends with '.py'. It creates a PythonBuilder and uses it to parse the source code, returning the result. Returns None if the filename does not end with '.py'.
+
+F-90b1 | language.py
+imports: tree_sitter
+fields: PYTHON_LANGUAGE
+
+F-dfa6 | queries.py
+fields: DEPENDENCY_QUERY
+
+F-f219 | models.py
+imports: dataclasses, toaster.core.models
+
+F-743b | __init__.py
+imports: .models, .parser
+
+F-83ae | builder.py
+imports: os, tree_sitter, toaster.languages.java.models, toaster.core.registry, toaster.languages.java.queries, toaster.languages.java.language
+   C-ff08 | class JavaBuilder
+   // A builder class responsible for parsing Java source files and constructing a representation of the Java code structure. It utilizes a MemberRegistry to store parsed elements like classes, methods, and fields. The builder navigates the Abstract Syntax Tree (AST) generated by a parser to extract information about packages, imports, classes, interfaces, enums, methods, and fields, creating corresponding Java objects.
+   fields: JavaBuilder.registry, JavaBuilder._dep_query
+   
+      M-2c043 @L9-10 | def __init__(self, registry: MemberRegistry)
+      // Initializes the JavaBuilder with a MemberRegistry and a Query object for dependency analysis.
+      M-fed12 @L13-15 | def parse_file(self, filepath: str) -> JavaFile
+      // Reads the source code from a given file path and delegates parsing to `parse_source`.
+      M-312ff @L18-55 | def parse_source(self, filename: str, source_code: bytes) -> JavaFile
+      // Parses Java source code from a byte string, extracting package declarations, import statements, and class/interface/enum declarations. It then constructs a JavaFile object, populates it with parsed elements, and calls `_plumb_context` to establish relationships between them.
+      M-76000 @L58-60 | def _plumb_context(self, file_obj: JavaFile)
+      // Recursively passes context information downwards through the parsed Java file structure, starting from classes.
+      M-c5e38 @L63-68 | def _plumb_class(self, class_obj: JavaClass, file_obj: JavaFile, parent_class: JavaClass)
+      // Recursively sets the file and parent class context for methods and child classes within a given class object.
+      M-66730 @L71-159 | def parse_class(self, node: Node, scope: str = "") -> JavaClass
+      // Parses a class or interface declaration node from the AST, extracting its name, modifiers, superclass, implemented interfaces, and type parameters. It constructs a JavaClass object, registers it, and then recursively parses its body to identify and parse nested methods, fields, and inner classes/interfaces/enums.
+      M-4a5f5 @L162-229 | def parse_enum(self, node: Node, scope: str = "") -> JavaEnum
+      // Parses an enum declaration node from the AST, extracting its name, modifiers, and implemented interfaces. It constructs a JavaEnum object, registers it, and then parses its body to identify and parse enum constants, methods, and fields.
+      M-3f111 @L232-326 | def parse_method(self, node: Node, scope: str) -> JavaMethod
+      // Parses a method or constructor declaration node from the AST, extracting its name, return type, parameters, modifiers, type parameters, and throws clause. It constructs a JavaMethod object, registers it, and analyzes the method body for dependencies using a predefined query.
+      M-fd0ec @L329-372 | def parse_field(self, node: Node, scope: str = "") -> JavaField
+      // Parses a field declaration node from the AST, extracting its type, modifiers, identifier, and initial value. It constructs a JavaField object with a signature representing its declaration.
+
+F-9fb2 | parser.py
+imports: toaster.core, toaster.languages.java.builder
+   C-b287 | class JavaParser(BaseParser)
+   // Parses Java source code files, delegating the actual parsing logic to a JavaBuilder. It acts as a specialized parser for Java files within a larger parsing framework.
+   
+      M-f10aa @L4-7 | def parse_file(self, name: str, code: bytes)
+      // Parses a file if its name ends with ".java". It initializes a JavaBuilder with the current registry and then uses the builder to parse the provided source code, returning the result. If the file is not a Java file, it returns None.
+
+F-90b1 | language.py
+imports: tree_sitter
+fields: JAVA_LANGUAGE
+
+F-dfa6 | queries.py
+fields: CLASS_QUERY, PACKAGE_QUERY, METHOD_QUERY, DEPENDENCY_QUERY, FIELD_QUERY
+
+F-f219 | models.py
+imports: dataclasses, toaster.core.models
+
+F-743b | __init__.py
+imports: .parser
+
+F-83ae | builder.py
+imports: os, tree_sitter, toaster.languages.csharp.models, toaster.core.registry, toaster.languages.csharp.queries, toaster.languages.csharp.language
+   C-5172 | class CSharpBuilder
+   // Parses C# source code into a structured representation, extracting information about files, classes, enums, methods, and fields. It utilizes a MemberRegistry to store and manage these parsed entities and employs a tree-sitter parser for accurate syntax analysis. The builder also handles the plumbing of context information down the object hierarchy.
+   fields: CSharpBuilder.registry, CSharpBuilder._dep_query
+   
+      M-64852 @L9-10 | def __init__(self, registry: MemberRegistry)
+      // Initializes the CSharpBuilder with a MemberRegistry and a dependency query object.
+      M-e5252 @L13-15 | def parse_file(self, filepath: str) -> CSharpFile
+      // Reads C# source code from a given file path and initiates parsing.
+      M-3d340 @L18-74 | def parse_source(self, filename: str, source_code: bytes) -> CSharpFile
+      // Parses C# source code from a byte string, using a tree-sitter parser to build an Abstract Syntax Tree (AST). It traverses the AST to identify and extract information about namespaces, classes, interfaces, records, structs, and enums, populating a CSharpFile object with the parsed data. It also handles 'using' directives for imports and recursively calls parsing methods for nested declarations.
+      M-66b4b @L77-79 | def _plumb_context(self, file_obj: CSharpFile)
+      // Recursively passes file-level context down to class objects.
+      M-67f23 @L82-87 | def _plumb_class(self, class_obj: CSharpClass, file_obj: CSharpFile, parent_class: CSharpClass)
+      // Recursively passes context (file and parent class) down to methods and child classes.
+      M-5e5cf @L90-186 | def parse_class(self, node: Node, scope: str = "") -> CSharpClass
+      // Parses a C# class, interface, record, or struct declaration from a tree-sitter Node. It extracts the identifier, scope, modifiers, base classes, interfaces, and type parameters to construct a CSharpClass object. It then recursively parses nested methods, properties, fields, and child classes/enums within the body of the declaration.
+      M-52eb1 @L189-236 | def parse_enum(self, node: Node, scope: str = "") -> CSharpEnum
+      // Parses a C# enum declaration from a tree-sitter Node, extracting its identifier, scope, modifiers, and constants. It constructs a CSharpEnum object and registers it.
+      M-01d99 @L239-346 | def parse_method(self, node: Node, scope: str) -> CSharpMethod
+      // Parses a C# method or constructor declaration from a tree-sitter Node. It extracts the method's name, return type, parameters, modifiers, and type parameters to form a signature. It also parses the method body to identify dependencies using a predefined query and constructs a CSharpMethod object.
+      M-a8610 @L349-410 | def parse_field(self, node: Node, scope: str = "") -> CSharpField
+      // Parses a C# field declaration from a tree-sitter Node, extracting its type, identifier, modifiers, and initial value. It constructs a CSharpField object with a generated signature.
+
+F-9fb2 | parser.py
+imports: toaster.core, toaster.languages.csharp.builder
+   C-4dc9 | class CSharpParser(BaseParser)
+   // Parses C# code files, specifically identifying and processing files with the .cs extension. It utilizes a CSharpBuilder to handle the actual parsing logic.
+   
+      M-f1f6c @L4-7 | def parse_file(self, name: str, code: bytes)
+      // Parses the given code if the filename ends with '.cs'. It initializes a CSharpBuilder and delegates the parsing of the source code to it, returning the result.
+
+F-90b1 | language.py
+imports: tree_sitter_c_sharp, tree_sitter
+fields: CSHARP_LANGUAGE
+
+F-dfa6 | queries.py
+fields: DEPENDENCY_QUERY

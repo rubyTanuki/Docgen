@@ -9,7 +9,8 @@ description = "Token-Optimized AST Generator"
 dependencies = [
     "tree-sitter",
     "tree-sitter-java",
-    "tree-sitter-csharp",
+    "tree-sitter-c-sharp",
+    "tree-sitter-python",
     "google.genai",
     "pydantic",
     "typer",

@@ -40,7 +40,6 @@ def _run_watcher_thread(target_path: Path):
 
 @mcp.tool()
 async def init(workspace_path: str, use_cache: bool = True) -> str:
-    # ... docstrings ...
     global _is_initialized, _current_project_dir
     project_dir = Path(workspace_path).resolve()
     

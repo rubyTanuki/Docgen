@@ -21,6 +21,8 @@ class BaseFile(ABC):
     ufid: str # Unique File ID (usually filename or relative path)
     imports: List[str]
     classes: List["BaseClass"]
+    fields: Dict[str, "BaseField"] = field(default_factory=dict)
+    methods: Dict[str, "BaseMethod"] = field(default_factory=dict)
     registry: "MemberRegistry" = None
     source_path: str = ""
     
@@ -34,7 +36,9 @@ class BaseFile(ABC):
         f = file_cls(
             ufid=d['ufid'],
             imports=d.get('imports', []),
-            classes=[]
+            classes=[],
+            fields={},
+            methods={}
         )
         f.source_path = path
         f.id = d['id']
@@ -43,6 +47,17 @@ class BaseFile(ABC):
             cd["_file_source_path"] = path
             child = BaseClass.from_dict(cd)
             f.classes.append(child)
+
+        for md in d.get("methods", []):
+            md["_file_source_path"] = path
+            m = BaseMethod.from_dict(md)
+            m.file = f
+            f.methods[m.umid] = m
+
+        for fd in d.get("fields", []):
+            fd["_file_source_path"] = path
+            field_obj = BaseField.from_dict(fd)
+            f.fields[field_obj.ucid] = field_obj
             
         return f
 
@@ -54,13 +69,18 @@ class BaseFile(ABC):
         """Triggers dependency resolution for all children."""
         for c in self.classes:
             c.resolve_dependencies(self.imports)
-    
+        for m in self.methods.values():
+            m.resolve_dependencies(self.imports)
+
     async def resolve_descriptions(self, llm: "LLMClient", visited_ucids: set[str] = None):
         if visited_ucids is None:
             visited_ucids = set()
+        
+        # Resolve class descriptions
         coroutine_list = [cls.resolve_descriptions(llm, self.imports, visited_ucids, self.registry) for cls in self.classes]
         for class_obj in self.classes:
             coroutine_list.extend([c.resolve_descriptions(llm, self.imports, visited_ucids, self.registry) for c in class_obj.child_classes.values()])
+        
         await asyncio.gather(*coroutine_list)
 
     def __str__(self):
@@ -124,6 +144,11 @@ class BaseClass(ABC):
             cd["_file_source_path"] = path
             child = BaseClass.from_dict(cd)
             c.child_classes[child.ucid] = child
+
+        for fd in d.get("fields", []):
+            fd["_file_source_path"] = path
+            field_obj = BaseField.from_dict(fd)
+            c.fields[field_obj.ucid] = field_obj
             
         return c
 
@@ -294,6 +319,24 @@ class BaseField(ABC):
     name: str
     signature: str
     field_type: str
+    
+    id: str = field(init=False)
+
+    @staticmethod
+    def from_dict(d: dict) -> "BaseField":
+        path = d.get("_file_source_path", "unknown.java")
+        field_cls = StructProvider.get_struct_class(path, "field")
+        f = field_cls(
+            ucid=d["ucid"],
+            name=d["name"],
+            signature=d["signature"],
+            field_type=d["field_type"],
+        )
+        f.id = d["id"]
+        return f
+
+    def __post_init__(self):
+        self.id = f"V-{hashlib.md5(self.ucid.encode('utf-8')).hexdigest()[:4]}"
 
     def __str__(self) -> str:
         return f"<{self.__class__.__name__}: {self.ucid}>"
