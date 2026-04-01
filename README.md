@@ -3,13 +3,13 @@
 </p>
 
 <h1 align="center">
-Pro-compiling Agentic AI Code Context
+Pre-compiling Agentic AI Code Context
 </h1>
 
 <!-- usage gif goes here -->
 
 <p align="center">
-Toaster is a CLI and MCP tool which greatly reduces token costs and context bloat for agentic LLM coding assistants by pre-computing an llm-described AST in the .toast format
+Toaster is a CLI and MCP agent context engine which greatly reduces token costs and context bloat for agentic LLM coding assistants by pre-computing an llm-described AST in the .toast format
 </p>
 
 ## Features
