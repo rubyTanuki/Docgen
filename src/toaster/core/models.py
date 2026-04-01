@@ -18,7 +18,8 @@ class BaseFile(ABC):
     Abstract representation of a source code file.
     Acts as the root container for the dependency graph.
     """
-    ufid: str # Unique File ID (usually filename or relative path)
+    
+    ufid: str # PIDController.java
     imports: List[str]
     classes: List["BaseClass"]
     fields: Dict[str, "BaseField"] = field(default_factory=dict)
@@ -34,7 +35,7 @@ class BaseFile(ABC):
         file_cls = StructProvider.get_struct_class(path, "file")
         
         f = file_cls(
-            ufid=d['ufid'],
+            ufid=path,
             imports=d.get('imports', []),
             classes=[],
             fields={},
@@ -46,6 +47,7 @@ class BaseFile(ABC):
         for cd in d.get("classes", []):
             cd["_file_source_path"] = path
             child = BaseClass.from_dict(cd)
+            child.file = f
             f.classes.append(child)
 
         for md in d.get("methods", []):

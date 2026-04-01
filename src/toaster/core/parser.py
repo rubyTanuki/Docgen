@@ -98,7 +98,7 @@ class BaseParser(ABC):
         
         
     def write_skeleton(self):
-        toast_string = toast.dump_project(self, verbosity=Verbosity.SIMPLE)
+        toast_string = toast.dump_parser(self, verbosity=Verbosity.SIMPLE)
         toaster_dir = self.path / ".toaster"
         toaster_dir.mkdir(exist_ok=True)
         with open(toaster_dir / "skeleton.toast", "w") as file:

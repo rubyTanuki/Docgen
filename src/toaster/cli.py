@@ -142,11 +142,18 @@ def inspect(
             "--body/--no-body", 
             help="Include code body in output"
             )
-        ] = False
+        ] = False,
+    pretty: Annotated[
+        bool,
+        typer.Option(
+            "--pretty/--raw",
+            help="Pretty format output with line wrapping and indentation (disable for raw output)"
+        )
+    ] = True
 ):
     """Output the AST details for a specific struct ID."""
     try:
-        result = asyncio.run(inspect_async(id, path, include_body))
+        result = asyncio.run(inspect_async(id, path, include_body=include_body, pretty=pretty))
         print(result)
     except ToasterError as e:
         typer.secho(f"❌ Error: {e}", fg="red", err=True)
@@ -158,7 +165,7 @@ def skeleton(
     subpath: Annotated[
         str, 
         typer.Argument(help="File or directory path relative to the project root to generate a skeleton for")
-    ],
+    ] = ".",
     path: Path = typer.Argument(
         ".", 
         help="Path to the project directory to scan",

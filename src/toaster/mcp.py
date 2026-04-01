@@ -82,8 +82,7 @@ async def inspect(id: str, include_body: bool = False) -> str:
         return "Error: Toaster is not initialized. You must call 'init' with the absolute workspace path before querying the database."
     
     try:
-        # 3. THE FIX: Rely strictly on the globally saved state, not Path(".")
-        result = await inspect_async(id, _current_project_dir, include_body)
+        result = await inspect_async(id, _current_project_dir, include_body, pretty=False)
         return str(result)
     except ToasterError as e:
         return f"Error: {e}"
@@ -104,7 +103,6 @@ async def skeleton(subpath: str) -> str:
         return "Error: Toaster is not initialized. You must call 'init' with the absolute workspace path before querying the database."
     
     try:
-        # 3. THE FIX
         result = await skeleton_async(subpath, _current_project_dir)
         return str(result)
     except ToasterError as e:

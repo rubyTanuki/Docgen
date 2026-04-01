@@ -52,7 +52,7 @@ async def init_async(target_path: Path, use_cache: bool = True, write_skeleton: 
     # Write Cache
     parser.write_cache()
     
-async def inspect_async(id:str, target_path: Path, include_body: bool = False):
+async def inspect_async(id:str, target_path: Path, include_body: bool = False, pretty: bool = True):
     _verify_db_exists(target_path)
     
     registry = MemberRegistry(str(target_path))
@@ -60,8 +60,7 @@ async def inspect_async(id:str, target_path: Path, include_body: bool = False):
     if struct_obj is None:
         raise StructNotFoundError(f"Struct not found with id {id}.")
     
-    verb = Verbosity.FULL if include_body else Verbosity.VERBOSE
-    return toast.dumps(struct_obj, verbosity=verb)
+    return toast.dumps(struct_obj, verbosity=Verbosity.VERBOSE, include_body=include_body, pretty=pretty)
     
 async def skeleton_async(subpath: str, target_path: Path):
     _verify_db_exists(target_path)
@@ -71,7 +70,7 @@ async def skeleton_async(subpath: str, target_path: Path):
     if not files:
         raise FileNotFoundError(f"No files found matching path '{subpath}'.")
     
-    return toast.dump_files(files, verbosity=Verbosity.SKELETON)
+    return toast.dump_files(files, verbosity=Verbosity.SKELETON, pretty=False)
     
 async def resolve_async(name: str, target_path: Path):
     _verify_db_exists(target_path)
@@ -126,9 +125,9 @@ async def process_single_file(project_dir: Path, filepath: Path, llm_client: Gem
         await parser.parse_path(filepath)
         parser.resolve_dependencies()
         logger.debug("✅ Resolved Dependencies")
-        logger.trace(toast.dump_project(parser))
+        # logger.trace(toast.dump_parser(parser))
         parser.load_cache()
-        # mark the descriptions as stale here
+        # TODO: mark the descriptions as stale here
         await asyncio.to_thread(parser.write_cache)
         logger.debug("✅ Wrote Cache #1")
         
@@ -137,10 +136,9 @@ async def process_single_file(project_dir: Path, filepath: Path, llm_client: Gem
         await parser.resolve_descriptions()
         await asyncio.to_thread(parser.write_cache)
         logger.debug("✅ Wrote Cache #2")
-        logger.trace(toast.dump_project(parser))
+        # logger.trace(toast.dump_parser(parser))
     except asyncio.CancelledError:
         logger.warning(f"Task cancelled on {filepath}")
-        pass
     except Exception as e:
         logger.warning(f"Error processing file {filepath}: {e}")
     finally:
