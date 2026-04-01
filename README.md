@@ -12,7 +12,7 @@ Pre-compiling Agentic AI Code Context
 Toaster is a CLI and MCP agent context engine which greatly reduces token costs and context bloat for agentic LLM coding assistants by pre-computing an llm-described AST in the .toast format
 </p>
 
-## Features
+# Features
 ### Pre-compiled Abstract Syntax Tree
 Toaster scrapes your project on initialization, building a comprehensive Abstract Syntax Tree IR (Intermediate Representation) of the entire OOP code structure.
 
