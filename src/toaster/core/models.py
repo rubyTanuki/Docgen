@@ -171,6 +171,9 @@ class BaseFile(BaseStruct):
     _IDPREFIX: ClassVar[str] = "F"
     
     imports: List[str] = field(default_factory=list)
+    package: str = ""
+    body: str = ""
+    node: "Node" = None
     
     async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
         pass
@@ -179,6 +182,7 @@ class BaseFile(BaseStruct):
         data = super().to_dict()
         data["type"] = "BaseFile"
         data["imports"] = self.imports
+        data["body"] = self.body
         return data
     
 @dataclass    
@@ -309,6 +313,7 @@ class BaseMethod(BaseCodeStruct):
     _IDPREFIX: ClassVar[str] = "M"
     
     arity: int = 0
+    dependency_names: Optional[List[str]] = field(default_factory=list)
     
     children: dict = field(init=False, repr=False, default_factory=dict)
     
@@ -354,7 +359,7 @@ class BaseMethod(BaseCodeStruct):
         pass
 
 @dataclass
-class BaseField(BaseStruct):
+class BaseField(BaseCodeStruct):
     _IDPREFIX: ClassVar[str] = "V"
     
     field_type: str = ""
