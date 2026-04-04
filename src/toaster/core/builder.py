@@ -3,9 +3,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from toaster.core.models import *
+from toaster.core.registry import Registry
 
 class BaseBuilder(ABC):
-    def __init__(self, registry: MemberRegistry):
+    def __init__(self, registry: Registry):
         self.registry = registry
         
     @abstractmethod
@@ -21,7 +22,7 @@ class BaseBuilder(ABC):
     def build_field(self) -> "BaseCodeStructBuilder": pass
     
 class BaseStructBuilder(ABC):
-    def __init__(self, registry: MemberRegistry):
+    def __init__(self, registry: Registry):
         self.registry = registry
         
     @abstractmethod

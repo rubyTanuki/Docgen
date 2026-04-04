@@ -1,45 +1,46 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, TYPE_CHECKING, ClassVar
+from typing import Set, List, Dict, Any, Optional, TYPE_CHECKING, ClassVar
 import re
 import json
 import asyncio
 import hashlib
 from importlib import import_module
+from pathlib import Path
 
 from loguru import logger
 
 from toaster.core.providers import StructProvider
 
 if TYPE_CHECKING:
-    from toaster.core.registry import MemberRegistry
+    from toaster.core.registry import Registry
 
-@dataclass
+@dataclass(eq=False)
 class BaseStruct(ABC):
     # IDENTITY
     name: str = ""              # exampleMethod
-    uid: str                    # namespace.exampleClass#exampleMethod(num1: int) or src/com/example/Example.java
+    uid: str = ""               # namespace.exampleClass#exampleMethod(num1: int) or src/com/example/Example.java
     id: str = field(init=False) # S-1a2b3c4d5e
     description: str = ""
     
     # DEPENDENCIES / GRAPH
-    inbound_dependencies: Set["BaseStruct" | str] = field(default_factory=set)
-    inbound_dependencies_fuzzy: Set["BaseStruct" | str] = field(default_factory=set) # for fuzzy matching during resolution
-    outbound_dependencies: Set["BaseStruct" | str] = field(default_factory=set)
-    outbound_dependencies_fuzzy: Set["BaseStruct" | str] = field(default_factory=set) # for fuzzy matching during resolution
+    inbound_dependencies: Set[BaseStruct | str] = field(default_factory=set)
+    inbound_dependencies_fuzzy: Set[BaseStruct | str] = field(default_factory=set) # for fuzzy matching during resolution
+    outbound_dependencies: Set[BaseStruct | str] = field(default_factory=set)
+    outbound_dependencies_fuzzy: Set[BaseStruct | str] = field(default_factory=set) # for fuzzy matching during resolution
     
     inbound_dependency_names: Set[str] = field(default_factory=set) # for serialization only, not used for resolution
     outbound_dependency_names: Set[str] = field(default_factory=set) # for serialization only, not used for resolution
     
     # CONTEXT
-    registry: "MemberRegistry" = None
-    parent: "BaseStruct" | str = None
-    children: Dict[str, Set["BaseStruct" | str]] = field(default_factory=dict)
+    registry: "Registry" = None
+    parent: BaseStruct | str = None
+    children: Dict[str, Set[BaseStruct | str]] = field(default_factory=dict)
     path: Path = None
     
     _IDPREFIX: ClassVar[str] = "S"
     
-    _all_children: List["BaseStruct"] = []
+    _all_children: List["BaseStruct"] = field(init=False, repr=False, default_factory=list)
     @property
     def all_children(self):
         if self._all_children: return self._all_children
@@ -139,7 +140,7 @@ class BaseStruct(ABC):
         return f"<{self.__class__.__name__}: {self.uid}>"
     __repr__=__str__
     
-@dataclass
+@dataclass(eq=False)
 class Directory(BaseStruct):
     _IDPREFIX: ClassVar[str] = "D"
     
@@ -166,7 +167,7 @@ class Directory(BaseStruct):
         data["type"] = "Directory"
         return data
 
-@dataclass
+@dataclass(eq=False)
 class BaseFile(BaseStruct):
     _IDPREFIX: ClassVar[str] = "F"
     
@@ -185,7 +186,7 @@ class BaseFile(BaseStruct):
         data["body"] = self.body
         return data
     
-@dataclass    
+@dataclass(eq=False) 
 class BaseCodeStruct(BaseStruct):
     
     signature: str = ""         # public static int add(int num1, int num2) or class <T> Example extends BaseClass
@@ -205,7 +206,7 @@ class BaseCodeStruct(BaseStruct):
         data["end_line"] = self.end_line
         return data
     
-@dataclass
+@dataclass(eq=False)
 class BaseClass(BaseCodeStruct):
     _IDPREFIX: ClassVar[str] = "C"
     
@@ -308,7 +309,7 @@ class BaseClass(BaseCodeStruct):
         data["inherits"] = self.inherits
         return data
     
-@dataclass
+@dataclass(eq=False)
 class BaseMethod(BaseCodeStruct):
     _IDPREFIX: ClassVar[str] = "M"
     
@@ -317,9 +318,9 @@ class BaseMethod(BaseCodeStruct):
     
     children: dict = field(init=False, repr=False, default_factory=dict)
     
-    @abstractmethod
-    def _parse_dependencies(self):
-        pass
+    # @abstractmethod
+    # def _parse_dependencies(self):
+    #     pass
     
     def resolve_dependencies(self):
         dependency_names: List[(str, int)] = [] # (name, arity)
@@ -358,7 +359,7 @@ class BaseMethod(BaseCodeStruct):
     async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
         pass
 
-@dataclass
+@dataclass(eq=False)
 class BaseField(BaseCodeStruct):
     _IDPREFIX: ClassVar[str] = "V"
     

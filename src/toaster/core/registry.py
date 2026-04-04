@@ -2,10 +2,10 @@ from collections import defaultdict
 from typing import List, Dict, Optional, TYPE_CHECKING
 from pathlib import Path
 from toaster.core.models import BaseFile, BaseClass, BaseMethod, BaseField
+from toaster.core.db import SQLiteCache
 
 if TYPE_CHECKING:
     from toaster.core.models import BaseStruct, BaseCodeStruct
-    from toaster.core.db import SQLiteCache
 
 class Registry:
     def __init__(self, use_cache: bool = True, db: SQLiteCache = None):

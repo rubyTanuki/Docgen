@@ -7,11 +7,11 @@ import time
 from collections import deque
 
 from toaster.core.models import BaseFile
-from toaster.core.registry import MemberRegistry
+from toaster.core.registry import Registry
 from toaster.core.serializer import toast, Verbosity
 
 class BaseParser(ABC):
-    def __init__(self, project_dir: str, llm=None, registry: MemberRegistry=None):
+    def __init__(self, project_dir: str, llm=None, registry: Registry=None):
         self.llm = llm
         self.registry = registry
         self.project_path = Path(self.project_dir)
@@ -61,7 +61,8 @@ class BaseParser(ABC):
 
     @abstractmethod
     def parse_file(self, subpath: Path) -> BaseFile:
-        pass
+        builder = StructBuilderProvier.get_builder(subpath.suffix, self.registry)
+        return builder.build_file.from_path(subpath)
     
     def resolve_dependencies(self) -> None:
         tree_root.resolve_dependencies()
