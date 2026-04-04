@@ -4,6 +4,7 @@ from collections import defaultdict
 import asyncio
 import json
 import time
+from collections import deque
 
 from toaster.core.models import BaseFile
 from toaster.core.registry import MemberRegistry
@@ -13,77 +14,57 @@ class BaseParser(ABC):
     def __init__(self, project_dir: str, llm=None, registry: MemberRegistry=None):
         self.llm = llm
         self.registry = registry
-        self.files: list[BaseFile] = []
-        self.project_dir = project_dir
-        self.path = Path(self.project_dir)
-    async def parse(self, use_cache=True, subpath=None):
+        self.project_path = Path(self.project_dir)
+        self.path_ignore = ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster"]
+    
+    @property
+    def files(self):
+        if self._files: return self._files
+        self._files = self.registry.uid_map.values().Filter(lambda x: isinstance(x, BaseFile)).ToList()
+        return self._files
+    
+    
+    async def parse(self, subpath: Path = None):
+        if not subpath:
+            subpath = self.project_path
+        
         # print(f"🔍 Parsing files in '{self.project_dir}' and linking AST...")
         
         # start_time = time.time()
         
         # t_parse = time.time()
-        
-        await self.parse_relative_path(subpath)
-        # print(f"✅ Parsed Project Files in {time.time() - t_parse:.2f} seconds")
-        
-        # t_resolve = time.time()
-        self.resolve_dependencies()
-        # print(f"✅ Resolved Dependencies in {time.time() - t_resolve:.2f} seconds")
-        
-        # end_time = time.time()
-        # print(f"Took {end_time - start_time:.2f} seconds to parse project files")
-        
-        if use_cache and self.registry:
-            self.load_cache()
-        # else:
-        #     print("❌ Skipping cache load")
-        
-        await self.resolve_descriptions()
-
-    async def _parse_single_file(self, filepath: Path):
-        if filepath.is_file():
-            # Filter out ignored directories
-            ignore_list = {"venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster"}
-            if any(part in filepath.parts for part in ignore_list):
-                return None
-
-            code = filepath.read_bytes()
-            name = filepath.name
-            file_obj = await asyncio.to_thread(self.parse_file, name, code)
-            if file_obj:
-                file_obj.source_path = filepath.relative_to(self.path)
-                return file_obj
-        return None
-    
-    async def parse_path(self, path: Path):
-        if path.is_file():
-            self.files.append(await self._parse_single_file(path))
+        if subpath.is_dir():
+            self.registry.root = Directory(path=subpath, registry=self.registry)
+            self.registry.add_struct(self.registry.root)
+            for path in subpath.glob("*"):
+                if any(part in path.parts for part in self.path_ignore):
+                    continue
+                if path.is_dir():
+                    directory = Directory(path=path, registry=self.registry, parent=self.registry.root)
+                    self.registry.add_struct(directory)
+                    directory.parse_children()
+                else:
+                    file = self.parse_file(subpath, parent=self.registry.root)
+                    self.registry.add_struct(file)
         else:
-            tasks = [self._parse_single_file(filepath) for filepath in path.rglob("*")]
-            results = await asyncio.gather(*tasks)
-            self.files.extend(filter(None, results))
-    
-    async def parse_relative_path(self, subpath):
-        path = self.path / subpath if subpath else self.path
-        await self.parse_path(path)
-    
-    async def parse_filetree(self, subpath=None):
-        path = self.path / subpath if subpath else self.path
+            file = self.parse_file(subpath)
+            self.registry.root = file
+            self.registry.add_struct(file)
+        # # print(f"✅ Parsed Project Files in {time.time() - t_parse:.2f} seconds")
         
-        if self.path.is_file():
-            self.files.append(await self._parse_single_file(path))
-        else:
-            tasks = [self._parse_single_file(filepath) for filepath in path.rglob("*")]
-            results = await asyncio.gather(*tasks)
-            self.files.extend(filter(None, results))
+        # # t_resolve = time.time()
+        self.registry.root.resolve_dependencies()
+        # # print(f"✅ Resolved Dependencies in {time.time() - t_resolve:.2f} seconds")
+        
+        # # end_time = time.time()
+        # # print(f"Took {end_time - start_time:.2f} seconds to parse project files")
 
     @abstractmethod
-    def parse_file(self, name: str, code: bytes) -> BaseFile:
+    def parse_file(self, subpath: Path) -> BaseFile:
         pass
     
     def resolve_dependencies(self) -> None:
-        for file in self.files:
-            file.resolve_dependencies()
+        tree_root.resolve_dependencies()
     
     def load_cache(self):
         # print("Attempting to load cache from SQLite database...")
