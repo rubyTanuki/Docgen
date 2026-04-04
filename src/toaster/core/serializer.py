@@ -21,6 +21,10 @@ class Verbosity(IntEnum):
 class toast:
     
     @classmethod
+    def is_serializable(cls, obj) -> bool:
+        return isinstance(obj, (BaseFile, BaseClass, BaseMethod))
+    
+    @classmethod
     def dumps(cls, obj: "BaseStruct", verbosity: Verbosity=Verbosity.SIMPLE, include_body: bool = False, pretty: bool = True) -> str:
         match obj:
             case BaseFile():
