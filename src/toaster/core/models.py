@@ -9,8 +9,8 @@ from importlib import import_module
 from pathlib import Path
 
 from loguru import logger
-
-from toaster.core.providers import StructProvider
+from toaster.core.providers import StructBuilderProvider
+from toaster.exceptions import LanguageNotSupportedError
 
 if TYPE_CHECKING:
     from toaster.core.registry import Registry
@@ -128,6 +128,9 @@ class BaseStruct(ABC):
         }
         return data
     
+    def to_json(self):
+        return json.dumps(self.to_dict())
+    
     def __hash__(self):
         return hash(self.id)
     
@@ -145,22 +148,30 @@ class Directory(BaseStruct):
     _IDPREFIX: ClassVar[str] = "D"
     
     def __init__(self, path, registry=None, parent=None):
-        super().__init__(name=path.name, uid=str(path), registry=registry, parent=parent)
+        super().__init__(name=path.name, path=path, uid=str(path), registry=registry, parent=parent)
     
     async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
         pass
     
     def parse_children(self):
+        if self.path is None:
+            logger.error(f"{self} has no path")
+            return
         for path in self.path.glob("*"):
-            # if any(part in path.parts for part in self.path_ignore):
-            #     continue
-            if path.is_dir():
-                directory = Directory(path=path, registry=self.registry, parent=self)
-                self.registry.add_struct(directory)
-                directory.parse_children()
-            else:
-                file = FileBuilder.from_path(path, llm=self.llm, registry=self.registry, parent=self)
-                self.registry.add_struct(file)
+                if any(part in path.parts for part in ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster", ".DS_Store"]):
+                    continue
+                if path.is_dir():
+                    logger.debug(f"🔍 Parsing directory '{path}'")
+                    directory = Directory(path=path, registry=self.registry, parent=self)
+                    self.registry.add_struct(directory)
+                    directory.parse_children()
+                else:
+                    logger.debug(f"Attempting to resolve builder for suffix {path.parts[-1]}")
+                    try:
+                        builder = StructBuilderProvider.get_builder(path.suffix, self.registry)
+                    except LanguageNotSupportedError as e:
+                        return None
+                    return builder.build_file().from_path(path, parent=self)
     
     def to_dict(self) -> dict:
         data = super().to_dict()

@@ -42,18 +42,20 @@ class Registry:
         if not self.use_cache or not self.db:
             return []
         
+        from toaster.core.builder import BaseBuilder
+        
         # get sqlite connection
         struct_json = {}
-        with db.get_connection() as conn:
+        with self.db.get_connection() as conn:
             # SELECT * FROM structs WHERE uid = uid
             row = conn.execute("SELECT * FROM structs WHERE uid = ?", (uid,)).fetchone()
             if not row:
                 return []
             struct_json = dict(row)
-            struct_class = StructProvider.get_struct_by_type(struct_json["type"])
-            
+        
+        builder = BaseBuilder(self)
         # Hydrate the returned struct into its in-memory representation
-        struct = StructBuilder.from_json(struct_json)
+        struct = builder.with_type(struct_json["type"]).from_dict(struct_json)
         # add the hydrated struct to the memory cache for faster future retrieval
         self.add_struct(struct)
         return struct
@@ -66,7 +68,7 @@ class Registry:
                 raise KeyError(f"Could not find struct with uid {struct}")
             struct = self.uid_map[struct]
             
-        with db.get_connection() as conn:
+        with self.db.get_connection() as conn:
             row = conn.execute("SELECT diff_hash FROM structs WHERE uid = ?", (struct.uid,)).fetchone()
             if not row or row[0] != struct.diff_hash:
                 return True
@@ -80,7 +82,7 @@ class Registry:
                 raise KeyError(f"Could not find struct with uid {struct}")
             struct = self.uid_map[struct]
         
-        with db.get_connection() as conn:
+        with self.db.get_connection() as conn:
             conn.execute("UPDATE structs SET description = ? WHERE uid = ?", (struct.description, struct.uid))
             conn.commit()
         
@@ -103,7 +105,7 @@ class Registry:
         
         edges = list(struct.edges)
             
-        with db.get_connection() as conn:
+        with self.db.get_connection() as conn:
             conn.execute(node_sql, node_params)
             
             # Clear all existing edges touching this node to prevent ghosts
@@ -126,15 +128,16 @@ class Registry:
         all_edges = set()
         
         for node in self.uid_map.values():
-            data = node.to_dict()
+            data_dict = node.to_dict()
+            data_json = node.to_json()
             
             # Use the tuple of keys as the group identifier
-            column_footprint = tuple(data.keys())
-            grouped_nodes[column_footprint].append(data)
+            column_footprint = tuple(data_dict.keys())
+            grouped_nodes[column_footprint].append(data_json)
             
             all_edges.update(node.edges)
             
-        with db.get_connection() as conn:
+        with self.db.get_connection() as conn:
             
             # Iterate through each unique column footprint and execute its batch
             for columns_tuple, dict_list in grouped_nodes.items():
@@ -143,7 +146,10 @@ class Registry:
                 placeholders = ", ".join(["?"] * len(columns_tuple))
                 node_sql = f"INSERT OR REPLACE INTO structs ({columns}) VALUES ({placeholders})"
                 
-                node_values = [tuple(n.values()) for n in dict_list]
+                node_values = [
+                    tuple((n) for col in columns_tuple)
+                    for n in dict_list
+                ]
                 
                 conn.executemany(node_sql, node_values)
             

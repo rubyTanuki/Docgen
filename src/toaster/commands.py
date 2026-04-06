@@ -9,7 +9,7 @@ from watchfiles import awatch, Change
 from loguru import logger
 
 from toaster.llm import GeminiClient
-from toaster.core import MemberRegistry, toast, Verbosity, ParserProvider
+from toaster.core import Registry, toast, Verbosity, BaseParser, SQLiteCache
 
 from toaster.exceptions import APIKeyError, StructNotFoundError, ResolveError, DatabaseNotFoundError, TargetFileNotFoundError
 
@@ -33,11 +33,14 @@ def clean_db(target_path: Path):
 
 async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BaseParser:
     llm = get_llm_client()
-    registry = MemberRegistry(str(target_path))
+    db = SQLiteCache(target_path / ".toaster" / "cache.db")
+    registry = Registry(use_cache=use_cache, db=db)
+    logger.info("Building AST...")
     
-    parser = ParserProvider.get_parser(target_path, llm, registry)
-    await parser.parse(use_cache=use_cache)
-    
+    parser = BaseParser(target_path, llm, registry)
+    logger.info("Parsing files...")
+    await parser.parse()
+    logger.success("✅ Parsed files")
     return parser
 
 async def init_async(target_path: Path, use_cache: bool = True, write_skeleton: bool = False):
@@ -45,9 +48,10 @@ async def init_async(target_path: Path, use_cache: bool = True, write_skeleton: 
     
     parser = await _build_ast_async(target_path, use_cache=use_cache)
     
+    
     # Write Skeleton
-    if write_skeleton:
-        parser.write_skeleton()
+    # if write_skeleton:
+    #     parser.write_skeleton()
         
     # Write Cache
     parser.write_cache()

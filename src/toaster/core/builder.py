@@ -8,18 +8,25 @@ from toaster.core.registry import Registry
 class BaseBuilder(ABC):
     def __init__(self, registry: Registry):
         self.registry = registry
+    
+    def with_type(self, struct_type: str) -> "BaseBuilder":
+        match(struct_type):
+            case "BaseFile": return self.build_file()
+            case "BaseClass": return self.build_class()
+            case "BaseMethod": return self.build_method()
+            case "BaseField": return self.build_field()
         
     @abstractmethod
-    def build_file(self) -> "BaseFileBuilder": pass
+    def build_file(self) -> "BaseFileBuilder": return BaseFileBuilder(self.registry)
     
     @abstractmethod
-    def build_class(self) -> "BaseCodeStructBuilder": pass
+    def build_class(self) -> "BaseClassBuilder": return BaseClassBuilder(self.registry)
     
     @abstractmethod
-    def build_method(self) -> "BaseCodeStructBuilder": pass
+    def build_method(self) -> "BaseMethodBuilder": return BaseMethodBuilder(self.registry)
     
     @abstractmethod
-    def build_field(self) -> "BaseCodeStructBuilder": pass
+    def build_field(self) -> "BaseFieldBuilder": return BaseFieldBuilder(self.registry)
     
 class BaseStructBuilder(ABC):
     def __init__(self, registry: Registry):

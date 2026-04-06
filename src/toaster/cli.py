@@ -9,7 +9,7 @@ from loguru import logger
 from threading import Thread
 
 from toaster.llm import GeminiClient
-from toaster.core import MemberRegistry, toast, Verbosity
+from toaster.core import Registry, toast, Verbosity
 from toaster.exceptions import ToasterError
 
 from toaster.commands import init_async, inspect_async, skeleton_async, resolve_async, watch_async, clean_db
