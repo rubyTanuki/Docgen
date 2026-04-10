@@ -38,10 +38,11 @@ To manually initialize the repository, cd to the root of the project and run:
 ```
 % toaster init . --ignore 'default'
 ```
+<!--
 This creates the .toaster directory and initializes the default *.toastignore* to exclude environment files, node_modules, build artifacts, and other files which are not needed in the project AST
 
 In the */.toaster* directory, you will also find the *config.toml* file to configure the other adjustable parameters (The full list of configuration parameters can be found ***Here***)
-
+-->
 ## Parsing the project
 Once the project itself is initialized and configured, the AST cache has to be initialized. To do this manually, cd to the project root (where you initialized the .toaster files) and run:
 ```
