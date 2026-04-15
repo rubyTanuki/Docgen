@@ -22,7 +22,19 @@ class InterceptHandler(logging.Handler):
 
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
-def configure_logging(project_dir: Path | str):
+def configure_cli_logging(debug: bool = False):
+    """
+    Configures the global logger. Call this exactly once at the entry point of your CLI/MCP server.
+    """
+    
+    logger.remove()
+    if debug:
+        logger.add(sys.stdout, level="DEBUG", enqueue=True)
+    else:
+        logger.add(sys.stdout, level="INFO", enqueue=True)
+        # logger.add(sys.stderr, level="DEBUG", enqueue=True)
+
+def configure_mcp_logging(project_dir: Path | str):
     """
     Configures the global logger. Call this exactly once at the entry point of your CLI/MCP server.
     """
@@ -32,22 +44,19 @@ def configure_logging(project_dir: Path | str):
     
     log_file = log_dir / "toaster.log"
 
-    # 1. Remove all default handlers (CRITICAL: This stops output to stdout/stderr)
+    # Remove any existing logger outputs
     logger.remove()
 
-    # 2. Add the file handler with rotation and retention
+    # Add the file handler with rotation and retention
     logger.add(
         str(log_file),
         rotation="5 MB",      # Create a new file when it hits 5MB
         retention="3 days",   # Automatically clean up old logs
         level="DEBUG",        # Capture everything
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {thread.name: <15} | {name}:{function}:{line} - {message}",
-        enqueue=True          # Makes logging strictly thread-safe and async-safe!
+        enqueue=True          # Makes logging strictly thread-safe and async-safe
     )
 
-    # 3. Intercept all standard library logs from dependencies
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
-    
-    # Optional: specifically quiet down noisy third-party libraries
     logging.getLogger("watchfiles").setLevel(logging.INFO)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
