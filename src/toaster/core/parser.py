@@ -26,17 +26,19 @@ class BaseParser(ABC):
         self._files = self.registry.uid_map.values().filter(lambda x: isinstance(x, BaseFile))
         return self._files
     
-    
     async def parse(self, subpath: Path = None):
         if not subpath:
-            subpath = self.project_path
+            subpath = Path(".")
         if not isinstance(subpath, Path):
             subpath = Path(subpath)
-        # print(f"🔍 Parsing files in '{self.project_dir}' and linking AST...")
+
+        self.parse_path(subpath)
+
+        self.resolve_dependencies()
         
-        # start_time = time.time()
+        await self.resolve_descriptions_async()
         
-        # t_parse = time.time()
+    def parse_path(self, subpath: Path = None):
         if subpath.is_dir():
             logger.debug(f"🔍 Parsing files in '{subpath}'")
             self.registry.root = Directory(path=subpath, registry=self.registry)
@@ -47,27 +49,22 @@ class BaseParser(ABC):
                     continue
                 if path.is_dir():
                     logger.debug(f"🔍 Parsing directory '{path}'")
-                    directory = Directory(path=path, registry=self.registry, parent=self.registry.root)
+                    relative_path = path.resolve().relative_to(self.project_path.resolve())
+                    directory = Directory(path=relative_path, registry=self.registry, parent=self.registry.root)
                     self.registry.add_struct(directory)
+                    self.registry.root.add_child(directory)
                     directory.parse_children()
                 else:
                     logger.debug(f"🔍 Parsing file '{path}'")
                     file = self.parse_file(path, parent=self.registry.root)
                     if file:
                         self.registry.add_struct(file)
+                        self.registry.root.add_child(file)
         else:
             logger.debug(f"🔍 Parsing file '{subpath}'")
             file = self.parse_file(subpath)
             self.registry.root = file
             self.registry.add_struct(file)
-        # # print(f"✅ Parsed Project Files in {time.time() - t_parse:.2f} seconds")
-        
-        # # t_resolve = time.time()
-        self.registry.root.resolve_dependencies()
-        # # print(f"✅ Resolved Dependencies in {time.time() - t_resolve:.2f} seconds")
-        
-        # # end_time = time.time()
-        # # print(f"Took {end_time - start_time:.2f} seconds to parse project files")
 
     # @abstractmethod
     def parse_file(self, subpath: Path, parent: BaseStruct=None) -> BaseFile:
@@ -77,11 +74,11 @@ class BaseParser(ABC):
         except LanguageNotSupportedError as e:
             return None
         file_obj = builder.build_file().from_path(subpath, parent=parent)
-        logger.debug(json.dumps(file_obj.to_dict(), indent=2))
+        # logger.debug(json.dumps(file_obj.to_dict(), indent=2))
         return file_obj
     
-    def resolve_dependencies(self) -> None:
-        tree_root.resolve_dependencies()
+    def resolve_dependencies(self):
+        self.registry.root.resolve_dependencies()
     
     def load_cache(self):
         # print("Attempting to load cache from SQLite database...")
@@ -89,9 +86,10 @@ class BaseParser(ABC):
         self.registry.load_cache()
         # print(f"✅ Loaded Cache in {time.time() - t_cache:.2f} seconds")
                     
-    async def resolve_descriptions(self):
+    async def resolve_descriptions_async(self):
         self.visited_ucids = set()
-        coroutine_list = [file.resolve_descriptions(self.llm, self.visited_ucids) for file in self.files]
+        coroutine_list = [file.resolve_description_async(self.llm, self.visited_ucids) for file in self.registry.files]
+        if coroutine_list == []: return
         result = await asyncio.gather(*coroutine_list)
         
         
@@ -103,5 +101,5 @@ class BaseParser(ABC):
     #         file.write(toast_string)
             
     def write_cache(self):
-        logger.info("Writing AST to SQLite database...")
+        logger.debug("Writing AST to SQLite database...")
         self.registry.save_to_cache()
