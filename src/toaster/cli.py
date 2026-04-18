@@ -12,11 +12,11 @@ from toaster.llm import GeminiClient
 from toaster.core import Registry, toast, Verbosity
 from toaster.exceptions import ToasterError
 
-from toaster.commands import init_async, inspect_async, skeleton_async, resolve_async, watch_async, clean_db
+from toaster.commands import init_async, inspect_async, skeleton_async, watch_async, clean_db
 
 from toaster.mcp import mcp
 
-from toaster.core.logger import configure_logging
+from toaster.core.logger import configure_cli_logging
 
 
 # Initialize the Typer app
@@ -56,9 +56,18 @@ def watch(
         file_okay=False,   # Typer blocks files, only allowing directories
         dir_okay=True,
         resolve_path=True  # Converts relative paths to absolute paths automatically
-    )
+    ),
+    debug: Annotated[
+        bool, 
+        typer.Option(
+            "--debug/--no-debug", 
+            "-d/-nd",
+            help="Enable debug logging"
+            )
+    ] = False
 ):
     """Watch for changes to files and update the SQLite database."""
+    configure_cli_logging(debug)
     try:
         asyncio.run(watch_async(path))
     except ToasterError as e:
@@ -74,9 +83,18 @@ def clean(
         file_okay=False,   # Typer blocks files, only allowing directories
         dir_okay=True,
         resolve_path=True  # Converts relative paths to absolute paths automatically
-    )
+    ),
+    debug: Annotated[
+        bool, 
+        typer.Option(
+            "--debug/--no-debug", 
+            "-d/-nd",
+            help="Enable debug logging"
+            )
+    ] = False
 ):
     """Clean the SQLite database."""
+    configure_cli_logging(debug)
     try:
         clean_db(path)
     except ToasterError as e:
@@ -106,20 +124,28 @@ def init(
             "--skeleton/--no-skeleton", 
             help="Build skeleton if it doesn't exist"
             )
-    ] = True
+    ] = True,
+    debug: Annotated[
+        bool, 
+        typer.Option(
+            "--debug/--no-debug", 
+            "-d/-nd",
+            help="Enable debug logging"
+            )
+    ] = False
 ):
     """Parse files and setup SQLite database."""
+    configure_cli_logging(debug)
+    start_time = time.perf_counter()
     try:
-        start_time = time.perf_counter()
-        
         asyncio.run(init_async(path, use_cache, write_skeleton))
-        
-        end_time = time.perf_counter()
-        elapsed_time = end_time - start_time
-        typer.secho(f"✅ Success! Initialization saved in {elapsed_time:.4f} seconds.", fg="green")
     except ToasterError as e:
         typer.secho(f"❌ Error: {e}", fg="red", err=True)
         raise typer.Exit(code=1)
+    
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    logger.debug(f"Finished in {elapsed_time:.4f} seconds.")
 
 
 @app.command()
@@ -149,15 +175,30 @@ def inspect(
             "--pretty/--raw",
             help="Pretty format output with line wrapping and indentation (disable for raw output)"
         )
-    ] = True
+    ] = True,
+    debug: Annotated[
+        bool, 
+        typer.Option(
+            "--debug/--no-debug", 
+            "-d/-nd",
+            help="Enable debug logging"
+            )
+    ] = False
 ):
     """Output the AST details for a specific struct ID."""
+    configure_cli_logging(debug)
+    
+    start_time = time.perf_counter()
     try:
         result = asyncio.run(inspect_async(id, path, include_body=include_body, pretty=pretty))
         print(result)
     except ToasterError as e:
         typer.secho(f"❌ Error: {e}", fg="red", err=True)
         raise typer.Exit(code=1)
+    
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    logger.debug(f"Finished in {elapsed_time:.4f} seconds.")
 
 
 @app.command()
@@ -173,40 +214,29 @@ def skeleton(
         file_okay=False,
         dir_okay=True,
         resolve_path=True
-    )
+    ),
+    debug: Annotated[
+        bool, 
+        typer.Option(
+            "--debug/--no-debug", 
+            "-d/-nd",
+            help="Enable debug logging"
+            )
+    ] = False
 ):
     """Output the .toast skeleton format for all files matching a specific subpath."""
+    configure_cli_logging(debug)
+    
+    start_time = time.perf_counter()
     try:
         result = asyncio.run(skeleton_async(subpath, path))
         print(result)
     except ToasterError as e:
         typer.secho(f"❌ Error: {e}", fg="red", err=True)
         raise typer.Exit(code=1)
-
-
-@app.command()
-def resolve(
-    name: Annotated[
-        str, 
-        typer.Argument(help="Method or Class name to search for (partial match)")
-    ],
-    path: Path = typer.Argument(
-        ".", 
-        help="Path to the project directory to scan",
-        exists=True,
-        file_okay=False,
-        dir_okay=True,
-        resolve_path=True
-    )
-):
-    """Find the ID of a struct by its name or identifier."""
-    try: 
-        result = asyncio.run(resolve_async(name, path))
-        print(result)
-    except ToasterError as e:
-        typer.secho(f"❌ Error: {e}", fg="red", err=True)
-        raise typer.Exit(code=1)
-
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    logger.debug(f"Finished in {elapsed_time:.4f} seconds.")
 
 if __name__ == "__main__":
     app()
