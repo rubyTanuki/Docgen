@@ -1,11 +1,11 @@
-from tree_sitter import Parser, Node
+from tree_sitter import Parser, Node, Query, QueryCursor
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from toaster.core.registry import Registry
 from toaster.languages.java.language import JAVA_LANGUAGE
 from toaster.core.builder import BaseBuilder, BaseFileBuilder, BaseClassBuilder, BaseMethodBuilder, BaseFieldBuilder
-# from toaster.languages.java.queries import DEPENDENCY_QUERY
+from toaster.languages.java.queries import DEPENDENCY_QUERY
 from toaster.core.models import *
 
 class JavaBuilder(BaseBuilder):
@@ -216,7 +216,15 @@ class JavaMethodBuilder(BaseMethodBuilder):
             uid = f"{parent.uid}.{name}{parameters_string}"
         
         dependency_names = []
-        # TODO: query for dependencies
+        
+        query = Query(JAVA_LANGUAGE, DEPENDENCY_QUERY)
+        cursor = QueryCursor(query)
+        captures = cursor.captures(node)
+        for dep in captures.get("dependencies", []):
+            name = dep.child_by_field_name('name').text.decode('utf-8').strip()
+            parameters = dep.child_by_field_name('arguments')
+            arity = len(parameters.named_children)
+            dependency_names.append((name, arity))
         
         return BaseMethod(
             # BaseStruct

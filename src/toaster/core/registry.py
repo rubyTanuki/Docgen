@@ -40,13 +40,22 @@ class Registry:
         self.uid_map[struct.uid] = struct
         self.id_map[struct.id] = struct
         
+    def resolve_methods(self, name: str, arity: int, parent_name: Optional[str] = None):
+        if parent_name:
+            return [x for x in self.methods if x.name == name and x.arity == arity and x.parent.name == parent_name]
+        return [x for x in self.methods if x.name == name and x.arity == arity]
+    
     def load_subtree(self, path: Path):
         logger.info(f"Loading subtree {str(path)}")
+        path_str = str(path)
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             
             # pull and hydrate structs
-            cursor.execute("SELECT * FROM structs WHERE uid LIKE ? || '%'", (str(path.resolve()),))
+            if path_str != ".":
+                cursor.execute("SELECT * FROM structs WHERE uid LIKE ? || '%'", (str(path.resolve()),))
+            else:
+                cursor.execute("SELECT * FROM structs")
             node_rows = cursor.fetchall()
             node_ids = [row['id'] for row in node_rows]
             
@@ -58,13 +67,11 @@ class Registry:
                 
                 builder = BaseBuilder(self)
                 struct_type = struct_data['type']
-                logger.debug(f"{struct_type=}")
+                # logger.debug(f"{struct_type=}")
                 instance = builder.with_type(struct_type=struct_data['type']).from_dict(struct_data)
                 self.add_struct(instance)
             
             logger.info(f"Found {len(node_rows)} structs in subtree {str(path.resolve())}")
-            
-            
             
             if not node_ids:
                 return
@@ -94,13 +101,18 @@ class Registry:
                     continue
                 
                 target_obj.add_child(source_obj)
+                
+        self.root = self.get_struct_by_uid(".")
     
     def get_struct_by_uid(self, uid: str) -> Optional["BaseStruct"]:
+        logger.debug(f"Attempting to retrieve struct with UID {uid} from registry")
         # Check memory cache first and return early if found
         if uid in self.uid_map:
+            logger.debug(f"Cache hit for UID {uid}, returning memory object")
             return self.uid_map[uid]
 
         if not self.use_cache or not self.db:
+            logger.debug(f"Cache miss for UID {uid}, but no DB provided or caching disabled, returning None")
             return None
         
         from toaster.core.builder import BaseBuilder
@@ -110,10 +122,11 @@ class Registry:
             cursor = conn.cursor()
             
             # fetch struct and its children via prefix search
-            cursor.execute("SELECT * FROM structs WHERE uid LIKE ?", (f"{uid}%",))
+            cursor.execute("SELECT * FROM structs WHERE uid LIKE ?", (f"%{uid}%",))
             node_rows = cursor.fetchall()
             
             if not node_rows:
+                logger.debug(f"No structs found in DB matching UID {uid}")
                 return None
                 
             node_ids = []
@@ -122,7 +135,6 @@ class Registry:
                 struct_data = dict(row)
                 node_ids.append(struct_data['id'])
                 
-                # Skip hydrating if it somehow already exists in memory
                 if struct_data['uid'] not in self.uid_map:
                     if struct_data.get('imports', None):
                         struct_data['imports'] = json.loads(struct_data['imports'])
@@ -154,6 +166,7 @@ class Registry:
                         continue
                     
                     target_obj.add_child(source_obj)
+                    source_obj.parent = target_obj
                     
         return self.uid_map.get(uid)
 

@@ -29,6 +29,18 @@ class BaseStruct(ABC):
     outbound_dependencies: Set[BaseStruct | str] = field(default_factory=set)
     outbound_dependencies_fuzzy: Set[BaseStruct | str] = field(default_factory=set) # for fuzzy matching during resolution
     
+    _inbound_dependency_strings: List[str] = field(default_factory=list)
+    @property
+    def inbound_dependency_strings(self):
+        if not self._inbound_dependency_strings: self._inbound_dependency_strings = [f"{dep.id}|{dep.uid}" for dep in self.inbound_dependencies] + ['~'+f"{dep.id}|{dep.uid}" for dep in self.inbound_dependencies_fuzzy]
+        return self._inbound_dependency_strings
+    
+    _outbound_dependency_strings: List[str] = field(default_factory=list)
+    @property
+    def outbound_dependency_strings(self):
+        if not self._outbound_dependency_strings: self._outbound_dependency_strings = [f"{dep.id}|{dep.uid}" for dep in self.outbound_dependencies] + ['~'+f"{dep.id}|{dep.uid}" for dep in self.outbound_dependencies_fuzzy]
+        return self._outbound_dependency_strings
+    
     inbound_dependency_names: Set[str] = field(default_factory=set) # for serialization only, not used for resolution
     outbound_dependency_names: Set[str] = field(default_factory=set) # for serialization only, not used for resolution
     
@@ -50,6 +62,22 @@ class BaseStruct(ABC):
         return self._all_children
     
     @property
+    def files(self):
+        return list(self.children.get("BaseFile", set()))
+    
+    @property
+    def methods(self):
+        return [child for child in self.all_children if isinstance(child, BaseMethod)]
+    
+    @property
+    def fields(self):
+        return [child for child in self.all_children if isinstance(child, BaseField)]
+    
+    @property
+    def classes(self):
+        return [child for child in self.all_children if isinstance(child, BaseClass)]
+    
+    @property
     def edges(self):
         edges = set()
         for dependency in self.outbound_dependencies:
@@ -68,6 +96,10 @@ class BaseStruct(ABC):
                 edges.add((child.id, self.id, "contains"))
         
         return edges
+    
+    @property 
+    def impact_score(self) -> int:
+        return len(self.inbound_dependencies) + len(self.inbound_dependencies_fuzzy) + len(self.children)
     
     def __post_init__(self):
         id_hash = hashlib.md5(self.uid.encode('utf-8')).hexdigest()[:10]
@@ -101,6 +133,7 @@ class BaseStruct(ABC):
                 self.parent.add_fuzzy_dependency(target.parent)
         
     def resolve_dependencies(self):
+        # logger.debug(f"Resolving dependencies for {self}")
         for child_set in self.children.values():
             for child in child_set:
                 child.resolve_dependencies()
@@ -124,12 +157,16 @@ class BaseStruct(ABC):
             "id": self.id,
             "name": self.name,
             "uid": self.uid,
-            "type": "BaseStruct"
+            "type": "BaseStruct",
+            "path": str(self.path.resolve()),
+            "description": self.description,
+            "inbound_dependency_strings": self.inbound_dependency_strings,
+            "outbound_dependency_strings": self.outbound_dependency_strings,
         }
         return data
     
-    def to_json(self):
-        return json.dumps(self.to_dict())
+    def to_json(self, indent=0):
+        return json.dumps(self.to_dict(), indent=indent)
     
     def __hash__(self):
         return hash(self.id)
@@ -162,16 +199,20 @@ class Directory(BaseStruct):
                     continue
                 if path.is_dir():
                     logger.debug(f"🔍 Parsing directory '{path}'")
-                    directory = Directory(path=path, registry=self.registry, parent=self)
+                    relative_path = path.resolve().relative_to(self.project_path.resolve())
+                    directory = Directory(path=relative_path, registry=self.registry, parent=self)
                     self.registry.add_struct(directory)
+                    self.add_child(directory)
                     directory.parse_children()
                 else:
                     logger.debug(f"Attempting to resolve builder for suffix {path.parts[-1]}")
                     try:
                         builder = StructBuilderProvider.get_builder(path.suffix, self.registry)
                     except LanguageNotSupportedError as e:
-                        return None
-                    return builder.build_file().from_path(path, parent=self)
+                        continue
+                    instance = builder.build_file().from_path(path, parent=self)
+                    self.registry.add_struct(instance)
+                    self.add_child(instance)
     
     def to_dict(self) -> dict:
         data = super().to_dict()
@@ -188,7 +229,8 @@ class BaseFile(BaseStruct):
     node: "Node" = None
     
     async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
-        pass
+        for child in self.all_children:
+            await child.resolve_description_async(llm, visited)
     
     def to_dict(self) -> dict:
         data = super().to_dict()
@@ -220,7 +262,6 @@ class BaseCodeStruct(BaseStruct):
 @dataclass(eq=False)
 class BaseClass(BaseCodeStruct):
     _IDPREFIX: ClassVar[str] = "C"
-    
     enum_constants: Optional[List[str]] = None
     inherits: List[str] = field(default_factory=list) # list of parent class UIDs for inheritance relationships
     
@@ -239,19 +280,26 @@ class BaseClass(BaseCodeStruct):
         return self.parent.imports
     
     def resolve_dependencies(self):
+        # logger.debug(f"Resolving dependencies for {self}")
         # resolve child dependencies
         super().resolve_dependencies()
         
         # resolve import dependencies
         for imp in self.imports:
+            import_name = imp.split('.')[-1]
             import_dependency = self.registry.get_struct_by_uid(imp)
-            self.add_dependency(import_dependency)
+            if import_dependency:
+                self.add_dependency(import_dependency)
         
         # resolve inheritance dependencies
         if self.inherits:
             for parent_class in self.inherits:
-                parent_dependency = self.registry.get_struct_by_uid(parent_class)
-                self.add_dependency(parent_dependency)
+                parent_class_name = parent_class.split('.')[-1]
+                parent_dependency = self.registry.get_struct_by_uid(parent_class_name)
+                if parent_dependency:
+                    self.add_dependency(parent_dependency)
+        
+        # logger.debug(f"Resolved dependencies for {self.name}: {self.outbound_dependency_strings}")
 
     def skeletonize(self) -> str:
         if not hasattr(self, 'node') or not self.node:
@@ -287,19 +335,25 @@ class BaseClass(BaseCodeStruct):
         
         if not self.registry:
             raise ValueError("Registry reference is required for description resolution.")
-        
         try:
             # TODO: move the imports reference into llm.generate_description
             response_obj = await llm.generate_description(self, self.imports)
+        except Exception as e:
+            logger.error(f"Failed to generate description for {self.uid}: {e}")
+            return
             
+        try:
             if not response_obj or response_obj.get("status") == "error":
                 error_msg = response_obj.get('error') if response_obj else 'Returned None in'
-                logger.warning(f"⚠️ Skipping {self.ucid} due to LLM failure: {error_msg}")
+                logger.warning(f"⚠️ Skipping {self.uid} due to LLM failure: {error_msg}")
+                return
+            try:
+                self.description = response_obj["description"]
+            except KeyError:
+                logger.warning(f"⚠️ Missing description for {self.uid} in LLM response")
                 return
             
-            self.description = response_obj["description"]
-            
-            returned_methods = {child['uid']: child for child in response_obj.get("children", [])}
+            returned_methods = {child['uid']: child for child in response_obj.get("methods", [])}
             
             for child_set in self.children.values():
                 for child in child_set:
@@ -310,7 +364,7 @@ class BaseClass(BaseCodeStruct):
                         child.description = returned_methods[child.uid].get("description")
                         # self.registry.update_struct_description(child)
         except Exception as e:
-            print(f"Failed to generate description for {self.ucid}: {e}")
+            logger.error(f"Failed to generate description for {self.uid}: {e}")
             
     def to_dict(self) -> dict:
         data = super().to_dict()
@@ -325,7 +379,7 @@ class BaseMethod(BaseCodeStruct):
     _IDPREFIX: ClassVar[str] = "M"
     
     arity: int = 0
-    dependency_names: Optional[List[str]] = field(default_factory=list)
+    dependency_names: Optional[List[(str, int)]] = field(default_factory=list)
     
     children: dict = field(init=False, repr=False, default_factory=dict)
     
@@ -334,11 +388,7 @@ class BaseMethod(BaseCodeStruct):
     #     pass
     
     def resolve_dependencies(self):
-        dependency_names: List[(str, int)] = [] # (name, arity)
-        
-        dependency_names = _parse_dependencies()
-        # parse dependency_names with tree-sitter
-        for name, arity in dependency_names:
+        for name, arity in self.dependency_names:
             # LOCAL
             for child_set in self.children.values():
                 for child in child_set:
@@ -347,10 +397,9 @@ class BaseMethod(BaseCodeStruct):
                         break
             
             # IMPORTED
-            for imp in self.imports:
+            for imp in self.parent.imports:
                 import_name = f"{imp}#{name}"
-                # TODO: implement get_methods_by_name in registry
-                candidates = self.registry.get_methods_by_name(f"{imp}#{name}", arity)
+                candidates = self.registry.resolve_methods(name=name, arity=arity, parent_name=import_name)
                 if len(candidates) == 1:
                     self.add_dependency(candidates[0])
                 elif len(candidates) > 1:
@@ -358,9 +407,10 @@ class BaseMethod(BaseCodeStruct):
                         self.add_fuzzy_dependency(c)
             
             # INHERITED
-            for parent_class in self.inherits:
-                # TODO: implement get_methods_by_name in registry
-                candidates = self.registry.get_methods_by_name(f"{parent_class}#{name}", arity)
+            for parent_class in self.parent.inherits:
+                parent_name = parent_class.split('.')[-1]
+                # TODO: implement resolve_methods_by_name in registry
+                candidates = self.registry.resolve_methods(name=name, arity=arity, parent_name=parent_name)
                 if len(candidates) == 1:
                     self.add_dependency(candidates[0])
                 elif len(candidates) > 1:
@@ -369,6 +419,12 @@ class BaseMethod(BaseCodeStruct):
             
     async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
         pass
+    
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "BaseMethod"
+        data["arity"] = self.arity
+        return data
 
 @dataclass(eq=False)
 class BaseField(BaseCodeStruct):
@@ -382,3 +438,9 @@ class BaseField(BaseCodeStruct):
     
     async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
         pass
+    
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "BaseField"
+        data["field_type"] = self.field_type
+        return data

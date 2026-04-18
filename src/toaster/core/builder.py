@@ -1,9 +1,12 @@
 from tree_sitter import Language, Parser
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from toaster.core.models import *
-from toaster.core.registry import Registry
+
+if TYPE_CHECKING:
+    from toaster.core.registry import Registry
 
 class BaseBuilder(ABC):
     def __init__(self, registry: Registry):
@@ -15,18 +18,17 @@ class BaseBuilder(ABC):
             case "BaseClass": return self.build_class()
             case "BaseMethod": return self.build_method()
             case "BaseField": return self.build_field()
+            case "Directory": return self.build_directory()
         
-    @abstractmethod
     def build_file(self) -> "BaseFileBuilder": return BaseFileBuilder(self.registry)
     
-    @abstractmethod
     def build_class(self) -> "BaseClassBuilder": return BaseClassBuilder(self.registry)
     
-    @abstractmethod
     def build_method(self) -> "BaseMethodBuilder": return BaseMethodBuilder(self.registry)
     
-    @abstractmethod
     def build_field(self) -> "BaseFieldBuilder": return BaseFieldBuilder(self.registry)
+    
+    def build_directory(self) -> "DirectoryBuilder": return DirectoryBuilder(self.registry)
     
 class BaseStructBuilder(ABC):
     def __init__(self, registry: Registry):
@@ -47,23 +49,79 @@ class BaseFileBuilder(BaseStructBuilder):
         return file_obj
     
     def from_dict(self, d: dict) -> BaseFile:
-        return BaseFile(**d)
+        return BaseFile(
+            uid=d.get("uid", str(d["path"])),
+            name=d.get("name", Path(d["path"]).name),
+            path=Path(d.get("path", ".")),
+            registry=self.registry,
+            description=d.get("description", ""),
+            imports=d.get("imports", []),
+            body=d.get("body", ""),
+            package=d.get("package", ""),
+            _inbound_dependency_strings=json.loads(d.get("inbound_dependency_strings", [])),
+            _outbound_dependency_strings=json.loads(d.get("outbound_dependency_strings", [])),
+        )
 
 class BaseCodeStructBuilder(BaseStructBuilder):
-    @abstractmethod
     def from_node(self, node: Node, parent: BaseStruct=None) -> BaseClass:
         pass
 
 class BaseClassBuilder(BaseCodeStructBuilder):
     def from_dict(self, d: dict) -> BaseClass:
-        return BaseClass(**d)
+        return BaseClass(
+            uid=d.get("uid", d["name"]),
+            name=d.get("name", Path(d["path"]).name),
+            path=Path(d.get("path", ".")),
+            registry=self.registry,
+            description=d.get("description", ""),
+            signature=d.get("signature", ""),
+            body=d.get("body", ""),
+            diff_hash=d.get("diff_hash", ""),
+            start_line=d.get("start_line", 0),
+            end_line=d.get("end_line", 0),
+            inherits=d.get("inherits", []),
+            enum_constants=d.get("enum_constants", []),
+            _inbound_dependency_strings=json.loads(d.get("inbound_dependency_strings", [])),
+            _outbound_dependency_strings=json.loads(d.get("outbound_dependency_strings", [])),
+        )
 
 class BaseMethodBuilder(BaseCodeStructBuilder):
     def from_dict(self, d: dict) -> BaseMethod:
-        return BaseMethod(**d)
+        return BaseMethod(
+            uid=d.get("uid", d["name"]),
+            name=d.get("name", Path(d["path"]).name),
+            path=Path(d.get("path", ".")),
+            registry=self.registry,
+            description=d.get("description", ""),
+            signature=d.get("signature", ""),
+            body=d.get("body", ""),
+            diff_hash=d.get("diff_hash", ""),
+            start_line=d.get("start_line", 0),
+            end_line=d.get("end_line", 0),
+            arity=d.get("arity", 0),
+            _inbound_dependency_strings=json.loads(d.get("inbound_dependency_strings", [])),
+            _outbound_dependency_strings=json.loads(d.get("outbound_dependency_strings", [])),
+        )
 
 class BaseFieldBuilder(BaseCodeStructBuilder):
     def from_dict(self, d: dict) -> BaseField:
-        return BaseField(**d)
+        return BaseField(
+            uid=d.get("uid", d["name"]),
+            name=d.get("name", Path(d["path"]).name),
+            path=Path(d.get("path", ".")),
+            registry=self.registry,
+            description=d.get("description", ""),
+            signature=d.get("signature", ""),
+            body=d.get("body", ""),
+            diff_hash=d.get("diff_hash", ""),
+            start_line=d.get("start_line", 0),
+            end_line=d.get("end_line", 0),
+            _inbound_dependency_strings=json.loads(d.get("inbound_dependency_strings", [])),
+            _outbound_dependency_strings=json.loads(d.get("outbound_dependency_strings", [])),
+        )
+    
+class DirectoryBuilder(BaseStructBuilder):
+    def from_dict(self, d: dict) -> Directory:
+        return Directory(path=Path(d["path"]), registry=self.registry)
     
     
