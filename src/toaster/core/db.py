@@ -35,6 +35,10 @@ class SQLiteCache:
                     uid TEXT UNIQUE NOT NULL,
                     name TEXT,
                     type TEXT NOT NULL, -- e.g., 'BaseFile', 'BaseClass', 'BaseMethod'
+                    path TEXT,
+                    description TEXT,
+                    inbound_dependency_strings TEXT,
+                    outbound_dependency_strings TEXT,
                     
                     -- CodeStruct Fields
                     signature TEXT,
@@ -42,7 +46,6 @@ class SQLiteCache:
                     diff_hash TEXT,
                     start_line INTEGER,
                     end_line INTEGER,
-                    description TEXT,
                     
                     -- Specialized Fields (Stored as JSON or plaintext)
                     imports JSON,
