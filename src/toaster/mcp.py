@@ -10,10 +10,10 @@ from toaster.commands import (
     init_async, 
     inspect_async, 
     skeleton_async, 
-    resolve_async, 
-    watch_async
+    watch_async,
+    clean_db
 )
-from toaster.core.logger import configure_logging
+from toaster.core.logger import configure_mcp_logging
 
 _is_initialized = False
 _current_project_dir = None
@@ -39,7 +39,7 @@ def _run_watcher_thread(target_path: Path):
         logger.info("Background watcher shut down cleanly.")
 
 @mcp.tool()
-async def init(workspace_path: str, use_cache: bool = True) -> str:
+async def init(workspace_path: str, use_cache: bool = True, write_skeleton: bool = True) -> str:
     global _is_initialized, _current_project_dir
     project_dir = Path(workspace_path).resolve()
     
@@ -47,9 +47,9 @@ async def init(workspace_path: str, use_cache: bool = True) -> str:
         return f"Status: Already initialized for {project_dir}."
         
     try:
-        configure_logging(project_dir)
+        configure_mcp_logging(project_dir)
         
-        await init_async(project_dir, use_cache)
+        await init_async(project_dir, use_cache, write_skeleton)
 
         watcher_thread = threading.Thread(
             target=_run_watcher_thread,
@@ -89,6 +89,18 @@ async def inspect(id: str, include_body: bool = False) -> str:
 
 
 @mcp.tool()
+async def clean(workspace_path: str) -> str:
+    """
+    Clean the SQLite database for a specific workspace.
+    """
+    try:
+        project_dir = Path(workspace_path).resolve()
+        clean_db(project_dir)
+        return f"Success: Database cleaned for {project_dir}."
+    except Exception as e:
+        return f"Error: {e}"
+
+@mcp.tool()
 async def skeleton(subpath: str) -> str:
     """
     Output the .toast skeleton format for all files matching a specific subpath.
@@ -107,29 +119,6 @@ async def skeleton(subpath: str) -> str:
         return str(result)
     except ToasterError as e:
         return f"Error: {e}"
-
-
-@mcp.tool()
-async def resolve(name: str) -> str:
-    """
-    Find the exact ID of a struct by searching its name or identifier.
-    Use this when you know the name of a method or class but need its ID for the 'inspect' tool.
-    
-    Args:
-        name: Method or Class name to search for (partial matches allowed).
-    """
-    global _is_initialized, _current_project_dir
-    
-    if not _is_initialized:
-        return "Error: Toaster is not initialized. You must call 'init' with the absolute workspace path before querying the database."
-    
-    try:
-        # 3. THE FIX
-        result = await resolve_async(name, _current_project_dir)
-        return str(result)
-    except ToasterError as e:
-        return f"Error: {e}"
-
 
 if __name__ == "__main__":
     mcp.run()

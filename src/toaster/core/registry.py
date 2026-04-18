@@ -1,366 +1,298 @@
 from collections import defaultdict
-from typing import List, Dict, Optional, Any, TYPE_CHECKING
-import json
+from typing import List, Dict, Optional, TYPE_CHECKING
 from pathlib import Path
-
-from toaster.core.db import SQLiteCache
 from toaster.core.models import BaseFile, BaseClass, BaseMethod, BaseField
+from toaster.core.db import SQLiteCache
+from toaster.core.builder import BaseBuilder
+
+import json
+from loguru import logger
 
 if TYPE_CHECKING:
-    from toaster.core.models import BaseStruct
+    from toaster.core.models import BaseStruct, BaseCodeStruct
 
-class RegistryMemoryState:
-    """Handles in-memory tracking of the active parsing/traversal graph."""
-    def __init__(self):
-        self.map_umid: Dict[str, "BaseMethod"] = {}
-        self.map_scoped: Dict[str, List["BaseMethod"]] = defaultdict(list)
-        self.map_short: Dict[str, List["BaseMethod"]] = defaultdict(list)
-        self.map_class: Dict[str, "BaseClass"] = {}
-        self.map_id: Dict[str, "BaseStruct"] = {}
-
-    def add_method(self, method: "BaseMethod"):
-        self.map_umid[method.umid] = method
-        self.map_id[method.id] = method
-        self.map_scoped[method.scoped_identifier].append(method)
-        self.map_short[method.identifier].append(method)
-
-    def add_class(self, class_obj: "BaseClass"):
-        self.map_class[class_obj.ucid] = class_obj
-        self.map_id[class_obj.id] = class_obj
-
-class RegistryStorage:
-    """Handles persistence of the AST graph and metadata to the SQLite database."""
-    def __init__(self, db: SQLiteCache):
+class Registry:
+    def __init__(self, use_cache: bool = True, db: SQLiteCache = None):
+        self.use_cache = use_cache
+        self.uid_map: Dict[str, BaseStruct] = {}
+        self.id_map: Dict[str, BaseStruct] = {}
+        self.root: Optional[BaseStruct] = None
         self.db = db
-
-    def save_to_db(self, files: List["BaseFile"]):
-        """Flush the parsed AST graph to the SQLite database."""
-        with self.db.get_connection() as conn:
-            for file in files:
-                source_path_str = str(getattr(file, "source_path", ""))
-                conn.execute(
-                    "INSERT INTO files (id, ufid, source_path, imports) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET source_path=excluded.source_path, imports=excluded.imports",
-                    (file.id, file.ufid, source_path_str, json.dumps(file.imports))
-                )
-                
-                # Save module-level methods
-                for method in file.methods.values():
-                    self._save_method(conn, method, file_id=file.id)
-
-                # Save module-level fields
-                for field_obj in file.fields.values():
-                    self._save_field(conn, field_obj, file_id=file.id)
-
-                for class_obj in file.classes:
-                    self._save_class_recursive(conn, class_obj, file.id)
-
-            conn.commit()
-
-    def _save_class_recursive(self, conn, class_obj, file_id, parent_id=None):
-        conn.execute(
-            """INSERT INTO classes 
-               (id, file_id, parent_class_id, ucid, signature, body, start_line, end_line, description, constants)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(id) DO UPDATE SET 
-               signature=excluded.signature, body=excluded.body, description=COALESCE(excluded.description, classes.description)
-            """,
-            (class_obj.id, file_id, parent_id, class_obj.ucid, class_obj.signature, class_obj.body, 
-             class_obj.start_line, class_obj.end_line, class_obj.description, json.dumps(class_obj.constants))
-        )
+    
+    @property
+    def files(self) -> List[BaseFile]:
+        return [x for x in self.uid_map.values() if isinstance(x, BaseFile)]
+    
+    @property
+    def classes(self) -> List[BaseClass]:
+        return [x for x in self.uid_map.values() if isinstance(x, BaseClass)]
+    
+    @property
+    def methods(self) -> List[BaseMethod]:
+        return [x for x in self.uid_map.values() if isinstance(x, BaseMethod)]
+    
+    @property
+    def fields(self) -> List[BaseField]:
+        return [x for x in self.uid_map.values() if isinstance(x, BaseField)]
+    
+    def add_struct(self, struct: BaseStruct):
+        """ Adds a struct to the in-memory cache """
+        self.uid_map[struct.uid] = struct
+        self.id_map[struct.id] = struct
         
-        for method in class_obj.methods.values():
-            self._save_method(conn, method, class_id=class_obj.id, file_id=file_id)
-
-        for field_obj in class_obj.fields.values():
-            self._save_field(conn, field_obj, class_id=class_obj.id, file_id=file_id)
+    def resolve_methods(self, name: str, arity: int, parent_name: Optional[str] = None):
+        if parent_name:
+            return [x for x in self.methods if x.name == name and x.arity == arity and x.parent.name == parent_name]
+        return [x for x in self.methods if x.name == name and x.arity == arity]
+    
+    def load_subtree(self, path: Path):
+        logger.info(f"Loading subtree {str(path)}")
+        path_str = str(path)
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
             
-        for child_class in class_obj.child_classes.values():
-            self._save_class_recursive(conn, child_class, file_id, class_obj.id)
-
-    def _save_method(self, conn, method, class_id=None, file_id=None):
-        conn.execute(
-            """INSERT INTO methods
-                (id, class_id, file_id, identifier, scoped_identifier, return_type, umid, signature, body, body_hash, start_line, end_line, parameters, dependencies, inbound_dependencies, description)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                signature=excluded.signature, body=excluded.body, body_hash=excluded.body_hash, dependencies=excluded.dependencies, inbound_dependencies=excluded.inbound_dependencies, description=COALESCE(NULLIF(excluded.description, ''), methods.description)
-            """,
-            (method.id, class_id, file_id, method.identifier, method.scoped_identifier, method.return_type, 
-                method.umid, method.signature, method.body, method.body_hash, method.start_line, method.end_line, 
-                json.dumps(method.parameters), json.dumps(method.dependencies), json.dumps(method.inbound_dependencies), method.description)
-        )
-
-    def _save_field(self, conn, field_obj, class_id=None, file_id=None):
-        conn.execute(
-            """INSERT INTO fields
-                (id, class_id, file_id, ucid, name, signature, field_type)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                signature=excluded.signature, field_type=excluded.field_type
-            """,
-            (field_obj.id, class_id, file_id, field_obj.ucid, field_obj.name, field_obj.signature, field_obj.field_type)
-        )
-
-    def update_method_description(self, method: "BaseMethod"):
-        """Used by the LLM client to update descriptions in real-time."""
-        with self.db.get_connection() as conn:
-            conn.execute("UPDATE methods SET description = ? WHERE id = ?", (method.description, method.id))
-            conn.commit()
-            
-    def update_class_description(self, class_obj: "BaseClass"):
-        """Used by the LLM client to update descriptions in real-time."""
-        with self.db.get_connection() as conn:
-            conn.execute("UPDATE classes SET description = ? WHERE id = ?", (class_obj.description, class_obj.id))
-            conn.commit()
-
-class RegistryHydrator:
-    """Handles loading and reconstructing objects from the database."""
-    def __init__(self, db: SQLiteCache):
-        self.db = db
-
-    def load_cache_into_state(self, state: RegistryMemoryState):
-        """Loads descriptions from the SQLite database back into the active memory graph."""
-        with self.db.get_connection() as conn:
-            # Load methods
-            rows = conn.execute("SELECT umid, body_hash, description FROM methods WHERE description IS NOT NULL").fetchall()
-            for row in rows:
-                method = state.map_umid.get(row['umid'])
-                if method and method.body_hash == row['body_hash']:
-                    method.description = row['description']
-                    
-            # Load classes
-            rows = conn.execute("SELECT ucid, description FROM classes WHERE description IS NOT NULL").fetchall()
-            for row in rows:
-                class_obj = state.map_class.get(row['ucid'])
-                if class_obj:
-                    class_obj.description = row['description']
-
-    def get_struct_from_db(self, id: str) -> Optional["BaseStruct"]:
-        """Direct SQLite lookup that returns hydrated BaseStruct objects."""
-        with self.db.get_connection() as conn:
-            if id.startswith("M-"):
-                query = """
-                    SELECT m.*, c.ucid as _class_ucid, f.source_path as _file_source_path
-                    FROM methods m
-                    LEFT JOIN classes c ON m.class_id = c.id
-                    JOIN files f ON (c.file_id = f.id OR m.file_id = f.id)
-                    WHERE m.id = ?
-                """
-                row = conn.execute(query, (id,)).fetchone()
-                if not row: return None
-                return BaseMethod.from_dict(self._parse_row(row))
-                
-            elif id.startswith("C-"):
-                query = """
-                    SELECT c.*, f.source_path as _file_source_path
-                    FROM classes c
-                    JOIN files f ON c.file_id = f.id
-                    WHERE c.id = ?
-                """
-                row = conn.execute(query, (id,)).fetchone()
-                if not row: return None
-                row_dict = self._parse_row(row)
-                
-                m_rows = conn.execute("SELECT * FROM methods WHERE class_id = ?", (id,)).fetchall()
-                row_dict["methods"] = [self._parse_row(r) for r in m_rows]
-                
-                f_rows = conn.execute("SELECT * FROM fields WHERE class_id = ?", (id,)).fetchall()
-                row_dict["fields"] = [self._parse_row(r) for r in f_rows]
-                
-                c_rows = conn.execute("SELECT * FROM classes WHERE parent_class_id = ?", (id,)).fetchall()
-                row_dict["child_classes"] = [self._parse_row(c) for c in c_rows]
-                return BaseClass.from_dict(row_dict)
-                
-            elif id.startswith("F-"):
-                row = conn.execute("SELECT * FROM files WHERE id = ?", (id,)).fetchone()
-                if not row: return None
-                row_dict = self._parse_row(row)
-                
-                c_rows = conn.execute("SELECT * FROM classes WHERE file_id = ? AND parent_class_id IS NULL", (id,)).fetchall()
-                row_dict["classes"] = [self._parse_row(c) for c in c_rows]
-                
-                m_rows = conn.execute("SELECT * FROM methods WHERE file_id = ? AND class_id IS NULL", (id,)).fetchall()
-                row_dict["methods"] = [self._parse_row(m) for m in m_rows]
-
-                f_rows = conn.execute("SELECT * FROM fields WHERE file_id = ? AND class_id IS NULL", (id,)).fetchall()
-                row_dict["fields"] = [self._parse_row(f) for f in f_rows]
-                
-                return BaseFile.from_dict(row_dict)
-            
-            elif id.startswith("V-"):
-                query = """
-                    SELECT fi.*, c.ucid as _class_ucid, f.source_path as _file_source_path
-                    FROM fields fi
-                    LEFT JOIN classes c ON fi.class_id = c.id
-                    JOIN files f ON (c.file_id = f.id OR fi.file_id = f.id)
-                    WHERE fi.id = ?
-                """
-                row = conn.execute(query, (id,)).fetchone()
-                if not row: return None
-                return BaseField.from_dict(self._parse_row(row))
-                
-            return None
-
-    def get_files_by_path(self, subpath: str) -> List["BaseFile"]:
-        """Direct SQLite lookup that returns hydrated BaseFile objects for a given path prefix."""
-        with self.db.get_connection() as conn:
-            if subpath == "." or subpath == "./":
-                query_path = ""
-            elif subpath.startswith("./"):
-                query_path = subpath[2:]
+            # pull and hydrate structs
+            if path_str != ".":
+                cursor.execute("SELECT * FROM structs WHERE uid LIKE ? || '%'", (str(path.resolve()),))
             else:
-                query_path = subpath
-                
-            query = "SELECT * FROM files WHERE source_path LIKE ?"
-            rows = conn.execute(query, (f"{query_path}%",)).fetchall()
+                cursor.execute("SELECT * FROM structs")
+            node_rows = cursor.fetchall()
+            node_ids = [row['id'] for row in node_rows]
             
-            results = []
-            for row in rows:
-                row_dict = self._parse_row(row)
-                fid = row_dict['id']
+            for row in node_rows:
+                struct_data = dict(row)
                 
-                # Classes
-                c_rows = conn.execute("SELECT * FROM classes WHERE file_id = ? AND parent_class_id IS NULL", (fid,)).fetchall()
-                class_dicts = []
-                for c_row in c_rows:
-                    c_dict = self._parse_row(c_row)
-                    # Methods
-                    m_rows = conn.execute("SELECT * FROM methods WHERE class_id = ?", (c_dict['id'],)).fetchall()
-                    c_dict["methods"] = [self._parse_row(r) for r in m_rows]
-                    # Fields
-                    f_rows = conn.execute("SELECT * FROM fields WHERE class_id = ?", (c_dict['id'],)).fetchall()
-                    c_dict["fields"] = [self._parse_row(r) for r in f_rows]
-                    
-                    c_dict["child_classes"] = []
-                    class_dicts.append(c_dict)
-                row_dict["classes"] = class_dicts
+                if struct_data.get('imports', None):
+                    struct_data['imports'] = json.loads(struct_data['imports'])
                 
-                # Module-level methods
-                m_rows = conn.execute("SELECT * FROM methods WHERE file_id = ? AND class_id IS NULL", (fid,)).fetchall()
-                row_dict["methods"] = [self._parse_row(m) for m in m_rows]
-
-                # Module-level fields
-                f_rows = conn.execute("SELECT * FROM fields WHERE file_id = ? AND class_id IS NULL", (fid,)).fetchall()
-                row_dict["fields"] = [self._parse_row(f) for f in f_rows]
-                
-                results.append(BaseFile.from_dict(row_dict))
-                
-            return results
-
-    def resolve_name(self, name: str) -> List[Dict[str, Any]]:
-        """Queries the SQLite database for structs matching a given name."""
-        results = []
-        with self.db.get_connection() as conn:
-            # Search files
-            f_rows = conn.execute(
-                "SELECT id, source_path as signature FROM files WHERE ufid LIKE ? OR source_path LIKE ?",
-                (f"%{name}%", f"%{name}%")
-            ).fetchall()
-            for r in f_rows:
-                results.append({"id": r["id"], "type": "File", "signature": r["signature"], "description": ""})
+                builder = BaseBuilder(self)
+                struct_type = struct_data['type']
+                # logger.debug(f"{struct_type=}")
+                instance = builder.with_type(struct_type=struct_data['type']).from_dict(struct_data)
+                self.add_struct(instance)
             
-            # Search classes
-            c_rows = conn.execute(
-                "SELECT id, signature, description FROM classes WHERE ucid LIKE ?",
-                (f"%{name}%",)
-            ).fetchall()
-            for r in c_rows:
-                results.append({"id": r["id"], "type": "Class", "signature": r["signature"], "description": r["description"]})
-             
-            # Search methods
-            m_rows = conn.execute(
-                "SELECT id, signature, description FROM methods WHERE identifier LIKE ? OR scoped_identifier LIKE ? OR umid LIKE ?",
-                (f"%{name}%", f"%{name}%", f"%{name}%")
-            ).fetchall()
-            for r in m_rows:
-                results.append({"id": r["id"], "type": "Method", "signature": r["signature"], "description": r["description"]})
-
-            # Search fields
-            fi_rows = conn.execute(
-                "SELECT id, signature, name FROM fields WHERE name LIKE ? OR ucid LIKE ?",
-                (f"%{name}%", f"%{name}%")
-            ).fetchall()
-            for r in fi_rows:
-                results.append({"id": r["id"], "type": "Field", "signature": r["signature"], "description": ""})
+            logger.info(f"Found {len(node_rows)} structs in subtree {str(path.resolve())}")
+            
+            if not node_ids:
+                return
+            
+            placeholders = ",".join(["?"] * len(node_ids))
+            
+            sql = f"""
+                SELECT source_id, target_id, edge_type 
+                FROM edges 
+                WHERE (source_id IN ({placeholders}) 
+                OR target_id IN ({placeholders}))
+                AND edge_type = 'is_child_of'
+            """
+            
+            params = node_ids + node_ids
+            cursor.execute(sql, params)
+            
+            edge_rows = cursor.fetchall()
+            
+            logger.info(f"Found {len(edge_rows)} edges in subtree {path.resolve()}")
+            
+            for source_id, target_id, edge_type in edge_rows:
+                source_obj = self.get_struct_by_id(source_id)
+                target_obj = self.get_struct_by_id(target_id)
                 
-        return results
+                if not source_obj or not target_obj:
+                    continue
+                
+                target_obj.add_child(source_obj)
+                
+        self.root = self.get_struct_by_uid(".")
+    
+    def get_struct_by_uid(self, uid: str) -> Optional["BaseStruct"]:
+        logger.debug(f"Attempting to retrieve struct with UID {uid} from registry")
+        # Check memory cache first and return early if found
+        if uid in self.uid_map:
+            logger.debug(f"Cache hit for UID {uid}, returning memory object")
+            return self.uid_map[uid]
 
-    @staticmethod
-    def _parse_row(row: Any) -> Optional[Dict[str, Any]]:
-        if not row:
+        if not self.use_cache or not self.db:
+            logger.debug(f"Cache miss for UID {uid}, but no DB provided or caching disabled, returning None")
             return None
         
-        row_dict = dict(row)
-        json_fields = {
-            'imports', 'constants', 'parameters', 
-            'dependencies', 'inbound_dependencies'
-        }
+        from toaster.core.builder import BaseBuilder
+        import json
         
-        for field in json_fields:
-            if field in row_dict and row_dict[field]:
-                try:
-                    row_dict[field] = json.loads(row_dict[field])
-                except (json.JSONDecodeError, TypeError):
-                    pass
-                    
-        return row_dict
-
-class MemberRegistry:
-    """
-    A facade class that coordinates in-memory state, storage, and hydration.
-    Maintains the existing API for backward compatibility.
-    """
-    def __init__(self, project_dir: str = "."):
-        self.db_path = Path(project_dir) / ".toaster" / "cache.db"
-        self.db = SQLiteCache(self.db_path)
-        
-        self.state = RegistryMemoryState()
-        self.storage = RegistryStorage(self.db)
-        self.hydrator = RegistryHydrator(self.db)
-    
-    @property
-    def map_umid(self): return self.state.map_umid
-    @property
-    def map_scoped(self): return self.state.map_scoped
-    @property
-    def map_short(self): return self.state.map_short
-    @property
-    def map_class(self): return self.state.map_class
-    @property
-    def map_id(self): return self.state.map_id
-
-    def add_method(self, method: "BaseMethod"):
-        self.state.add_method(method)
-    
-    def add_class(self, class_obj: "BaseClass"):
-        self.state.add_class(class_obj)
-        
-    def add_file(self, file_obj: "BaseFile"):
-        pass
-
-    def save_to_db(self, files: List["BaseFile"]):
-        self.storage.save_to_db(files)
-
-    def load_cache(self):
-        self.hydrator.load_cache_into_state(self.state)
-
-    def update_method_description(self, method: "BaseMethod"):
-        self.storage.update_method_description(method)
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
             
-    def update_class_description(self, class_obj: "BaseClass"):
-        self.storage.update_class_description(class_obj)
+            # fetch struct and its children via prefix search
+            cursor.execute("SELECT * FROM structs WHERE uid LIKE ?", (f"%{uid}%",))
+            node_rows = cursor.fetchall()
+            
+            if not node_rows:
+                logger.debug(f"No structs found in DB matching UID {uid}")
+                return None
+                
+            node_ids = []
+            
+            for row in node_rows:
+                struct_data = dict(row)
+                node_ids.append(struct_data['id'])
+                
+                if struct_data['uid'] not in self.uid_map:
+                    if struct_data.get('imports', None):
+                        struct_data['imports'] = json.loads(struct_data['imports'])
+                    
+                    builder = BaseBuilder(self)
+                    instance = builder.with_type(struct_type=struct_data['type']).from_dict(struct_data)
+                    self.add_struct(instance)
+            
+            # Fetch and connect edges
+            if node_ids:
+                placeholders = ",".join(["?"] * len(node_ids))
+                sql = f"""
+                    SELECT source_id, target_id, edge_type 
+                    FROM edges 
+                    WHERE (source_id IN ({placeholders}) 
+                    OR target_id IN ({placeholders}))
+                    AND edge_type = 'is_child_of'
+                """
+                
+                params = node_ids + node_ids
+                cursor.execute(sql, params)
+                edge_rows = cursor.fetchall()
+                
+                for source_id, target_id, edge_type in edge_rows:
+                    source_obj = self.id_map.get(source_id)
+                    target_obj = self.id_map.get(target_id)
+                    
+                    if not source_obj or not target_obj:
+                        continue
+                    
+                    target_obj.add_child(source_obj)
+                    source_obj.parent = target_obj
+                    
+        return self.uid_map.get(uid)
 
+    
     def get_struct_by_id(self, id: str) -> Optional["BaseStruct"]:
-        # Check memory first, then DB
-        if val := self.state.map_id.get(id):
-            return val
-        return self.get_struct_from_db(id)
+        # Check memory cache first and return early if found
+        if hasattr(self, 'id_map') and id in self.id_map:
+            return self.id_map[id]
+            
+        if not self.use_cache or not self.db:
+            return None
+        
+        # Fetch UID from db for prefix search
+        with self.db.get_connection() as conn:
+            row = conn.execute("SELECT uid FROM structs WHERE id = ?", (id,)).fetchone()
+            if not row:
+                return None
+            
+            target_uid = row[0]
+            
+        return self.get_struct_by_uid(target_uid)
+    
+    def is_stale(self, struct: BaseCodeStruct | str) -> bool:
+        if not self.db:
+            raise RuntimeError("Cannot check for stale structs if SqLiteCache not provided.")
+        if isinstance(struct, str):
+            if struct not in self.uid_map:
+                raise KeyError(f"Could not find struct with uid {struct}")
+            struct = self.uid_map[struct]
+            
+        with self.db.get_connection() as conn:
+            row = conn.execute("SELECT diff_hash FROM structs WHERE uid = ?", (struct.uid,)).fetchone()
+            if not row or row[0] != struct.diff_hash:
+                return True
+            return False
+        
+    def update_cached_description(self, struct: BaseStruct | str):
+        if not self.db:
+            raise RuntimeError("Cannot check for stale structs if SqLiteCache not provided.")
+        if isinstance(struct, str):
+            if struct not in self.uid_map:
+                raise KeyError(f"Could not find struct with uid {struct}")
+            struct = self.uid_map[struct]
+        
+        with self.db.get_connection() as conn:
+            conn.execute("UPDATE structs SET description = ? WHERE uid = ?", (struct.description, struct.uid))
+            conn.commit()
+        
 
-    def get_struct_from_db(self, id: str) -> Optional["BaseStruct"]:
-        return self.hydrator.get_struct_from_db(id)
-
-    def get_files_by_path(self, subpath: str) -> List["BaseFile"]:
-        return self.hydrator.get_files_by_path(subpath)
-
-    def resolve_name(self, name: str) -> List[Dict[str, Any]]:
-        return self.hydrator.resolve_name(name)
+    def save_struct_to_cache(self, struct: BaseStruct | str):
+        """ Saves a struct to the SQLite cache """
+        if not self.db:
+            raise RuntimeError("Cannot save to cache if SqLiteCache not provided.")
+        if isinstance(struct, str):
+            if struct not in self.uid_map:
+                raise KeyError(f"Could not find struct with uid {struct}")
+            struct = self.uid_map[struct]
+        
+        data = struct.to_dict()
+        
+        target_uid = data.pop("uid") 
+        set_clause = ", ".join([f"{k} = ?" for k in data.keys()])
+        node_sql = f"UPDATE structs SET {set_clause} WHERE uid = ?"
+        node_params = list(data.values()) + [target_uid]
+        
+        edges = list(struct.edges)
+            
+        with self.db.get_connection() as conn:
+            conn.execute(node_sql, node_params)
+            
+            # Clear all existing edges touching this node to prevent ghosts
+            conn.execute("DELETE FROM edges WHERE source_id = ?", (struct.id,))
+            
+            # Bulk insert fresh edges
+            if edges:
+                conn.executemany("INSERT INTO edges (source_id, target_id, edge_type) VALUES (?, ?, ?)", edges)
+            conn.commit()
+    
+    def save_to_cache(self):
+        """Saves the entire AST to the SQLite cache."""
+        if not self.db:
+            raise RuntimeError("Cannot save to cache if SqLiteCache not provided.")
+        
+        parsed_ids = [(node.id,) for node in self.uid_map.values()]
+        grouped_nodes = defaultdict(list)
+        all_edges = set()
+        
+        def serialize_for_db(value):
+            if isinstance(value, (dict, list, tuple, set)):
+                if isinstance(value, set):
+                    value = list(value)
+                return json.dumps(value)
+            return value
+        
+        for node in self.uid_map.values():
+            data_dict = node.to_dict()
+            
+            # tuple of keys as the group identifier
+            column_footprint = tuple(data_dict.keys())
+            
+            grouped_nodes[column_footprint].append(data_dict) 
+            all_edges.update(node.edges)
+            
+        with self.db.get_connection() as conn:
+            for columns_tuple, dict_list in grouped_nodes.items():
+                
+                columns = ", ".join(columns_tuple)
+                placeholders = ", ".join(["?"] * len(columns_tuple))
+                node_sql = f"INSERT OR REPLACE INTO structs ({columns}) VALUES ({placeholders})"
+                
+                # Fetching the specific value for each column from the dictionary
+                node_values = [
+                    tuple(serialize_for_db(n.get(col)) for col in columns_tuple)
+                    for n in dict_list
+                ]
+                
+                conn.executemany(node_sql, node_values)
+            
+            conn.executemany(
+                "DELETE FROM edges WHERE source_id = ?", 
+                parsed_ids
+            )
+            
+            if all_edges:
+                conn.executemany(
+                    "INSERT INTO edges (source_id, target_id, edge_type) VALUES (?, ?, ?)",
+                    list(all_edges)
+                )
+            conn.commit()

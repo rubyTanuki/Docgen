@@ -9,14 +9,12 @@ import time
 class MethodDescription(BaseModel):
     method_id: int = Field(description="The integer ID of the method provided in the prompt data")
     description: str = Field(description="Description of the method")
-    confidence: int = Field(description="Confidence in analysis based only on provided code")
-    needs_context: int = Field(description="Dependency on external/unknown state (0=Pure, 100=Dependent on external logic)")
-
+    
 class DescriptionResult(BaseModel):
-    ucid: str = Field(description="ucid of the class")
+    uid: str = Field(description="uid of the class")
     description: str = Field(description="Description of the class")
-    confidence: int = Field(description="Confidence in analysis based only on provided code")
-    needs_context: int = Field(description="Dependency on external/unknown state (0=Pure, 100=Dependent on external logic)")
+    # confidence: int = Field(description="Confidence in analysis based only on provided code")
+    # needs_context: int = Field(description="Dependency on external/unknown state (0=Pure, 100=Dependent on external logic)")
     methods: list[MethodDescription] = Field(description="List of method information")
 
 class GeminiClient:
@@ -43,18 +41,14 @@ Assume all descriptions are to be utilized by an AI Agent for contextual referen
 Analyze the provided code and generate a JSON response. 
 **Class Analysis**: Generate a `description` for the overall class. Look at the fields, Javadocs, and method summaries to write a concise explanation of the class's primary purpose and architectural role. Also provide a confidence score and context need score for the class.
 **Method Analysis**: For each method that still has a raw code body, generate:
-1. **Description**: Write a concise summary of what the method does. 
+**Description**: Write a concise summary of what the method does. 
    - **Focus on**: Inputs and Outputs (semantics) and Side Effects (state changes). If the method is complex, include core logic (algorithms and data flow).
    - **Style**: Technical, precise, and dense. Start with an active verb (e.g., "Calculates...", "Updates..."). Unless complexity is high, try to keep it to one sentence.
-2. **Confidence Score (1-100)**: Confidence in analysis based only on provided code. Should only be 100 for simple getters/setters.
-3. **Context Need Score (1-100)**: Dependency on external/unknown state, such as database access, unknown imports, not easily-resolvable dependencies (0=Pure, 100=Dependent on external logic).
 Reference methods by their provided integer `method_id`.
-"""
+"""     
         
         # Create a mapping of method IDs to method objects
-        method_lookup = {idx: m for idx, m in enumerate(class_obj.methods.values())}
-        
-        has_cached_methods = any(m.description for m in class_obj.methods.values())
+        method_lookup = {idx: m for idx, m in enumerate(class_obj.methods)}
         
         
         input_data = {
@@ -62,7 +56,7 @@ Reference methods by their provided integer `method_id`.
             "method_ids_to_signatures": {idx: m.signature for idx, m in method_lookup.items()}
         }
         
-        logger.info(f"Generating Description for {class_obj.ucid}...")
+        logger.debug(f"Generating Description for {class_obj.uid}...")
         start_time = time.perf_counter()
         
         max_retries = 3
@@ -84,7 +78,7 @@ Reference methods by their provided integer `method_id`.
                     )
                     end_time = time.perf_counter()
                     elapsed_time = end_time - start_time
-                    logger.info(f"✅ Generated Description for {class_obj.ucid} in {elapsed_time:.4f} seconds.")
+                    logger.debug(f"✅ Generated Description for {class_obj.uid} in {elapsed_time:.4f} seconds.")
                     
                     parsed_data = response.parsed
                     
@@ -92,8 +86,9 @@ Reference methods by their provided integer `method_id`.
                     for method_result in parsed_data.get("methods", []):
                         m_id = method_result.get("method_id")
                         if m_id in method_lookup:
-                            method_result["umid"] = method_lookup[m_id].umid
+                            method_result["uid"] = method_lookup[m_id].uid
                             
+                    # logger.debug(f"Response: {parsed_data}")
                     return parsed_data
                     
                 except Exception as e:
@@ -101,12 +96,12 @@ Reference methods by their provided integer `method_id`.
                     if "503" in error_str or "429" in error_str:
                         if attempt < max_retries - 1:
                             sleep_time = base_delay * (2 ** attempt)
-                            logger.warning(f"⏳ Server busy (503/429) on {class_obj.ucid}. Retrying in {sleep_time}s...")
+                            logger.warning(f"⏳ Server busy (503/429) on {class_obj.uid}. Retrying in {sleep_time}s...")
                             await asyncio.sleep(sleep_time)
                             continue 
                             
                     return {
-                        "ucid": class_obj.ucid,
+                        "uid": class_obj.uid,
                         "error": error_str,
                         "status": "error"
                     }

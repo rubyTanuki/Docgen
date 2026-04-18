@@ -21,85 +21,61 @@ class SQLiteCache:
             conn.close()
 
     def init_db(self):
-        """Initializes the database schema and enables WAL mode."""
+        """Initializes the database schema for the AST Graph."""
+        
         with self.get_connection() as conn:
-            # Enable Write-Ahead Logging for concurrent agent swarms
-            conn.execute("PRAGMA journal_mode=WAL;")
-            conn.execute("PRAGMA synchronous=NORMAL;")
+            conn.execute("PRAGMA journal_mode = WAL;")
+            conn.execute("PRAGMA synchronous = NORMAL;")
+            conn.execute("PRAGMA foreign_keys = ON;") 
             
-            # Files Table
+            # NODES TABLE
             conn.execute("""
-                CREATE TABLE IF NOT EXISTS files (
+                CREATE TABLE IF NOT EXISTS structs (
                     id TEXT PRIMARY KEY,
-                    ufid TEXT UNIQUE NOT NULL,
-                    source_path TEXT,
-                    imports JSON
-                )
-            """)
-
-            # Classes Table
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS classes (
-                    id TEXT PRIMARY KEY,
-                    file_id TEXT NOT NULL,
-                    parent_class_id TEXT,
-                    ucid TEXT UNIQUE NOT NULL,
-                    signature TEXT,
-                    body TEXT,
-                    start_line INTEGER,
-                    end_line INTEGER,
-                    description TEXT,
-                    constants JSON,
-                    FOREIGN KEY(file_id) REFERENCES files(id),
-                    FOREIGN KEY(parent_class_id) REFERENCES classes(id)
-                )
-            """)
-
-            # Methods Table
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS methods (
-                    id TEXT PRIMARY KEY,
-                    class_id TEXT,
-                    file_id TEXT,
-                    identifier TEXT,
-                    scoped_identifier TEXT,
-                    return_type TEXT,
-                    umid TEXT UNIQUE NOT NULL,
-                    signature TEXT,
-                    body TEXT,
-                    body_hash TEXT,
-                    start_line INTEGER,
-                    end_line INTEGER,
-                    parameters JSON,
-                    dependencies JSON,
-                    inbound_dependencies JSON,
-                    description TEXT,
-                    FOREIGN KEY(class_id) REFERENCES classes(id),
-                    FOREIGN KEY(file_id) REFERENCES files(id)
-                )
-            """)
-
-            # Fields Table
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS fields (
-                    id TEXT PRIMARY KEY,
-                    class_id TEXT,
-                    file_id TEXT,
-                    ucid TEXT UNIQUE NOT NULL,
+                    uid TEXT UNIQUE NOT NULL,
                     name TEXT,
+                    type TEXT NOT NULL, -- e.g., 'BaseFile', 'BaseClass', 'BaseMethod'
+                    path TEXT,
+                    description TEXT,
+                    inbound_dependency_strings TEXT,
+                    outbound_dependency_strings TEXT,
+                    
+                    -- CodeStruct Fields
                     signature TEXT,
+                    body TEXT,
+                    diff_hash TEXT,
+                    start_line INTEGER,
+                    end_line INTEGER,
+                    
+                    -- Specialized Fields (Stored as JSON or plaintext)
+                    imports JSON,
+                    inherits JSON,
+                    enum_constants JSON,
                     field_type TEXT,
-                    FOREIGN KEY(class_id) REFERENCES classes(id),
-                    FOREIGN KEY(file_id) REFERENCES files(id)
+                    arity INTEGER
                 )
             """)
 
-            # Indexes for querying speed
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_classes_file ON classes(file_id)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_methods_class ON methods(class_id)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_methods_file ON methods(file_id)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_methods_identifier ON methods(identifier)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_fields_class ON fields(class_id)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_fields_file ON fields(file_id)")
+            # EDGES TABLE
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS edges (
+                    source_id TEXT NOT NULL,
+                    target_id TEXT NOT NULL,
+                    edge_type TEXT NOT NULL, -- 'contains', 'depends_on', 'fuzzy_depends_on'
+                    
+                    PRIMARY KEY (source_id, target_id, edge_type),
+                    
+                    FOREIGN KEY(source_id) REFERENCES structs(id) ON DELETE CASCADE,
+                    FOREIGN KEY(target_id) REFERENCES structs(id) ON DELETE CASCADE
+                )
+            """)
+
+            # INDEXES FOR GRAPH TRAVERSAL
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_structs_uid ON structs(uid)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_structs_type ON structs(type)")
+            
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_edges_type ON edges(edge_type)")
             
             conn.commit()

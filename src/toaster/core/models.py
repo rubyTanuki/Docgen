@@ -1,357 +1,446 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, TYPE_CHECKING
+from typing import Set, List, Dict, Any, Optional, TYPE_CHECKING, ClassVar
 import re
 import json
 import asyncio
 import hashlib
 from importlib import import_module
+from pathlib import Path
 
-from toaster.core.providers import StructProvider
+from loguru import logger
+from toaster.core.providers import StructBuilderProvider
+from toaster.exceptions import LanguageNotSupportedError
 
 if TYPE_CHECKING:
-    from toaster.core.registry import MemberRegistry
+    from toaster.core.registry import Registry
 
-@dataclass
-class BaseFile(ABC):
-    """
-    Abstract representation of a source code file.
-    Acts as the root container for the dependency graph.
-    """
-    
-    ufid: str # PIDController.java
-    imports: List[str]
-    classes: List["BaseClass"]
-    fields: Dict[str, "BaseField"] = field(default_factory=dict)
-    methods: Dict[str, "BaseMethod"] = field(default_factory=dict)
-    registry: "MemberRegistry" = None
-    source_path: str = ""
-    
-    id: str = field(init=False)
-
-    @staticmethod
-    def from_dict(d: dict) -> "BaseFile":
-        path = d.get("source_path") or d.get("ufid", "")
-        file_cls = StructProvider.get_struct_class(path, "file")
-        
-        f = file_cls(
-            ufid=path,
-            imports=d.get('imports', []),
-            classes=[],
-            fields={},
-            methods={}
-        )
-        f.source_path = path
-        f.id = d['id']
-        
-        for cd in d.get("classes", []):
-            cd["_file_source_path"] = path
-            child = BaseClass.from_dict(cd)
-            child.file = f
-            f.classes.append(child)
-
-        for md in d.get("methods", []):
-            md["_file_source_path"] = path
-            m = BaseMethod.from_dict(md)
-            m.file = f
-            f.methods[m.umid] = m
-
-        for fd in d.get("fields", []):
-            fd["_file_source_path"] = path
-            field_obj = BaseField.from_dict(fd)
-            f.fields[field_obj.ucid] = field_obj
-            
-        return f
-
-    def __post_init__(self):
-        id_hash = hashlib.md5(self.ufid.encode('utf-8')).hexdigest()[:4]
-        self.id = f"F-{id_hash}"
-
-    def resolve_dependencies(self):
-        """Triggers dependency resolution for all children."""
-        for c in self.classes:
-            c.resolve_dependencies(self.imports)
-        for m in self.methods.values():
-            m.resolve_dependencies(self.imports)
-
-    async def resolve_descriptions(self, llm: "LLMClient", visited_ucids: set[str] = None):
-        if visited_ucids is None:
-            visited_ucids = set()
-        
-        # Resolve class descriptions
-        coroutine_list = [cls.resolve_descriptions(llm, self.imports, visited_ucids, self.registry) for cls in self.classes]
-        for class_obj in self.classes:
-            coroutine_list.extend([c.resolve_descriptions(llm, self.imports, visited_ucids, self.registry) for c in class_obj.child_classes.values()])
-        
-        await asyncio.gather(*coroutine_list)
-
-    def __str__(self):
-        return f"<{self.__class__.__name__}: {self.ufid}>"
-    __repr__=__str__
-
-
-@dataclass
-class BaseClass(ABC):
-    """
-    Abstract representation of a Class.
-    Stores Members (Fields/Methods) and Metadata for LLM processing.
-    """
-    ucid: str
-    signature: str
-    body: str
-    start_line: int
-    node: Any = None
-    registry: "MemberRegistry" = None
-    file: BaseFile = None
-    
-    # computed
-    end_line: int = field(init=False)
-    id: str = field(init=False)
+@dataclass(eq=False)
+class BaseStruct(ABC):
+    # IDENTITY
+    name: str = ""              # exampleMethod
+    uid: str = ""               # namespace.exampleClass#exampleMethod(num1: int) or src/com/example/Example.java
+    id: str = field(init=False) # S-1a2b3c4d5e
     description: str = ""
-    sent_to_llm: bool = False
-    constants: List[str] = field(default_factory=list)
-    confidence: float = 0.0
     
-    fields: Dict[str, "BaseField"] = field(default_factory=dict)
-    methods: Dict[str, "BaseMethod"] = field(default_factory=dict)
-    child_classes: Dict[str, "BaseClass"] = field(default_factory=dict)
-
-    @staticmethod
-    def from_dict(d: dict) -> "BaseClass":
-        path = d.get("_file_source_path", "unknown.java")
-        class_cls = StructProvider.get_struct_class(path, "class")
+    # DEPENDENCIES / GRAPH
+    inbound_dependencies: Set[BaseStruct | str] = field(default_factory=set)
+    inbound_dependencies_fuzzy: Set[BaseStruct | str] = field(default_factory=set) # for fuzzy matching during resolution
+    outbound_dependencies: Set[BaseStruct | str] = field(default_factory=set)
+    outbound_dependencies_fuzzy: Set[BaseStruct | str] = field(default_factory=set) # for fuzzy matching during resolution
+    
+    _inbound_dependency_strings: List[str] = field(default_factory=list)
+    @property
+    def inbound_dependency_strings(self):
+        if not self._inbound_dependency_strings: self._inbound_dependency_strings = [f"{dep.id}|{dep.uid}" for dep in self.inbound_dependencies] + ['~'+f"{dep.id}|{dep.uid}" for dep in self.inbound_dependencies_fuzzy]
+        return self._inbound_dependency_strings
+    
+    _outbound_dependency_strings: List[str] = field(default_factory=list)
+    @property
+    def outbound_dependency_strings(self):
+        if not self._outbound_dependency_strings: self._outbound_dependency_strings = [f"{dep.id}|{dep.uid}" for dep in self.outbound_dependencies] + ['~'+f"{dep.id}|{dep.uid}" for dep in self.outbound_dependencies_fuzzy]
+        return self._outbound_dependency_strings
+    
+    inbound_dependency_names: Set[str] = field(default_factory=set) # for serialization only, not used for resolution
+    outbound_dependency_names: Set[str] = field(default_factory=set) # for serialization only, not used for resolution
+    
+    # CONTEXT
+    registry: "Registry" = None
+    parent: BaseStruct | str = None
+    children: Dict[str, Set[BaseStruct | str]] = field(default_factory=dict)
+    path: Path = None
+    
+    _IDPREFIX: ClassVar[str] = "S"
+    
+    _all_children: List["BaseStruct"] = field(init=False, repr=False, default_factory=list)
+    @property
+    def all_children(self):
+        if self._all_children: return self._all_children
+        self._all_children = []
+        for child_set in self.children.values():
+            self._all_children.extend(child_set)
+        return self._all_children
+    
+    @property
+    def files(self):
+        return list(self.children.get("BaseFile", set()))
+    
+    @property
+    def methods(self):
+        return [child for child in self.all_children if isinstance(child, BaseMethod)]
+    
+    @property
+    def fields(self):
+        return [child for child in self.all_children if isinstance(child, BaseField)]
+    
+    @property
+    def classes(self):
+        return [child for child in self.all_children if isinstance(child, BaseClass)]
+    
+    @property
+    def edges(self):
+        edges = set()
+        for dependency in self.outbound_dependencies:
+            edges.add((self.id, dependency.id, "depends_on"))
+        for dependency in self.outbound_dependencies_fuzzy:
+            edges.add((self.id, dependency.id, "depends_on_fuzzy"))
         
-        c = class_cls(
-            ucid=d['ucid'],
-            signature=d['signature'],
-            body=d['body'],
-            start_line=d['start_line'],
-            child_classes={},
-            methods={}
-        )
-        c.description = d.get('description', '')
-        c.constants = d.get('constants', [])
-        c.id = d['id']
-        c.end_line = d['end_line']
-        c.file = d.get('file', MockFile(ufid=path, imports=[], classes=[]))
+        if isinstance(self.parent, BaseStruct):
+            edges.add((self.id, self.parent.id, "is_child_of"))
+        elif isinstance(self.parent, str):
+            edges.add((self.id, self.parent, "is_child_of"))
         
-        for md in d.get("methods", []):
-            md["_file_source_path"] = path
-            md["_class_ucid"] = c.ucid
-            m = BaseMethod.from_dict(md)
-            m.parent_class = c
-            c.methods[m.umid] = m
-            
-        for cd in d.get("child_classes", []):
-            cd["_file_source_path"] = path
-            child = BaseClass.from_dict(cd)
-            c.child_classes[child.ucid] = child
-
-        for fd in d.get("fields", []):
-            fd["_file_source_path"] = path
-            field_obj = BaseField.from_dict(fd)
-            c.fields[field_obj.ucid] = field_obj
-            
-        return c
-
+        for child_set in self.children.values():
+            for child in child_set:
+                edges.update(child.edges)
+                edges.add((child.id, self.id, "contains"))
+        
+        return edges
+    
+    @property 
+    def impact_score(self) -> int:
+        return len(self.inbound_dependencies) + len(self.inbound_dependencies_fuzzy) + len(self.children)
+    
     def __post_init__(self):
-        self.end_line = self.start_line + self.body.count('\n')
-        self.id = f"C-{hashlib.md5(self.ucid.encode('utf-8')).hexdigest()[:4]}"
+        id_hash = hashlib.md5(self.uid.encode('utf-8')).hexdigest()[:10]
+        self.id = f"{self.__class__._IDPREFIX}-{id_hash}"
         
-    @abstractmethod
-    def skeletonize(self) -> str:
-        pass
-
-    def resolve_dependencies(self, imports: List[str] = None):
-        if imports is None:
-            imports = []
-        """Passes context to methods to link dependencies."""
-        for method in self.methods.values():
-            method.resolve_dependencies(imports)
-        for child in self.child_classes.values():
-            child.resolve_dependencies(imports)
+    def add_child(self, child: "BaseStruct"):
+        type_name = child.__class__.__name__ # e.g., "BaseMethod"
+        
+        if type_name not in self.children:
+            self.children[type_name] = set()
+            
+        self.children[type_name].add(child)
+        child.parent = self
     
-    async def resolve_descriptions(self, llm: "LLMClient", imports: List[str] = None, visited_ucids: set[str] = None, registry=None):
-        if imports is None: imports = []
-        if visited_ucids is None: visited_ucids = set()
-        self.registry = registry or self.registry
-        
-        if self.ucid in visited_ucids:
-            return
-        visited_ucids.add(self.ucid)
-        
-        needs_description = any([not method.description for method in self.methods.values()]) or not self.description
-        if not needs_description:
-            return
-        
-        try:
-            response_obj = await llm.generate_description(self, imports)
-            
-            if not response_obj or response_obj.get("status") == "error":
-                error_msg = response_obj.get('error') if response_obj else 'Returned None'
-                print(f"⚠️ Skipping {self.ucid} due to LLM failure: {error_msg}")
-                return
-            
-            self.description = response_obj["description"]
-            self.confidence = response_obj["confidence"]
-            
-            if self.registry:
-                self.registry.update_class_description(self)
+    def add_dependency(self, target: "BaseStruct"):
+        self.outbound_dependencies.add(target)
+        self.outbound_dependency_names.add(target.uid)
+        target.inbound_dependencies.add(self)
+        target.inbound_dependency_names.add(self.uid)
+        if isinstance(self.parent, BaseStruct) and isinstance(target.parent, BaseStruct):
+            if self.parent != target.parent: 
+                self.parent.add_dependency(target.parent)
                 
-            for method_obj in response_obj.get("methods", []):
-                returned_umid = method_obj.get("umid")
-                if not returned_umid:
-                    continue
-                    
-                method = self.methods.get(returned_umid)
-                if method:
-                    method.description = method_obj.get("description", "")
-                    method.confidence = method_obj.get("confidence", 0)
-                    if self.registry:
-                        self.registry.update_method_description(method)
-            
-        except Exception as e:
-            print(f"Failed to generate description for {self.ucid}: {e}")
-
-    def __str__(self):
-        return f"<{self.__class__.__name__}: {self.ucid}>"
-    __repr__ = __str__
-
-
-@dataclass
-class BaseMethod(ABC):
-    """
-    Abstract representation of a Function/Method.
-    This is the primary unit of work for the LLM.
-    """
-    @staticmethod
-    def from_dict(d: dict) -> "BaseMethod":
-        path = d.get("_file_source_path", "")
-        method_cls = StructProvider.get_struct_class(path, "method")
+    def add_fuzzy_dependency(self, target: "BaseStruct"):
+        self.outbound_dependencies_fuzzy.add(target)
+        self.outbound_dependency_names.add('~' + target.uid)
+        target.inbound_dependencies_fuzzy.add(self)
+        target.inbound_dependency_names.add('~' + self.uid)
+        if isinstance(self.parent, BaseStruct) and isinstance(target.parent, BaseStruct):
+            if self.parent != target.parent: 
+                self.parent.add_fuzzy_dependency(target.parent)
         
-        m = method_cls(
-            identifier=d['identifier'],
-            scoped_identifier=d['scoped_identifier'],
-            return_type=d['return_type'],
-            umid=d['umid'],
-            signature=d['signature'],
-            body=d['body'],
-            dependency_names=[],
-            start_line=d['start_line'],
-            parameters=d.get('parameters', [])
-        )
-        m.description = d.get('description', '')
-        raw_deps = d.get('dependencies', [])
-        m.dependencies = [
-            dep if isinstance(dep, str) else dep[-1] if isinstance(dep, list) and dep else str(dep)
-            for dep in raw_deps
-        ]
-        raw_inbound = d.get('inbound_dependencies', [])
-        m.inbound_dependencies = [
-            dep if isinstance(dep, str) else dep[-1] if isinstance(dep, list) and dep else str(dep)
-            for dep in (raw_inbound or [])
-        ]
-        m.id = d['id']
-        m.end_line = d['end_line']
-        m.body_hash = d['body_hash']
-        
-        # Inject the mock file for file path resolution in serialization
-        mf = MockFile(ufid=path, imports=[], classes=[])
-        mf.source_path = path
-        m.file = mf
-        
-        # Inject mock class for resolution
-        mc = MockClass(ucid=d.get('_class_ucid', ''), signature='', body='', start_line=0, child_classes={}, methods={})
-        m.parent_class = mc
-        
-        return m
-
-    identifier: str
-    scoped_identifier: str
-    return_type: str
-    umid: str
-    signature: str
-    body: str
-    dependency_names: List[str]
-    start_line: int
-    parameters: List[str]
-    node: Any = None
-    registry: "MemberRegistry" = None
-    file: BaseFile = None
-    parent_class: BaseClass = None
+    def resolve_dependencies(self):
+        # logger.debug(f"Resolving dependencies for {self}")
+        for child_set in self.children.values():
+            for child in child_set:
+                child.resolve_dependencies()
     
-    # computed
-    arity: int = field(init=False)
-    body_hash: str = field(init=False)
-    id: str = field(init=False)
-    end_line: int = field(init=False)
-    description: str = ""
-    confidence: float = 0.0
-    dependencies: List[str] = field(default_factory=list)
-    unresolved_dependencies: List[str] = field(default_factory=list)
-    inbound_dependencies: List[str] = field(default_factory=list)
+    @abstractmethod
+    async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
+        pass
+    
+    @classmethod
+    def from_dict(cls, d: dict):
+        data = d.copy()
+        # REMOVE all init=False here
+        id = data.pop("id", None) 
+        instance = cls(**data)
+        if id:
+            instance.id = id
+        return instance
+    
+    def to_dict(self) -> dict:
+        data = {
+            "id": self.id,
+            "name": self.name,
+            "uid": self.uid,
+            "type": "BaseStruct",
+            "path": str(self.path.resolve()),
+            "description": self.description,
+            "inbound_dependency_strings": self.inbound_dependency_strings,
+            "outbound_dependency_strings": self.outbound_dependency_strings,
+        }
+        return data
+    
+    def to_json(self, indent=0):
+        return json.dumps(self.to_dict(), indent=indent)
+    
+    def __hash__(self):
+        return hash(self.id)
+    
+    def __eq__(self, other):
+        if not isinstance(other, BaseStruct):
+            return False
+        return self.id == other.id
+    
+    def __str__(self):
+        return f"<{self.__class__.__name__}: {self.uid}>"
+    __repr__=__str__
+    
+@dataclass(eq=False)
+class Directory(BaseStruct):
+    _IDPREFIX: ClassVar[str] = "D"
+    
+    def __init__(self, path, registry=None, parent=None):
+        super().__init__(name=path.name, path=path, uid=str(path), registry=registry, parent=parent)
+    
+    async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
+        pass
+    
+    def parse_children(self):
+        if self.path is None:
+            logger.error(f"{self} has no path")
+            return
+        for path in self.path.glob("*"):
+                if any(part in path.parts for part in ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster", ".DS_Store"]):
+                    continue
+                if path.is_dir():
+                    logger.debug(f"🔍 Parsing directory '{path}'")
+                    relative_path = path.resolve().relative_to(self.project_path.resolve())
+                    directory = Directory(path=relative_path, registry=self.registry, parent=self)
+                    self.registry.add_struct(directory)
+                    self.add_child(directory)
+                    directory.parse_children()
+                else:
+                    logger.debug(f"Attempting to resolve builder for suffix {path.parts[-1]}")
+                    try:
+                        builder = StructBuilderProvider.get_builder(path.suffix, self.registry)
+                    except LanguageNotSupportedError as e:
+                        continue
+                    instance = builder.build_file().from_path(path, parent=self)
+                    self.registry.add_struct(instance)
+                    self.add_child(instance)
+    
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "Directory"
+        return data
+
+@dataclass(eq=False)
+class BaseFile(BaseStruct):
+    _IDPREFIX: ClassVar[str] = "F"
+    
+    imports: List[str] = field(default_factory=list)
+    package: str = ""
+    body: str = ""
+    node: "Node" = None
+    
+    async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
+        for child in self.all_children:
+            await child.resolve_description_async(llm, visited)
+    
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "BaseFile"
+        data["imports"] = self.imports
+        data["body"] = self.body
+        return data
+    
+@dataclass(eq=False) 
+class BaseCodeStruct(BaseStruct):
+    
+    signature: str = ""         # public static int add(int num1, int num2) or class <T> Example extends BaseClass
+    body: str = ""              # signature + method body or class body for hashing and LLM context
+    diff_hash: str = ""         # hash of the code body - whitespace for change detection
+    start_line: int = 0         
+    end_line: int = 0
+    node: "Node" = None         # Optional reference to the tree-sitter node for advanced processing (e.g., skeletonization)
+    
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "BaseCodeStruct"
+        data["signature"] = self.signature
+        data["body"] = self.body
+        data["diff_hash"] = self.diff_hash
+        data["start_line"] = self.start_line
+        data["end_line"] = self.end_line
+        return data
+    
+@dataclass(eq=False)
+class BaseClass(BaseCodeStruct):
+    _IDPREFIX: ClassVar[str] = "C"
+    enum_constants: Optional[List[str]] = None
+    inherits: List[str] = field(default_factory=list) # list of parent class UIDs for inheritance relationships
+    
+    @property
+    def needs_description(self) -> bool:
+        if not self.description:
+            return True
+        for child_set in self.children.values():
+            for child in child_set:
+                if not child.description and not isinstance(child, BaseField):
+                    return True
+        return False
 
     @property
-    def impact_score(self) -> int:
-        return len(self.inbound_dependencies) * 2 + len(self.dependencies)
-
-    def __post_init__(self):
-        self.arity = len(self.parameters)
-        clean_body = re.sub(r'\s+', '', self.body)
-        self.body_hash = hashlib.sha256(clean_body.encode('utf-8')).hexdigest()[:8]
-        self.id = f"M-{hashlib.md5(self.umid.encode('utf-8')).hexdigest()[:5]}" 
-        self.end_line = self.start_line + self.body.count('\n')
-
-    @abstractmethod
-    def resolve_dependencies(self, imports: List[str]):
-        """Links dependency_names to actual BaseMethod objects."""
-        pass
-
-    def __str__(self) -> str:
-        return f"<{self.__class__.__name__}: {self.umid}>"
-    __repr__=__str__
-
-
-@dataclass
-class BaseField(ABC):
-    """
-    Abstract representation of a variable/property.
-    """
-    ucid: str
-    name: str
-    signature: str
-    field_type: str
+    def imports(self) -> List[str]:
+        return self.parent.imports
     
-    id: str = field(init=False)
+    def resolve_dependencies(self):
+        # logger.debug(f"Resolving dependencies for {self}")
+        # resolve child dependencies
+        super().resolve_dependencies()
+        
+        # resolve import dependencies
+        for imp in self.imports:
+            import_name = imp.split('.')[-1]
+            import_dependency = self.registry.get_struct_by_uid(imp)
+            if import_dependency:
+                self.add_dependency(import_dependency)
+        
+        # resolve inheritance dependencies
+        if self.inherits:
+            for parent_class in self.inherits:
+                parent_class_name = parent_class.split('.')[-1]
+                parent_dependency = self.registry.get_struct_by_uid(parent_class_name)
+                if parent_dependency:
+                    self.add_dependency(parent_dependency)
+        
+        # logger.debug(f"Resolved dependencies for {self.name}: {self.outbound_dependency_strings}")
 
-    @staticmethod
-    def from_dict(d: dict) -> "BaseField":
-        path = d.get("_file_source_path", "unknown.java")
-        field_cls = StructProvider.get_struct_class(path, "field")
-        f = field_cls(
-            ucid=d["ucid"],
-            name=d["name"],
-            signature=d["signature"],
-            field_type=d["field_type"],
-        )
-        f.id = d["id"]
-        return f
+    def skeletonize(self) -> str:
+        if not hasattr(self, 'node') or not self.node:
+            raise ValueError("Node reference is required for skeletonization.")
+        
+        result_bytes = self.node.text
+        start_byte = self.node.start_byte
+        
+        children_to_replace = []
+        for child_set in self.children.values():
+            if child_set and isinstance(next(iter(child_set)), BaseCodeStruct):
+                children_to_replace.extend(child_set)
+        children_to_replace.sort(key=lambda x: x.node.start_byte, reverse=True)
+        
+        for child in children_to_replace:
+            if not child.description:
+                continue
+            
+            rel_start = child.node.start_byte - start_byte
+            rel_end = child.node.end_byte - start_byte
+            method_skeleton = toast.dump(child, verbosity=toast.VERBOSITY.SKELETON, pretty=False)
+            skeleton_bytes = method_skeleton.encode('utf-8')
+            result_bytes = result_bytes[:rel_start] + skeleton_bytes + result_bytes[rel_end:]
+            
+        return result_bytes.decode('utf-8')
+    
+    async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
+        if visited is None: visited = set()
+        
+        if self.uid in visited or not self.needs_description:
+            return
+        visited.add(self.uid)
+        
+        if not self.registry:
+            raise ValueError("Registry reference is required for description resolution.")
+        try:
+            # TODO: move the imports reference into llm.generate_description
+            response_obj = await llm.generate_description(self, self.imports)
+        except Exception as e:
+            logger.error(f"Failed to generate description for {self.uid}: {e}")
+            return
+            
+        try:
+            if not response_obj or response_obj.get("status") == "error":
+                error_msg = response_obj.get('error') if response_obj else 'Returned None in'
+                logger.warning(f"⚠️ Skipping {self.uid} due to LLM failure: {error_msg}")
+                return
+            try:
+                self.description = response_obj["description"]
+            except KeyError:
+                logger.warning(f"⚠️ Missing description for {self.uid} in LLM response")
+                return
+            
+            returned_methods = {child['uid']: child for child in response_obj.get("methods", [])}
+            
+            for child_set in self.children.values():
+                for child in child_set:
+                    if child.uid in returned_methods.keys():
+                        if not "description" in returned_methods[child.uid]:
+                            logger.warning(f"⚠️ Missing description for {child.uid} in LLM response for {self.uid}")
+                            continue
+                        child.description = returned_methods[child.uid].get("description")
+                        # self.registry.update_struct_description(child)
+        except Exception as e:
+            logger.error(f"Failed to generate description for {self.uid}: {e}")
+            
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "BaseClass"
+        if self.enum_constants:
+            data["enum_constants"] = self.enum_constants
+        data["inherits"] = self.inherits
+        return data
+    
+@dataclass(eq=False)
+class BaseMethod(BaseCodeStruct):
+    _IDPREFIX: ClassVar[str] = "M"
+    
+    arity: int = 0
+    dependency_names: Optional[List[(str, int)]] = field(default_factory=list)
+    
+    children: dict = field(init=False, repr=False, default_factory=dict)
+    
+    # @abstractmethod
+    # def _parse_dependencies(self):
+    #     pass
+    
+    def resolve_dependencies(self):
+        for name, arity in self.dependency_names:
+            # LOCAL
+            for child_set in self.children.values():
+                for child in child_set:
+                    if isinstance(child, BaseCodeStruct | BaseField) and child.name == name and child.arity == arity:
+                        self.add_dependency(child)
+                        break
+            
+            # IMPORTED
+            for imp in self.parent.imports:
+                import_name = f"{imp}#{name}"
+                candidates = self.registry.resolve_methods(name=name, arity=arity, parent_name=import_name)
+                if len(candidates) == 1:
+                    self.add_dependency(candidates[0])
+                elif len(candidates) > 1:
+                    for c in candidates:
+                        self.add_fuzzy_dependency(c)
+            
+            # INHERITED
+            for parent_class in self.parent.inherits:
+                parent_name = parent_class.split('.')[-1]
+                # TODO: implement resolve_methods_by_name in registry
+                candidates = self.registry.resolve_methods(name=name, arity=arity, parent_name=parent_name)
+                if len(candidates) == 1:
+                    self.add_dependency(candidates[0])
+                elif len(candidates) > 1:
+                    for c in candidates:
+                        self.add_fuzzy_dependency(c)
+            
+    async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
+        pass
+    
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "BaseMethod"
+        data["arity"] = self.arity
+        return data
 
-    def __post_init__(self):
-        self.id = f"V-{hashlib.md5(self.ucid.encode('utf-8')).hexdigest()[:4]}"
-
-    def __str__(self) -> str:
-        return f"<{self.__class__.__name__}: {self.ucid}>"
-    __repr__ = __str__
-
-
-@dataclass
-class MockFile(BaseFile):
+@dataclass(eq=False)
+class BaseField(BaseCodeStruct):
+    _IDPREFIX: ClassVar[str] = "V"
+    
+    field_type: str = ""
+    children: dict = field(init=False, repr=False, default_factory=dict)
+    
     def resolve_dependencies(self):
         pass
-
-
-@dataclass
-class MockClass(BaseClass):
-    def skeletonize(self) -> str:
-        return ""
+    
+    async def resolve_description_async(self, llm: "LLMClient", visited: set[str] = None):
+        pass
+    
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "BaseField"
+        data["field_type"] = self.field_type
+        return data
