@@ -215,6 +215,13 @@ def skeleton(
         dir_okay=True,
         resolve_path=True
     ),
+    pretty: Annotated[
+        bool,
+        typer.Option(
+            "--pretty/--raw",
+            help="Pretty format output with line wrapping and indentation (disable for raw output)"
+        )
+    ] = True,
     debug: Annotated[
         bool, 
         typer.Option(
@@ -223,13 +230,14 @@ def skeleton(
             help="Enable debug logging"
             )
     ] = False
+    
 ):
     """Output the .toast skeleton format for all files matching a specific subpath."""
     configure_cli_logging(debug)
     
     start_time = time.perf_counter()
     try:
-        result = asyncio.run(skeleton_async(subpath, path))
+        result = asyncio.run(skeleton_async(subpath, path, pretty=pretty))
         print(result)
     except ToasterError as e:
         typer.secho(f"❌ Error: {e}", fg="red", err=True)

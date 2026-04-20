@@ -12,7 +12,8 @@ if TYPE_CHECKING:
     from toaster.core.models import BaseStruct, BaseCodeStruct
 
 class Registry:
-    def __init__(self, use_cache: bool = True, db: SQLiteCache = None):
+    def __init__(self, use_cache: bool = True, db: SQLiteCache = None, project_path: Path = None):
+        self.project_path = project_path
         self.use_cache = use_cache
         self.uid_map: Dict[str, BaseStruct] = {}
         self.id_map: Dict[str, BaseStruct] = {}
@@ -35,6 +36,11 @@ class Registry:
     def fields(self) -> List[BaseField]:
         return [x for x in self.uid_map.values() if isinstance(x, BaseField)]
     
+    def relative_to_project(self, path: Path) -> Path:
+        if self.project_path:
+            return path.resolve().relative_to(self.project_path.resolve())
+        return path
+    
     def add_struct(self, struct: BaseStruct):
         """ Adds a struct to the in-memory cache """
         self.uid_map[struct.uid] = struct
@@ -45,19 +51,21 @@ class Registry:
             return [x for x in self.methods if x.name == name and x.arity == arity and x.parent.name == parent_name]
         return [x for x in self.methods if x.name == name and x.arity == arity]
     
-    def load_subtree(self, path: Path):
+    def load_filepath(self, path: Path):
         logger.info(f"Loading subtree {str(path)}")
-        path_str = str(path)
+        path_str = str(self.relative_to_project(path))
+        resolved_path_str = str(path.resolve())
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             
             # pull and hydrate structs
             if path_str != ".":
-                cursor.execute("SELECT * FROM structs WHERE uid LIKE ? || '%'", (str(path.resolve()),))
+                cursor.execute("SELECT * FROM structs WHERE path LIKE ? || '%'", (resolved_path_str,))
             else:
                 cursor.execute("SELECT * FROM structs")
+                
             node_rows = cursor.fetchall()
-            node_ids = [row['id'] for row in node_rows]
+            node_ids = [str(row['id']) for row in node_rows]
             
             for row in node_rows:
                 struct_data = dict(row)
@@ -67,46 +75,70 @@ class Registry:
                 
                 builder = BaseBuilder(self)
                 struct_type = struct_data['type']
-                # logger.debug(f"{struct_type=}")
-                instance = builder.with_type(struct_type=struct_data['type']).from_dict(struct_data)
-                self.add_struct(instance)
+                instance = builder.with_type(struct_type=struct_type).from_dict(struct_data)
+                
+                if instance:
+                    self.add_struct(instance)
             
-            logger.info(f"Found {len(node_rows)} structs in subtree {str(path.resolve())}")
+            logger.info(f"Found {len(node_rows)} structs in subtree {path_str}")
             
             if not node_ids:
-                return
+                return None
             
             placeholders = ",".join(["?"] * len(node_ids))
             
-            sql = f"""
-                SELECT source_id, target_id, edge_type 
-                FROM edges 
-                WHERE (source_id IN ({placeholders}) 
-                OR target_id IN ({placeholders}))
-                AND edge_type = 'is_child_of'
-            """
-            
-            params = node_ids + node_ids
-            cursor.execute(sql, params)
+            if path_str != ".":
+                sql = f"""
+                    SELECT source_id, target_id, edge_type 
+                    FROM edges 
+                    WHERE (source_id IN ({placeholders}) 
+                    OR target_id IN ({placeholders}))
+                    AND edge_type = 'is_child_of'
+                """
+                params = node_ids + node_ids
+                cursor.execute(sql, params)
+            else:
+                sql = f"""
+                    SELECT source_id, target_id, edge_type 
+                    FROM edges
+                    WHERE edge_type = 'is_child_of'
+                """
+                cursor.execute(sql)
             
             edge_rows = cursor.fetchall()
             
-            logger.info(f"Found {len(edge_rows)} edges in subtree {path.resolve()}")
+            logger.info(f"Found {len(edge_rows)} edges in subtree {path_str}")
+            
             
             for source_id, target_id, edge_type in edge_rows:
-                source_obj = self.get_struct_by_id(source_id)
-                target_obj = self.get_struct_by_id(target_id)
+                source_obj = self.get_struct_by_id(str(source_id))
+                target_obj = self.get_struct_by_id(str(target_id))
                 
                 if not source_obj or not target_obj:
                     continue
                 
                 target_obj.add_child(source_obj)
+                source_obj.parent = target_obj
+        
+        self.root = self.get_struct_by_uid(path_str)
+        
+        # Fallback if root isn't found: Find the highest level node (node without a parent) in the retrieved set.
+        if not self.root:
+            roots = [node for node in self.uid_map.values() if getattr(node, 'parent', None) is None]
+            if len(roots) == 1:
+                self.root = roots[0]
+            elif len(roots) > 1:
+                # Prefer directories if multiple unconnected roots exist in the fragment
+                dir_roots = [n for n in roots if n.__class__.__name__ == "Directory"]
+                self.root = dir_roots[0] if dir_roots else roots[0]
                 
-        self.root = self.get_struct_by_uid(".")
+        logger.info(f"Loaded subtree {path_str} with root {self.root}")
+        
+        return self.root
     
     def get_struct_by_uid(self, uid: str) -> Optional["BaseStruct"]:
-        logger.debug(f"Attempting to retrieve struct with UID {uid} from registry")
-        # Check memory cache first and return early if found
+        logger.debug(f"Attempting to retrieve struct and its children with UID {uid} from registry")
+        # Check memory cache first
         if uid in self.uid_map:
             logger.debug(f"Cache hit for UID {uid}, returning memory object")
             return self.uid_map[uid]
@@ -121,8 +153,8 @@ class Registry:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             
-            # fetch struct and its children via prefix search
-            cursor.execute("SELECT * FROM structs WHERE uid LIKE ?", (f"%{uid}%",))
+            # Use exact match or prefix match to avoid over-fetching (especially with ".")
+            cursor.execute("SELECT * FROM structs WHERE uid = ? OR uid LIKE ?", (uid, f"{uid}/%"))
             node_rows = cursor.fetchall()
             
             if not node_rows:
@@ -130,18 +162,29 @@ class Registry:
                 return None
                 
             node_ids = []
+            target_id = None
             
             for row in node_rows:
                 struct_data = dict(row)
-                node_ids.append(struct_data['id'])
+                current_id = str(struct_data['id'])
+                node_ids.append(current_id)
                 
-                if struct_data['uid'] not in self.uid_map:
+                # Identify the struct originally requested by its DB uid
+                if struct_data['uid'] == uid:
+                    target_id = current_id
+                
+                if current_id not in self.id_map:
                     if struct_data.get('imports', None):
                         struct_data['imports'] = json.loads(struct_data['imports'])
                     
                     builder = BaseBuilder(self)
                     instance = builder.with_type(struct_type=struct_data['type']).from_dict(struct_data)
-                    self.add_struct(instance)
+                    
+                    if instance:
+                        self.add_struct(instance)
+                        logger.debug(f"Created instance for struct with DB UID {struct_data['uid']} and type {struct_data['type']}")
+                    else:
+                        logger.warning(f"Builder failed to create instance for struct with UID {struct_data['uid']} and type {struct_data['type']}")
             
             # Fetch and connect edges
             if node_ids:
@@ -159,8 +202,8 @@ class Registry:
                 edge_rows = cursor.fetchall()
                 
                 for source_id, target_id, edge_type in edge_rows:
-                    source_obj = self.id_map.get(source_id)
-                    target_obj = self.id_map.get(target_id)
+                    source_obj = self.id_map.get(str(source_id))
+                    target_obj = self.id_map.get(str(target_id))
                     
                     if not source_obj or not target_obj:
                         continue
@@ -168,25 +211,31 @@ class Registry:
                     target_obj.add_child(source_obj)
                     source_obj.parent = target_obj
                     
-        return self.uid_map.get(uid)
+        struct = self.id_map.get(target_id) if target_id else None
+        
+        if struct is None:
+            logger.warning(f"Struct with DB UID {uid} was not found in memory cache after DB retrieval. Target ID: {target_id}")
+        return struct
 
-    
+
     def get_struct_by_id(self, id: str) -> Optional["BaseStruct"]:
-        # Check memory cache first and return early if found
-        if hasattr(self, 'id_map') and id in self.id_map:
-            return self.id_map[id]
+        id_str = str(id)
+        # Check memory cache first
+        if hasattr(self, 'id_map') and id_str in self.id_map:
+            return self.id_map[id_str]
             
         if not self.use_cache or not self.db:
             return None
         
-        # Fetch UID from db for prefix search
+        # Fetch UID from db for the localized search
         with self.db.get_connection() as conn:
-            row = conn.execute("SELECT uid FROM structs WHERE id = ?", (id,)).fetchone()
+            row = conn.execute("SELECT uid FROM structs WHERE id = ?", (id_str,)).fetchone()
             if not row:
                 return None
             
             target_uid = row[0]
             
+        # Passing the relative UID to the fixed method will correctly hydrate and map the ID
         return self.get_struct_by_uid(target_uid)
     
     def is_stale(self, struct: BaseCodeStruct | str) -> bool:
@@ -245,7 +294,7 @@ class Registry:
                 conn.executemany("INSERT INTO edges (source_id, target_id, edge_type) VALUES (?, ?, ?)", edges)
             conn.commit()
     
-    def save_to_cache(self):
+    def save_to_cache(self, stale: bool = False):
         """Saves the entire AST to the SQLite cache."""
         if not self.db:
             raise RuntimeError("Cannot save to cache if SqLiteCache not provided.")
@@ -263,6 +312,8 @@ class Registry:
         
         for node in self.uid_map.values():
             data_dict = node.to_dict()
+            if stale and data_dict.get("description", None):
+                data_dict["description"] = f"[STALE] {data_dict['description']}"
             
             # tuple of keys as the group identifier
             column_footprint = tuple(data_dict.keys())

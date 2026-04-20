@@ -34,7 +34,7 @@ def clean_db(target_path: Path):
 async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BaseParser:
     llm = get_llm_client()
     db = SQLiteCache(target_path / ".toaster" / "cache.db")
-    registry = Registry(use_cache=use_cache, db=db)
+    registry = Registry(use_cache=use_cache, db=db, project_path=target_path)
     logger.info("Building AST...")
     
     parser = BaseParser(target_path, llm, registry)
@@ -50,36 +50,36 @@ async def init_async(target_path: Path, use_cache: bool = True, write_skeleton: 
     parser = await _build_ast_async(target_path, use_cache=use_cache)
         
     # Write Cache
-    parser.write_cache()
+    parser.registry.save_to_cache()
     
 async def inspect_async(struct_id:str, project_path: Path, include_body: bool = False, pretty: bool = True):
     _verify_db_exists(project_path)
     
     db = SQLiteCache(project_path / ".toaster" / "cache.db")
     
-    registry = Registry(db=db, use_cache=True)
+    registry = Registry(db=db, use_cache=True, project_path=project_path)
     struct_obj = registry.get_struct_by_id(struct_id)
     if struct_obj is None:
         raise StructNotFoundError(f"Struct not found with id {struct_id}.")
     
-    return toast.dump(struct_obj, verbosity=Verbosity.VERBOSE, include_body=include_body, pretty=pretty)
+    return toast.dump(struct_obj, verbosity=Verbosity.FULL, include_body=include_body, pretty=pretty)
     
-async def skeleton_async(subpath: str, project_path: Path):
+async def skeleton_async(subpath: str, project_path: Path, pretty: bool = True):
     _verify_db_exists(project_path)
     
     db = SQLiteCache(project_path / ".toaster" / "cache.db")
-    registry = Registry(str(project_path), db=db)
+    registry = Registry(db=db, project_path=project_path)
     
     relative_subpath = Path(subpath).resolve().relative_to(project_path.resolve())
+    logger.debug(f"Loading subtree for relative path: {relative_subpath}")
     
-    registry.load_subtree(Path(subpath))
-    # logger.info(f"{registry.root=}")
+    registry.load_filepath(relative_subpath)
     if not registry.files:
         raise FileNotFoundError(f"No files found matching path '{subpath}'.")
     
-    return toast.dump(registry.root, verbosity=Verbosity.SKELETON, pretty=False)
+    return toast.dump(registry.root, verbosity=Verbosity.SKELETON, pretty=pretty)
 
-# active_tasks = {}
+active_tasks = {}
 
 async def watch_async(target_path: Path):
     llm = get_llm_client()
@@ -99,11 +99,17 @@ async def watch_async(target_path: Path):
                 match change_type:
                     case Change.modified:
                         logger.info(f"File modified: {path}")
+                    case Change.added:
+                        logger.info(f"File added: {path}")
+                    case Change.deleted:
+                        logger.info(f"File deleted: {path}")
+                        # TODO: handle deletions in the db
                         
-                        new_task = asyncio.create_task(
-                            process_single_file(target_path, path, llm)
-                        )
-                        active_tasks[path] = new_task
+                new_task = asyncio.create_task(
+                    process_single_file(target_path, path, llm)
+                )
+                active_tasks[path] = new_task
+                
     except (KeyboardInterrupt, asyncio.CancelledError):
         logger.info("\n🛑 Stopping listener...")
 
@@ -112,25 +118,21 @@ async def process_single_file(project_dir: Path, filepath: Path, llm_client: Gem
     try:
         db = SQLiteCache(project_dir / ".toaster" / "cache.db")
         
-        registry = Registry(db=db, use_cache=True)
+        registry = Registry(db=db, use_cache=True, project_path=project_dir)
         parser = BaseParser(filepath, llm_client, registry)
         
         parser.parse_path(filepath)
         
         parser.resolve_dependencies()
-        logger.debug("✅ Resolved Dependencies")
-        # logger.trace(toast.dump_parser(parser))
-        # parser.load_cache()
-        # TODO: mark the descriptions as stale here
-        await asyncio.to_thread(parser.write_cache)
-        logger.debug("✅ Wrote Cache #1")
         
-        # now resolve the descriptions and do the second cache write
-        logger.debug("Resolving Descriptions...")
+        await asyncio.to_thread(registry.save_to_cache, stale=True)
+        logger.debug("Wrote Cache w/ stale descriptions")
+        
+        # resolve the descriptions and do the second cache write
         await parser.resolve_descriptions_async()
-        await asyncio.to_thread(parser.write_cache)
-        logger.debug("✅ Wrote Cache #2")
-        # logger.trace(toast.dump_parser(parser))
+        await asyncio.to_thread(registry.save_to_cache)
+        logger.debug("Wrote Cache w/ resolved descriptions")
+        
         logger.success(f"✅ Processed file {filepath}")
         
     except asyncio.CancelledError:

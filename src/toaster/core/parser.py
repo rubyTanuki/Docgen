@@ -17,7 +17,6 @@ class BaseParser(ABC):
     def __init__(self, project_dir: str, llm=None, registry: Registry=None):
         self.llm = llm
         self.registry = registry
-        self.project_path = Path(project_dir)
         self.path_ignore = ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster"]
     
     @property
@@ -41,25 +40,26 @@ class BaseParser(ABC):
     def parse_path(self, subpath: Path = None):
         if subpath.is_dir():
             logger.debug(f"🔍 Parsing files in '{subpath}'")
-            self.registry.root = Directory(path=subpath, registry=self.registry)
-            logger.debug(f"Created registry root: {self.registry.root}")
-            self.registry.add_struct(self.registry.root)
+            root = Directory(path=subpath, registry=self.registry)
+            self.registry.root = root
+            logger.debug(f"Created registry root: {root}")
+            self.registry.add_struct(root)
             for path in subpath.glob("*"):
                 if any(part in path.parts for part in self.path_ignore):
                     continue
                 if path.is_dir():
                     logger.debug(f"🔍 Parsing directory '{path}'")
-                    relative_path = path.resolve().relative_to(self.project_path.resolve())
-                    directory = Directory(path=relative_path, registry=self.registry, parent=self.registry.root)
+                    relative_path = path.resolve().relative_to(self.registry.project_path.resolve())
+                    directory = Directory(path=relative_path, registry=self.registry, parent=root)
                     self.registry.add_struct(directory)
-                    self.registry.root.add_child(directory)
+                    root.add_child(directory)
                     directory.parse_children()
                 else:
                     logger.debug(f"🔍 Parsing file '{path}'")
-                    file = self.parse_file(path, parent=self.registry.root)
+                    file = self.parse_file(path, parent=root)
                     if file:
                         self.registry.add_struct(file)
-                        self.registry.root.add_child(file)
+                        root.add_child(file)
         else:
             logger.debug(f"🔍 Parsing file '{subpath}'")
             file = self.parse_file(subpath)
@@ -100,6 +100,7 @@ class BaseParser(ABC):
     #     with open(toaster_dir / "skeleton.toast", "w") as file:
     #         file.write(toast_string)
             
-    def write_cache(self):
-        logger.debug("Writing AST to SQLite database...")
-        self.registry.save_to_cache()
+    # def write_cache(self, stale: bool = False):
+    #     logger.debug("Writing AST to SQLite database...")
+    #     self.registry.save_to_cache(stale=stale)
+        

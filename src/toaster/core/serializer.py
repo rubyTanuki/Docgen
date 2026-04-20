@@ -9,7 +9,7 @@ import json
 import textwrap
 from collections import defaultdict
 
-_INDENT_TAB = "      "
+_INDENT_TAB = "   "
 
 _LINE_WRAP_WIDTH = 90
 
@@ -45,7 +45,7 @@ class toast:
     def dump(
         cls, 
         obj: "BaseStruct", 
-        verbosity: Verbosity=Verbosity.SIMPLE, 
+        verbosity: Verbosity=Verbosity.VERBOSE, 
         indent: int = 0,
         include_body: bool = False, 
         pretty: bool = True
@@ -79,15 +79,22 @@ class toast:
                 else:
                     parts.append(f"// {obj.description}")
                     
-        if verbosity >= Verbosity.SIMPLE:
-            if obj.files:
-                for f in obj.files:
-                    parts.append(cls.dump_file(f, verbosity=verbosity, indent=indent+1, include_body=include_body, pretty=pretty))
-            
+        # if verbosity >= Verbosity.SIMPLE:
+        if obj.files:
+            for f in obj.files:
+                parts.append(cls.dump(f, verbosity=verbosity, indent=1, include_body=include_body, pretty=pretty))
+        if obj.directories:
+            for d in obj.directories:
+                parts.append(cls.dump(d, verbosity=verbosity, indent=1, pretty=pretty))
+        if obj.classes:
+            for c in obj.classes:
+                parts.append(cls.dump(c, child_verbosity, indent=1))
+        
+        if verbosity > Verbosity.HEADER:
             if obj.fields:
                 field_strings = []
                 for f in obj.fields:
-                    field_strings.append(cls.dump(f, verbosity=Verbosity.HEADER, indent=indent+1, pretty=pretty))
+                    field_strings.append(cls.dump(f, verbosity=child_verbosity, indent=indent+1, pretty=pretty))
                 if len(field_strings)>0:
                     parts.append("fields:\n" + "\n".join(field_strings))
             
@@ -110,11 +117,7 @@ class toast:
                 if rest_method_strings:
                     method_str += "\n\n" + "\n".join(rest_method_strings)
                 parts.append(method_str)
-            
-            if obj.classes:
-                for class_obj in obj.classes.values():
-                    parts.append(cls.dump(class_obj, max(child_verbosity, Verbosity.SKELETON), indent=indent+1))
-                
+               
         if verbosity >= Verbosity.VERBOSE:
             if obj.parent and obj.parent.uid:
                 parts.insert(0, f"/{obj.parent.uid}")

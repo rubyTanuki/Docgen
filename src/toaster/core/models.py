@@ -62,6 +62,10 @@ class BaseStruct(ABC):
         return self._all_children
     
     @property
+    def directories(self):
+        return [child for child in self.all_children if isinstance(child, Directory)]
+    
+    @property
     def files(self):
         return list(self.children.get("BaseFile", set()))
     
