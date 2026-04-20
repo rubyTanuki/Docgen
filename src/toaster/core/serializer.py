@@ -85,10 +85,10 @@ class toast:
                 parts.append(cls.dump(f, verbosity=verbosity, indent=1, include_body=include_body, pretty=pretty))
         if obj.directories:
             for d in obj.directories:
-                parts.append(cls.dump(d, verbosity=verbosity, indent=1, pretty=pretty))
+                parts.append('\n' +cls.dump(d, verbosity=verbosity, indent=1, pretty=pretty))
         if obj.classes:
             for c in obj.classes:
-                parts.append(cls.dump(c, child_verbosity, indent=1))
+                parts.append(cls.dump(c, child_verbosity, indent=1, pretty=pretty))
         
         if verbosity > Verbosity.HEADER:
             if obj.fields:
