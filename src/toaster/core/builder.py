@@ -40,8 +40,8 @@ class BaseStructBuilder(ABC):
 class BaseFileBuilder(BaseStructBuilder):
         
     def from_path(self, path: Path, parent: BaseStruct=None) -> BaseFile:
-        rel_path = self.registry.relative_to_project(Path(d.get("path", ".")))
-        logger.debug(f"Building File from path: {rel_path}")
+        rel_path = self.registry.relative_to_project(path)
+        # logger.debug(f"Building File from path: {rel_path}")
         file_obj = BaseFile(
             name=rel_path.name,
             uid=str(rel_path),
@@ -52,7 +52,7 @@ class BaseFileBuilder(BaseStructBuilder):
     
     def from_dict(self, d: dict) -> BaseFile:
         path = self.registry.relative_to_project(Path(d.get("path", ".")))
-        logger.debug(f"Building File from dict with uid: {d.get('uid', d['name'])}")
+        # logger.debug(f"Building File from dict with uid: {d.get('uid', d['name'])}")
         return BaseFile(
             uid=d.get("uid", str(d["path"])),
             name=d.get("name", Path(d["path"]).name),
@@ -73,7 +73,7 @@ class BaseCodeStructBuilder(BaseStructBuilder):
 class BaseClassBuilder(BaseCodeStructBuilder):
     def from_dict(self, d: dict) -> BaseClass:
         path = self.registry.relative_to_project(Path(d.get("path", ".")))
-        logger.debug(f"Building Class from dict with uid: {d.get('uid', d['name'])}")
+        # logger.debug(f"Building Class from dict with uid: {d.get('uid', d['name'])}")
         return BaseClass(
             uid=d.get("uid", d["name"]),
             name=d.get("name", Path(d["path"]).name),
@@ -94,7 +94,7 @@ class BaseClassBuilder(BaseCodeStructBuilder):
 class BaseMethodBuilder(BaseCodeStructBuilder):
     def from_dict(self, d: dict) -> BaseMethod:
         path = self.registry.relative_to_project(Path(d.get("path", ".")))
-        logger.debug(f"Building Method from dict with uid: {d.get('uid', d['name'])}")
+        # logger.debug(f"Building Method from dict with uid: {d.get('uid', d['name'])}")
         return BaseMethod(
             uid=d.get("uid", d["name"]),
             name=d.get("name", Path(d["path"]).name),
@@ -114,7 +114,7 @@ class BaseMethodBuilder(BaseCodeStructBuilder):
 class BaseFieldBuilder(BaseCodeStructBuilder):
     def from_dict(self, d: dict) -> BaseField:
         path = self.registry.relative_to_project(Path(d.get("path", ".")))
-        logger.debug(f"Building Field from dict with uid: {d.get('uid', d['name'])}")
+        # logger.debug(f"Building Field from dict with uid: {d.get('uid', d['name'])}")
         return BaseField(
             uid=d.get("uid", d["name"]),
             name=d.get("name", Path(d["path"]).name),
@@ -133,7 +133,7 @@ class BaseFieldBuilder(BaseCodeStructBuilder):
 class DirectoryBuilder(BaseStructBuilder):
     def from_dict(self, d: dict) -> Directory:
         path = self.registry.relative_to_project(Path(d.get("path", ".")))
-        logger.debug(f"Building Directory from dict with path: {path}")
+        # logger.debug(f"Building Directory from dict with path: {path}")
         return Directory(path=path, registry=self.registry)
 
     

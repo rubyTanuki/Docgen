@@ -94,10 +94,10 @@ class BaseStruct(ABC):
         elif isinstance(self.parent, str):
             edges.add((self.id, self.parent, "is_child_of"))
         
-        for child_set in self.children.values():
-            for child in child_set:
-                edges.update(child.edges)
-                edges.add((child.id, self.id, "contains"))
+        # for child_set in self.children.values():
+        #     for child in child_set:
+        #         edges.update(child.edges)
+        #         edges.add((child.id, self.id, "contains"))
         
         return edges
     
@@ -116,7 +116,13 @@ class BaseStruct(ABC):
             self.children[type_name] = set()
             
         self.children[type_name].add(child)
-        child.parent = self
+        child.set_parent(self)
+    
+    def set_parent(self, parent: "BaseStruct"):
+        if self is parent:
+            logger.warning(f"Attempted to set parent of {self} to itself. Skipping to avoid circular reference.")
+            return
+        self.parent = parent
     
     def add_dependency(self, target: "BaseStruct"):
         self.outbound_dependencies.add(target)

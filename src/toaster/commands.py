@@ -62,7 +62,10 @@ async def inspect_async(struct_id:str, project_path: Path, include_body: bool = 
     if struct_obj is None:
         raise StructNotFoundError(f"Struct not found with id {struct_id}.")
     
-    return toast.dump(struct_obj, verbosity=Verbosity.FULL, include_body=include_body, pretty=pretty)
+    logger.debug(f"{struct_obj.uid}'s children: {[str(child) for child in struct_obj.all_children]}")
+    
+    
+    return toast.dump(struct_obj, verbosity=Verbosity.VERBOSE, include_body=include_body, pretty=pretty)
     
 async def skeleton_async(subpath: str, project_path: Path, pretty: bool = True):
     _verify_db_exists(project_path)

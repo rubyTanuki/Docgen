@@ -16,9 +16,8 @@ _LINE_WRAP_WIDTH = 90
 class Verbosity(IntEnum):
     HEADER = 0
     SKELETON = 1
-    SIMPLE = 2
-    VERBOSE = 3
-    FULL = 4
+    VERBOSE = 2
+    FULL = 3
 
 class toast:
     
@@ -55,7 +54,7 @@ class toast:
         is_code_struct = isinstance(obj, BaseCodeStruct)
         is_directory = isinstance(obj, Directory)
         
-        child_verbosity = verbosity - 1 if not is_directory else verbosity
+        child_verbosity = verbosity - 1 # if not is_directory else verbosity
         
         max_lines = verbosity + 1
         if verbosity == Verbosity.FULL:
@@ -82,21 +81,34 @@ class toast:
         # if verbosity >= Verbosity.SIMPLE:
         if obj.files:
             for f in obj.files:
-                parts.append(cls.dump(f, verbosity=verbosity, indent=1, include_body=include_body, pretty=pretty))
+                parts.append(cls.dump(f, verbosity=child_verbosity, indent=1, include_body=include_body, pretty=pretty))
         if obj.directories:
             for d in obj.directories:
+                if d is obj:
+                    logger.warning(f"Skipping dumping directory {d} as it is the same as its parent {obj}, likely to avoid circular reference.")
+                    continue
                 parts.append('\n' +cls.dump(d, verbosity=verbosity, indent=1, pretty=pretty))
         if obj.classes:
             for c in obj.classes:
                 parts.append(cls.dump(c, child_verbosity, indent=1, pretty=pretty))
         
-        if verbosity > Verbosity.HEADER:
+        if verbosity > Verbosity.SKELETON:
             if obj.fields:
-                field_strings = []
-                for f in obj.fields:
-                    field_strings.append(cls.dump(f, verbosity=child_verbosity, indent=indent+1, pretty=pretty))
-                if len(field_strings)>0:
-                    parts.append("fields:\n" + "\n".join(field_strings))
+                sorted_fields = sorted(obj.fields, key=lambda f: f.impact_score, reverse=True)
+                n = 5
+                top_fields = sorted_fields[:n]
+                rest_fields = sorted_fields[n:]
+                
+                top_fields_strings = []
+                rest_fields_strings = []
+                for f in top_fields:
+                    top_fields_strings.append(cls.dump(f, verbosity=max(0, child_verbosity), indent=indent+1, pretty=pretty))
+                for f in rest_fields:
+                    rest_fields_strings.append(cls.dump(f, verbosity=Verbosity.HEADER, indent=indent+1, pretty=pretty))
+                field_str = "fields:\n" + "\n".join(top_fields_strings)
+                if rest_fields_strings:
+                    field_str += "\n" + "\n".join(rest_fields_strings)
+                parts.append(field_str)
             
             if obj.methods:
                 sorted_methods = sorted(obj.methods, key=lambda m: m.impact_score, reverse=True)
@@ -113,16 +125,27 @@ class toast:
                 for m in rest_methods:
                     rest_method_strings.append(cls.dump(m, verbosity=Verbosity.HEADER, indent=indent+1, pretty=pretty))
                     
-                method_str = "methods:\n" + "\n".join(top_method_strings)
+                method_str = "methods:" + "\n".join(top_method_strings)
                 if rest_method_strings:
                     method_str += "\n\n" + "\n".join(rest_method_strings)
                 parts.append(method_str)
                
-        if verbosity >= Verbosity.VERBOSE:
-            if obj.parent and obj.parent.uid:
-                parts.insert(0, f"/{obj.parent.uid}")
+        # if verbosity >= Verbosity.VERBOSE:
+        #     if obj.parent and obj.parent.uid:
+        #         parts.insert(0, f"/{obj.parent.uid}")
+        #     else:
+        #         parts.insert(0, f"/{obj.path}")
+        
+        if obj.inbound_dependency_strings:
+            if pretty:
+                parts.append(textwrap.fill(f"{', '.join(obj.inbound_dependency_strings)}", width=_LINE_WRAP_WIDTH-len(indent_str), initial_indent="<  ", subsequent_indent="   ", max_lines=max_lines, placeholder="..."))
             else:
-                parts.insert(0, f"/{obj.path}")
+                parts.append(f"< {', '.join(obj.inbound_dependency_strings)}")
+        if obj.outbound_dependency_strings:
+            if pretty:
+                parts.append(textwrap.fill(f"{', '.join(obj.outbound_dependency_strings)}", width=_LINE_WRAP_WIDTH-len(indent_str), initial_indent=">  ", subsequent_indent="   ", max_lines=max_lines, placeholder="..."))
+            else:
+                parts.append(f"> {', '.join(obj.outbound_dependency_strings)}")
                 
         if is_code_struct:
             if include_body and c.body:
