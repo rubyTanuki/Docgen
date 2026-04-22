@@ -17,7 +17,7 @@ class BaseParser(ABC):
     def __init__(self, project_dir: str, llm=None, registry: Registry=None):
         self.llm = llm
         self.registry = registry
-        self.path_ignore = ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster"]
+        self.path_ignore = ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster", ".git"]
     
     @property
     def files(self):
@@ -50,6 +50,7 @@ class BaseParser(ABC):
                 if path.is_dir():
                     logger.debug(f"🔍 Parsing directory '{path}'")
                     relative_path = path.resolve().relative_to(self.registry.project_path.resolve())
+                    # relative_path = self.registry.relative_to_project(path)
                     directory = Directory(path=relative_path, registry=self.registry, parent=root)
                     self.registry.add_struct(directory)
                     root.add_child(directory)

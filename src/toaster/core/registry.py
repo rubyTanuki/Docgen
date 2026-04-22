@@ -37,9 +37,18 @@ class Registry:
         return [x for x in self.uid_map.values() if isinstance(x, BaseField)]
     
     def relative_to_project(self, path: Path) -> Path:
-        if self.project_path:
+        if not self.project_path:
+            logger.warning("Project path not set in registry, returning original path")
+            return path
+        try:
             return path.resolve().relative_to(self.project_path.resolve())
-        return path
+        except ValueError:
+            import os
+            try:
+                return path.absolute().relative_to(self.project_path.absolute())
+            except ValueError:
+                # If path is truly outside the subpath or due to macOS symlink quirks, fallback to relpath
+                return Path(os.path.relpath(path.resolve(), self.project_path.resolve()))
     
     def add_struct(self, struct: BaseStruct):
         """ Adds a struct to the in-memory cache """

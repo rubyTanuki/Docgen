@@ -3,6 +3,7 @@ import asyncio
 from pathlib import Path
 from fastmcp import FastMCP
 from loguru import logger
+import os
 
 from toaster.exceptions import ToasterError
 
@@ -39,9 +40,31 @@ def _run_watcher_thread(target_path: Path):
         logger.info("Background watcher shut down cleanly.")
 
 @mcp.tool()
-async def init(workspace_path: str, use_cache: bool = True, write_skeleton: bool = True) -> str:
+async def init(workspace_path: str, use_cache: bool = True) -> str:
+    """
+    -- MUST BE RUN BEFORE ANY OTHER TOOL --
+    Initializes the Toaster MCP server for a specific project workspace. 
+    
+    Args:
+        workspace_path: The ABSOLUTE path to the project workspace. DO NOT use '.' or relative paths. If you only have a relative path, you must determine the absolute path of the current workspace first.
+        use_cache: Whether to use the existing AST cache.
+    """
+    
+    target_path = Path(workspace_path)
+    
+    if not target_path.is_absolute():
+        return (f"Error: workspace_path must be an absolute path. You provided '{workspace_path}'. "
+                f"Please determine the absolute path of the current workspace and try again.")
+    
+    target_path = target_path.resolve()
+    
+    try:
+        os.chdir(target_path)
+    except FileNotFoundError:
+        return f"Fatal Error: Workspace path does not exist: {target_path}"
+    
     global _is_initialized, _current_project_dir
-    project_dir = Path(workspace_path).resolve()
+    project_dir = target_path
     
     if _is_initialized and _current_project_dir == project_dir:
         return f"Status: Already initialized for {project_dir}."

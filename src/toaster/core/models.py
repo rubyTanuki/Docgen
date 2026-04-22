@@ -205,11 +205,11 @@ class Directory(BaseStruct):
             logger.error(f"{self} has no path")
             return
         for path in self.path.glob("*"):
-                if any(part in path.parts for part in ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster", ".DS_Store"]):
+                if any(part in path.parts for part in ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster", ".DS_Store", ".git"]):
                     continue
                 if path.is_dir():
                     logger.debug(f"🔍 Parsing directory '{path}'")
-                    relative_path = path.resolve().relative_to(self.project_path.resolve())
+                    relative_path = self.registry.relative_to_project(path)
                     directory = Directory(path=relative_path, registry=self.registry, parent=self)
                     self.registry.add_struct(directory)
                     self.add_child(directory)
