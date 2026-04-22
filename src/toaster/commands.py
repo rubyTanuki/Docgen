@@ -43,7 +43,7 @@ async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BasePar
     logger.success("✅ Parsed files")
     return parser
 
-async def init_async(target_path: Path, use_cache: bool = True, write_skeleton: bool = False):
+async def init_async(target_path: Path, use_cache: bool = True):
     """Core asynchronous logic for scraping and parsing."""
     
     # Parse and resolve AST
@@ -80,7 +80,7 @@ async def skeleton_async(subpath: str, project_path: Path, pretty: bool = True):
     if not registry.files:
         raise FileNotFoundError(f"No files found matching path '{subpath}'.")
     
-    return toast.dump(registry.root, verbosity=Verbosity.SKELETON, pretty=pretty)
+    return toast.dump_skeleton(registry.root, pretty=pretty)
 
 active_tasks = {}
 

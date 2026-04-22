@@ -13,7 +13,7 @@ from toaster.commands import (
     watch_async,
     clean_db
 )
-from toaster.core.logger import configure_mcp_logging
+from toaster.core.logger import configure_mcp_logging, configure_cli_logging
 
 _is_initialized = False
 _current_project_dir = None
@@ -49,7 +49,7 @@ async def init(workspace_path: str, use_cache: bool = True, write_skeleton: bool
     try:
         configure_mcp_logging(project_dir)
         
-        await init_async(project_dir, use_cache, write_skeleton)
+        await init_async(project_dir, use_cache)
 
         watcher_thread = threading.Thread(
             target=_run_watcher_thread,
@@ -115,7 +115,7 @@ async def skeleton(subpath: str) -> str:
         return "Error: Toaster is not initialized. You must call 'init' with the absolute workspace path before querying the database."
     
     try:
-        result = await skeleton_async(subpath, _current_project_dir)
+        result = await skeleton_async(subpath, _current_project_dir, pretty=False)
         return str(result)
     except ToasterError as e:
         return f"Error: {e}"

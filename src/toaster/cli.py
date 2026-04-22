@@ -118,13 +118,6 @@ def init(
             help="Load cache if it exists"
             )
         ] = True,
-    write_skeleton: Annotated[
-        bool, 
-        typer.Option(
-            "--skeleton/--no-skeleton", 
-            help="Build skeleton if it doesn't exist"
-            )
-    ] = True,
     debug: Annotated[
         bool, 
         typer.Option(
@@ -138,7 +131,7 @@ def init(
     configure_cli_logging(debug)
     start_time = time.perf_counter()
     try:
-        asyncio.run(init_async(path, use_cache, write_skeleton))
+        asyncio.run(init_async(path, use_cache))
     except ToasterError as e:
         typer.secho(f"❌ Error: {e}", fg="red", err=True)
         raise typer.Exit(code=1)

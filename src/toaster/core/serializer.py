@@ -11,7 +11,7 @@ from collections import defaultdict
 
 _INDENT_TAB = "   "
 
-_LINE_WRAP_WIDTH = 90
+_LINE_WRAP_WIDTH = 120
 
 class Verbosity(IntEnum):
     HEADER = 0
@@ -21,24 +21,33 @@ class Verbosity(IntEnum):
 
 class toast:
     
-    # @classmethod
-    # def is_serializable(cls, obj) -> bool:
-    #     # return isinstance(obj, (BaseFile, BaseClass, BaseMethod, BaseField))
-    #     return True
-    
-    # @classmethod
-    # def dumps(cls, obj: "BaseStruct", verbosity: Verbosity=Verbosity.SIMPLE, include_body: bool = False, pretty: bool = True) -> str:
-    #     match obj:
-    #         case BaseFile():
-    #             return cls.dump_file(obj, verbosity=verbosity, include_body=include_body, pretty=pretty)
-    #         case BaseClass():
-    #             return cls.dump_class(obj, verbosity=verbosity, include_body=include_body, pretty=pretty)
-    #         case BaseMethod():
-    #             return cls.dump_method(obj, verbosity=verbosity, include_body=include_body, pretty=pretty)
-    #         case BaseField():
-    #             return cls.dump_field(obj, verbosity=verbosity, include_body=include_body, pretty=pretty)
-    #         case _:
-    #             raise TypeError(f"Unsupported type: {type(obj)}")
+    @classmethod
+    def dump_skeleton(
+        cls, 
+        obj: "BaseStruct",
+        # indent: int = 0,
+        pretty: bool = True
+    ) -> str:
+        indent_str = _INDENT_TAB if pretty else ""
+        parts = []
+        
+        header_str = f"{obj.id} | {obj.uid}"
+        parts.append(header_str)
+        
+        if obj.files:
+            for f in obj.files:
+                parts.append(cls.dump_skeleton(f, pretty=pretty))
+        if obj.directories:
+            for d in obj.directories:
+                if d is obj:
+                    logger.warning(f"Skipping dumping directory {d} as it is the same as its parent {obj}, likely to avoid circular reference.")
+                    continue
+                parts.append('\n' + cls.dump_skeleton(d, pretty=pretty))
+        if obj.classes:
+            for c in obj.classes:
+                parts.append(cls.dump_skeleton(c, pretty=pretty))
+                
+        return textwrap.indent("\n".join(parts), indent_str)
     
     @classmethod
     def dump(
@@ -53,12 +62,13 @@ class toast:
         
         is_code_struct = isinstance(obj, BaseCodeStruct)
         is_directory = isinstance(obj, Directory)
+        is_file = isinstance(obj, BaseFile)
         
         child_verbosity = verbosity - 1 # if not is_directory else verbosity
         
-        max_lines = verbosity + 1
-        if verbosity == Verbosity.FULL:
-            max_lines = 10000
+        max_lines = 5
+        # if verbosity == Verbosity.FULL:
+        #     max_lines = 10000
             
         indent_str = _INDENT_TAB*indent if pretty else ""
         parts = []
@@ -66,7 +76,10 @@ class toast:
         # HEADER
         header_str = f"{obj.id}"
         if is_code_struct:
-            header_str += f" @L{obj.start_line}-{obj.end_line} | {obj.signature}"
+            if obj.start_line != obj.end_line:
+                header_str += f" @L{obj.start_line}-{obj.end_line} | {obj.signature}"
+            else:
+                header_str += f" @L{obj.start_line} | {obj.signature}"
         else:
             header_str += f" | {obj.uid}"
         parts.append(header_str)
@@ -81,7 +94,7 @@ class toast:
         # if verbosity >= Verbosity.SIMPLE:
         if obj.files:
             for f in obj.files:
-                parts.append(cls.dump(f, verbosity=child_verbosity, indent=1, include_body=include_body, pretty=pretty))
+                parts.append(cls.dump(f, verbosity=verbosity, indent=1, include_body=include_body, pretty=pretty))
         if obj.directories:
             for d in obj.directories:
                 if d is obj:
@@ -91,6 +104,23 @@ class toast:
         if obj.classes:
             for c in obj.classes:
                 parts.append(cls.dump(c, child_verbosity, indent=1, pretty=pretty))
+        # if verbosity >= Verbosity.VERBOSE:
+        #     if obj.parent and obj.parent.uid:
+        #         parts.insert(0, f"/{obj.parent.uid}")
+        #     else:
+        #         parts.insert(0, f"/{obj.path}")
+        
+        if verbosity >= Verbosity.VERBOSE and not is_file:
+            if obj.inbound_dependency_strings:
+                if pretty:
+                    parts.append(textwrap.fill(f"{', '.join(obj.inbound_dependency_strings)}", width=_LINE_WRAP_WIDTH-len(indent_str), initial_indent="<  ", subsequent_indent="   ", max_lines=max_lines, placeholder="..."))
+                else:
+                    parts.append(f"< {', '.join(obj.inbound_dependency_strings)}")
+            if obj.outbound_dependency_strings:
+                if pretty:
+                    parts.append(textwrap.fill(f"{', '.join(obj.outbound_dependency_strings)}", width=_LINE_WRAP_WIDTH-len(indent_str), initial_indent=">  ", subsequent_indent="   ", max_lines=max_lines, placeholder="..."))
+                else:
+                    parts.append(f"> {', '.join(obj.outbound_dependency_strings)}")
         
         if verbosity > Verbosity.SKELETON:
             if obj.fields:
@@ -129,27 +159,10 @@ class toast:
                 if rest_method_strings:
                     method_str += "\n\n" + "\n".join(rest_method_strings)
                 parts.append(method_str)
-               
-        # if verbosity >= Verbosity.VERBOSE:
-        #     if obj.parent and obj.parent.uid:
-        #         parts.insert(0, f"/{obj.parent.uid}")
-        #     else:
-        #         parts.insert(0, f"/{obj.path}")
         
-        if obj.inbound_dependency_strings:
-            if pretty:
-                parts.append(textwrap.fill(f"{', '.join(obj.inbound_dependency_strings)}", width=_LINE_WRAP_WIDTH-len(indent_str), initial_indent="<  ", subsequent_indent="   ", max_lines=max_lines, placeholder="..."))
-            else:
-                parts.append(f"< {', '.join(obj.inbound_dependency_strings)}")
-        if obj.outbound_dependency_strings:
-            if pretty:
-                parts.append(textwrap.fill(f"{', '.join(obj.outbound_dependency_strings)}", width=_LINE_WRAP_WIDTH-len(indent_str), initial_indent=">  ", subsequent_indent="   ", max_lines=max_lines, placeholder="..."))
-            else:
-                parts.append(f"> {', '.join(obj.outbound_dependency_strings)}")
-                
         if is_code_struct:
-            if include_body and c.body:
-                parts.append(f"```\n{c.body}\n```")
+            if include_body and obj.body:
+                parts.append(f"```\n{obj.body}\n```")
             
         return textwrap.indent("\n".join(parts), indent_str)
     
