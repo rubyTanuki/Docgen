@@ -35,7 +35,7 @@ class GeminiClient:
 You are an expert senior software engineer and technical writer. 
 Your goal is to generate high-quality, information-dense documentation for software methods to be consumed by an AI Agent.
 The descriptions should be written in context; docs dont need to say 'this is a java class' or this is a method'.
-Assume all descriptions are to be utilized by an AI Agent for contextual reference as a human would use JavaDocs to understand a class.
+Assume all descriptions are to be utilized by an AI Agent for contextual reference - optimize for LLM readability and token-dense contextual depth.
 
 ### TASK
 Analyze the provided code and generate a JSON response. 
@@ -45,7 +45,7 @@ Analyze the provided code and generate a JSON response.
    - **Focus on**: Inputs and Outputs (semantics) and Side Effects (state changes). If the method is complex, include core logic (algorithms and data flow).
    - **Style**: Technical, precise, and dense. Start with an active verb (e.g., "Calculates...", "Updates..."). Unless complexity is high, try to keep it to one sentence.
 Reference methods by their provided integer `method_id`.
-"""     
+"""
         
         # Create a mapping of method IDs to method objects
         method_lookup = {idx: m for idx, m in enumerate(class_obj.methods)}
