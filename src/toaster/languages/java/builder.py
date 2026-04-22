@@ -302,5 +302,6 @@ class JavaFieldBuilder(BaseFieldBuilder):
 
 class JavaEnumBuilder(JavaClassBuilder):
     def from_node(self, node: Node, parent: BaseStruct=None) -> BaseClass:
-        super().from_node(node, parent)
+        # super().from_node(node, parent)
+        return None
         # TODO: extract enum values and add them to enum_constants in a class
