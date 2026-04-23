@@ -18,6 +18,8 @@ from toaster.mcp import mcp
 
 from toaster.core.logger import configure_cli_logging
 
+import multiprocessing
+
 
 # Initialize the Typer app
 app = typer.Typer(
@@ -240,4 +242,5 @@ def skeleton(
     logger.debug(f"Finished in {elapsed_time:.4f} seconds.")
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     app()
