@@ -36,17 +36,17 @@ Before being able to use Tostr, the repository must be initialized using the CLI
 
 To manually initialize the repository, cd to the root of the project and run:
 ```
-% Tostr init . --ignore 'default'
+% tostr init . --ignore 'default'
 ```
 <!--
 This creates the .Tostr directory and initializes the default *.toastignore* to exclude environment files, node_modules, build artifacts, and other files which are not needed in the project AST
 
-In the */.Tostr* directory, you will also find the *config.toml* file to configure the other adjustable parameters (The full list of configuration parameters can be found ***Here***)
+In the */.tostr* directory, you will also find the *config.toml* file to configure the other adjustable parameters (The full list of configuration parameters can be found ***Here***)
 -->
 ## Parsing the project
 Once the project itself is initialized and configured, the AST cache has to be initialized. To do this manually, cd to the project root (where you initialized the .Tostr files) and run:
 ```
-% Tostr parse .
+% tostr parse .
 ```
 This will take anywhere from a few seconds to a few minutes depending on the size of your repository, as the CLI parses the repository using tree-sitter, then passes the AST concurrently to your configured LLM provider for describing and embedding. Projects with particularly large individual classes will take longer to parse, since the description generation is blocked by class.
 > The time it takes to parse during this step is one time per project, as the incremental diffing allows further parses to only update the cache invalidations
@@ -58,13 +58,13 @@ Now that the project is initialized and parsed, Tostr is ready to go!
 ### Project Skeleton
 To test it, navigate to the project root and run:
 ```
-% Tostr skeleton . --depth 1
+% tostr skeleton . --depth 1
 ```
 You should see Tostr print the AST skeleton of your root and its direct children directories to your console. 
 > The 'depth' parameter can be adjusted to determine how many layers into the file tree should be skeletonized and printed (default is infinite, or the whole subtree of the path provided)
 
 ```
-% Tostr skeleton . --depth 1
+% tostr skeleton . --depth 1
 
 /src/project/foo.py
     C-1234 | class Foo(Bar)
@@ -84,7 +84,7 @@ You should see Tostr print the AST skeleton of your root and its direct children
 Each of the structs (files, classes, methods) can be inspected further to see more details about them:
 
 ```
-% Tostr inspect 'C-1234' --pretty
+% tostr inspect 'C-1234' --pretty
 
 /src/project/foo.py
 C-1234 | class Foo(Bar)
@@ -111,7 +111,7 @@ You can also use flags to expand the detail of the output:
 *  `-r` / `--raw`: Disables pretty printing, or the indentation and line-wrapping configured in `.Tostr/config.toml`. Pretty printing is active by default for CLI commands but inactive for MCP commands.
 
 ```
-% Tostr inspect 'M-12345' -v -b
+% tostr inspect 'M-12345' -v -b
 /src/project/foo.py
 C-1234 | Project.Foo
 M-12345 @L10-20 | def async foobar(num1: int = 0) -> int
