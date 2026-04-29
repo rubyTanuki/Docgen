@@ -1,7 +1,7 @@
-# Contributing to Toaster
-First off, thank you for considering contributing to Toaster!
+# Contributing to Tostr
+First off, thank you for considering contributing to Tostr!
 
-Since Toaster is designed to be a robust infrastructure tool for optimizing LLM interactions, we aim to maintain a clean, strictly organized, and well-tested codebase. This document outlines the process for contributing to the project.
+Since Tostr is designed to be a robust infrastructure tool for optimizing LLM interactions, we aim to maintain a clean, strictly organized, and well-tested codebase. This document outlines the process for contributing to the project.
 
 <!--
 Table of Contents
@@ -25,8 +25,8 @@ To get your local environment set up for development:
 2. **Clone your fork locally:**
 
 ```bash
-git clone https://github.com/rubytanuki/Toaster.git
-cd toaster
+git clone https://github.com/rubytanuki/Tostr.git
+cd Tostr
 ```
 
 **Set up a virtual environment (recommended) and install the dependencies:**
@@ -58,7 +58,7 @@ git checkout -b REFACTOR/your-refactor
 ```
 
 ## Coding Standards & Architecture
-While Toaster is built in Python, we prefer to rein in Python's inherent "freedom" in favor of strict, predictable, and verbose architecture. It is better for maintainability to treat the codebase closer to how one might approach Java or C#.
+While Tostr is built in Python, we prefer to rein in Python's inherent "freedom" in favor of strict, predictable, and verbose architecture. It is better for maintainability to treat the codebase closer to how one might approach Java or C#.
 
 When contributing, please adhere to the following:
 
