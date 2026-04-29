@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from toaster.core.models import *
+from tostr.core.models import *
 
 if TYPE_CHECKING:
-    from toaster.core.registry import Registry
+    from tostr.core.registry import Registry
 
 class BaseBuilder(ABC):
     def __init__(self, registry: Registry):

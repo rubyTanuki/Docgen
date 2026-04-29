@@ -5,16 +5,16 @@ from fastmcp import FastMCP
 from loguru import logger
 import os
 
-from toaster.exceptions import ToasterError
+from tostr.exceptions import ToasterError
 
-from toaster.commands import (
+from tostr.commands import (
     init_async, 
     inspect_async, 
     skeleton_async, 
     watch_async,
     clean_db
 )
-from toaster.core.logger import configure_mcp_logging, configure_cli_logging
+from tostr.core.logger import configure_mcp_logging, configure_cli_logging
 
 _is_initialized = False
 _current_project_dir = None
@@ -84,7 +84,7 @@ async def init(workspace_path: str, use_cache: bool = True) -> str:
         _is_initialized = True
         _current_project_dir = project_dir
         
-        return f"Success: Toaster initialized. Cache is built at {project_dir}/.toaster/cache.db. Background watcher is now actively listening on {project_dir}"
+        return f"Success: Toaster initialized. Cache is built at {project_dir}/.tostr/cache.db. Background watcher is now actively listening on {project_dir}"
         
     except Exception as e:
         return f"Fatal Error Initializing Toaster: {str(e)}"
@@ -126,7 +126,7 @@ async def clean(workspace_path: str) -> str:
 @mcp.tool()
 async def skeleton(subpath: str) -> str:
     """
-    Output the .toast skeleton format for all files matching a specific subpath.
+    Output the .tost skeleton format for all files matching a specific subpath.
     Use this to understand the high-level architecture, classes, and function signatures of a file or directory without reading the full code.
     
     Args:

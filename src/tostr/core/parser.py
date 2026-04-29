@@ -7,17 +7,17 @@ import time
 from collections import deque
 from loguru import logger
 
-from toaster.core.models import BaseFile, Directory
-from toaster.core.registry import Registry
-from toaster.core.serializer import toast, Verbosity
-from toaster.core.providers import StructBuilderProvider
-from toaster.exceptions import LanguageNotSupportedError
+from tostr.core.models import BaseFile, Directory
+from tostr.core.registry import Registry
+from tostr.core.serializer import tost, Verbosity
+from tostr.core.providers import StructBuilderProvider
+from tostr.exceptions import LanguageNotSupportedError
 
 class BaseParser(ABC):
     def __init__(self, project_dir: str, llm=None, registry: Registry=None):
         self.llm = llm
         self.registry = registry
-        self.path_ignore = ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster", ".git"]
+        self.path_ignore = ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".tostr", ".git"]
     
     @property
     def files(self):
@@ -95,11 +95,11 @@ class BaseParser(ABC):
         
         
     # def write_skeleton(self):
-    #     toast_string = toast.dump_parser(self, verbosity=Verbosity.SIMPLE)
-    #     toaster_dir = self.path / ".toaster"
-    #     toaster_dir.mkdir(exist_ok=True)
-    #     with open(toaster_dir / "skeleton.toast", "w") as file:
-    #         file.write(toast_string)
+    #     tost_string = tost.dump_parser(self, verbosity=Verbosity.SIMPLE)
+    #     tostr_dir = self.path / ".tostr"
+    #     tostr_dir.mkdir(exist_ok=True)
+    #     with open(tostr_dir / "skeleton.tost", "w") as file:
+    #         file.write(tost_string)
             
     # def write_cache(self, stale: bool = False):
     #     logger.debug("Writing AST to SQLite database...")

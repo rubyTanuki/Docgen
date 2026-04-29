@@ -39,10 +39,10 @@ def configure_mcp_logging(project_dir: Path | str):
     Configures the global logger. Call this exactly once at the entry point of your CLI/MCP server.
     """
     project_path = Path(project_dir)
-    log_dir = project_path / ".toaster"
+    log_dir = project_path / ".tostr"
     log_dir.mkdir(exist_ok=True)
     
-    log_file = log_dir / "toaster.log"
+    log_file = log_dir / "tostr.log"
 
     # Remove any existing logger outputs
     logger.remove()

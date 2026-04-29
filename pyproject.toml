@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "toaster"
+name = "tostr"
 version = "0.1.0"
-description = "Token-Optimized AST Generator"
+description = "Token-Optimized Syntax Tree String IR Generator"
 dependencies = [
     "tree-sitter",
     "tree-sitter-java",
@@ -20,4 +20,4 @@ dependencies = [
 ]
 
 [project.scripts]
-toaster = "toaster.cli:app"
+tostr = "tostr.cli:app"

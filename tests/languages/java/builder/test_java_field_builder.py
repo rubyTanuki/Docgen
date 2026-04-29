@@ -3,10 +3,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from tree_sitter import Parser
-from toaster.languages.java.language import JAVA_LANGUAGE
-from toaster.core.registry import Registry
-from toaster.core.models import BaseClass, BaseField
-from toaster.languages.java.builder import JavaFieldBuilder
+from tostr.languages.java.language import JAVA_LANGUAGE
+from tostr.core.registry import Registry
+from tostr.core.models import BaseClass, BaseField
+from tostr.languages.java.builder import JavaFieldBuilder
 
 @pytest.fixture(scope="session")
 def java_parser():
@@ -23,8 +23,8 @@ def mock_registry():
 def mock_parent_class():
     """Mocks the BaseClass parent needed for UID generation."""
     mock_cls = MagicMock(spec=BaseClass)
-    mock_cls.uid = "src/main/java/com/toaster/Constants.java#Constants"
-    mock_cls.path = Path("src/main/java/com/toaster/Constants.java")
+    mock_cls.uid = "src/main/java/com/tostr/Constants.java#Constants"
+    mock_cls.path = Path("src/main/java/com/tostr/Constants.java")
     mock_cls.__class__ = BaseClass 
     return mock_cls
 
@@ -69,7 +69,7 @@ def test_java_field_builder_extracts_fields(java_parser, mock_registry, mock_par
     assert "This comment should be ignored" not in tau_field.signature
     
     # UID Test (Ensuring NO type information is appended to fields)
-    expected_tau_uid = "src/main/java/com/toaster/Constants.java#Constants.TAU"
+    expected_tau_uid = "src/main/java/com/tostr/Constants.java#Constants.TAU"
     assert tau_field.uid == expected_tau_uid, f"Expected '{expected_tau_uid}', got '{tau_field.uid}'"
 
 
@@ -83,5 +83,5 @@ def test_java_field_builder_extracts_fields(java_parser, mock_registry, mock_par
     expected_users_sig = "private List<String> activeUsers"
     assert users_field.signature == expected_users_sig
     
-    expected_users_uid = "src/main/java/com/toaster/Constants.java#Constants.activeUsers"
+    expected_users_uid = "src/main/java/com/tostr/Constants.java#Constants.activeUsers"
     assert users_field.uid == expected_users_uid

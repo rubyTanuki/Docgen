@@ -1,6 +1,6 @@
 from typing import List
 
-from toaster.core.models import *
+from tostr.core.models import *
 
 from enum import IntEnum
 from loguru import logger
@@ -19,7 +19,7 @@ class Verbosity(IntEnum):
     VERBOSE = 2
     FULL = 3
 
-class toast:
+class tost:
     
     @classmethod
     def dump_skeleton(

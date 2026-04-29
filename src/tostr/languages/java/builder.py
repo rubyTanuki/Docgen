@@ -2,11 +2,11 @@ from tree_sitter import Parser, Node, Query, QueryCursor
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from toaster.core.registry import Registry
-from toaster.languages.java.language import JAVA_LANGUAGE
-from toaster.core.builder import BaseBuilder, BaseFileBuilder, BaseClassBuilder, BaseMethodBuilder, BaseFieldBuilder
-from toaster.languages.java.queries import DEPENDENCY_QUERY
-from toaster.core.models import *
+from tostr.core.registry import Registry
+from tostr.languages.java.language import JAVA_LANGUAGE
+from tostr.core.builder import BaseBuilder, BaseFileBuilder, BaseClassBuilder, BaseMethodBuilder, BaseFieldBuilder
+from tostr.languages.java.queries import DEPENDENCY_QUERY
+from tostr.core.models import *
 
 class JavaBuilder(BaseBuilder):
     

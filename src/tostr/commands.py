@@ -8,14 +8,14 @@ from typing import Annotated
 from watchfiles import awatch, Change
 from loguru import logger
 
-from toaster.llm import GeminiClient
-from toaster.core import Registry, toast, Verbosity, BaseParser, SQLiteCache
+from tostr.llm import GeminiClient
+from tostr.core import Registry, tost, Verbosity, BaseParser, SQLiteCache
 
-from toaster.exceptions import APIKeyError, StructNotFoundError, ResolveError, DatabaseNotFoundError, TargetFileNotFoundError
+from tostr.exceptions import APIKeyError, StructNotFoundError, ResolveError, DatabaseNotFoundError, TargetFileNotFoundError
 
 def _verify_db_exists(target_path: Path):
     if not os.path.exists(target_path):
-        raise DatabaseNotFoundError("Database not found. Run 'toaster init' first.")
+        raise DatabaseNotFoundError("Database not found. Run 'tostr init' first.")
 
 def get_llm_client():
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -25,15 +25,15 @@ def get_llm_client():
     return GeminiClient(api_key=GEMINI_API_KEY)
 
 def clean_db(target_path: Path):
-    if os.path.exists(target_path / ".toaster"):
-        shutil.rmtree(target_path / ".toaster")
+    if os.path.exists(target_path / ".tostr"):
+        shutil.rmtree(target_path / ".tostr")
         logger.info("Database cleaned.")
     else:
         logger.warning("No database found to clean.")
 
 async def _build_ast_async(target_path: Path, use_cache: bool = True) -> BaseParser:
     llm = get_llm_client()
-    db = SQLiteCache(target_path / ".toaster" / "cache.db")
+    db = SQLiteCache(target_path / ".tostr" / "cache.db")
     registry = Registry(use_cache=use_cache, db=db, project_path=target_path)
     logger.info("Building AST...")
     
@@ -55,7 +55,7 @@ async def init_async(target_path: Path, use_cache: bool = True):
 async def inspect_async(struct_id:str, project_path: Path, include_body: bool = False, pretty: bool = True):
     _verify_db_exists(project_path)
     
-    db = SQLiteCache(project_path / ".toaster" / "cache.db")
+    db = SQLiteCache(project_path / ".tostr" / "cache.db")
     
     registry = Registry(db=db, use_cache=True, project_path=project_path)
     struct_obj = registry.get_struct_by_id(struct_id)
@@ -65,12 +65,12 @@ async def inspect_async(struct_id:str, project_path: Path, include_body: bool = 
     logger.debug(f"{struct_obj.uid}'s children: {[str(child) for child in struct_obj.all_children]}")
     
     
-    return toast.dump(struct_obj, verbosity=Verbosity.VERBOSE, include_body=include_body, pretty=pretty)
+    return tost.dump(struct_obj, verbosity=Verbosity.VERBOSE, include_body=include_body, pretty=pretty)
     
 async def skeleton_async(subpath: str, project_path: Path, pretty: bool = True):
     _verify_db_exists(project_path)
     
-    db = SQLiteCache(project_path / ".toaster" / "cache.db")
+    db = SQLiteCache(project_path / ".tostr" / "cache.db")
     registry = Registry(db=db, project_path=project_path)
     
     subpath = Path(project_path / subpath)
@@ -82,7 +82,7 @@ async def skeleton_async(subpath: str, project_path: Path, pretty: bool = True):
     if not registry.files:
         raise FileNotFoundError(f"No files found matching path '{subpath}'.")
     
-    return toast.dump_skeleton(registry.root, pretty=pretty)
+    return tost.dump_skeleton(registry.root, pretty=pretty)
 
 active_tasks = {}
 
@@ -94,7 +94,7 @@ async def watch_async(target_path: Path):
         async for changes in awatch(target_path):
             for change_type, path in changes:
                 path = Path(path).relative_to(target_path)
-                if ".toaster" in str(path):
+                if ".tostr" in str(path):
                     continue
                 
                 existing_task = active_tasks.get(path)
@@ -121,7 +121,7 @@ async def watch_async(target_path: Path):
 async def process_single_file(project_dir: Path, filepath: Path, llm_client: GeminiClient):
     logger.info(f"Processing file {filepath}")
     try:
-        db = SQLiteCache(project_dir / ".toaster" / "cache.db")
+        db = SQLiteCache(project_dir / ".tostr" / "cache.db")
         
         registry = Registry(db=db, use_cache=True, project_path=project_dir)
         parser = BaseParser(filepath, llm_client, registry)

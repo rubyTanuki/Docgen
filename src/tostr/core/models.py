@@ -9,11 +9,11 @@ from importlib import import_module
 from pathlib import Path
 
 from loguru import logger
-from toaster.core.providers import StructBuilderProvider
-from toaster.exceptions import LanguageNotSupportedError
+from tostr.core.providers import StructBuilderProvider
+from tostr.exceptions import LanguageNotSupportedError
 
 if TYPE_CHECKING:
-    from toaster.core.registry import Registry
+    from tostr.core.registry import Registry
 
 @dataclass(eq=False)
 class BaseStruct(ABC):
@@ -205,7 +205,7 @@ class Directory(BaseStruct):
             logger.error(f"{self} has no path")
             return
         for path in self.path.glob("*"):
-                if any(part in path.parts for part in ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster", ".DS_Store", ".git"]):
+                if any(part in path.parts for part in ["venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".tostr", ".DS_Store", ".git"]):
                     continue
                 if path.is_dir():
                     logger.debug(f"🔍 Parsing directory '{path}'")
@@ -330,7 +330,7 @@ class BaseClass(BaseCodeStruct):
             
             rel_start = child.node.start_byte - start_byte
             rel_end = child.node.end_byte - start_byte
-            method_skeleton = toast.dump(child, verbosity=toast.VERBOSITY.SKELETON, pretty=False)
+            method_skeleton = tost.dump(child, verbosity=tost.VERBOSITY.SKELETON, pretty=False)
             skeleton_bytes = method_skeleton.encode('utf-8')
             result_bytes = result_bytes[:rel_start] + skeleton_bytes + result_bytes[rel_end:]
             

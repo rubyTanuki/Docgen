@@ -3,10 +3,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from tree_sitter import Parser
-from toaster.languages.java.language import JAVA_LANGUAGE
-from toaster.core.registry import Registry
-from toaster.core.models import BaseFile, BaseClass, BaseMethod, BaseField
-from toaster.languages.java.builder import JavaClassBuilder
+from tostr.languages.java.language import JAVA_LANGUAGE
+from tostr.core.registry import Registry
+from tostr.core.models import BaseFile, BaseClass, BaseMethod, BaseField
+from tostr.languages.java.builder import JavaClassBuilder
 
 @pytest.fixture(scope="session")
 def java_parser():
@@ -24,8 +24,8 @@ def mock_registry():
 def mock_parent_file():
     """Mocks the BaseFile parent needed for UID generation."""
     mock_file = MagicMock(spec=BaseFile)
-    mock_file.uid = "src/main/java/com/toaster/DataProcessor.java"
-    mock_file.path = Path("src/main/java/com/toaster/DataProcessor.java")
+    mock_file.uid = "src/main/java/com/tostr/DataProcessor.java"
+    mock_file.path = Path("src/main/java/com/tostr/DataProcessor.java")
     # Tell isinstance(parent, BaseFile) to return True
     mock_file.__class__ = BaseFile 
     return mock_file
@@ -65,7 +65,7 @@ def test_java_class_builder_extracts_complex_class(java_parser, mock_registry, m
 
     # 1. Test BaseStruct Properties
     assert class_obj.name == "DataProcessor"
-    assert class_obj.uid == "src/main/java/com/toaster/DataProcessor.java#DataProcessor"
+    assert class_obj.uid == "src/main/java/com/tostr/DataProcessor.java#DataProcessor"
     assert class_obj.parent == mock_parent_file
 
     # 2. Test Signature Extraction

@@ -2,7 +2,7 @@ from pathlib import Path
 from importlib import import_module
 from loguru import logger
 
-from toaster.exceptions import LanguageNotSupportedError
+from tostr.exceptions import LanguageNotSupportedError
 
 class StructBuilderProvider:
     builder_map = {
@@ -12,7 +12,7 @@ class StructBuilderProvider:
     @classmethod
     def get_builder(cls, ext: str, registry: "MemberRegistry") -> "BaseBuilder":
         if ext in cls.builder_map:
-            package = f"toaster.languages.{cls.builder_map[ext][0]}"
+            package = f"tostr.languages.{cls.builder_map[ext][0]}"
             class_name = cls.builder_map[ext][1]
             class_ref = getattr(import_module(package), class_name)
             return class_ref(registry)
@@ -23,9 +23,9 @@ class StructBuilderProvider:
 
 # class ParserProvider:
 #     parser_map = {
-#         ".java": "toaster.languages.java.JavaParser",
-#         ".cs": "toaster.languages.csharp.CSharpParser",
-#         ".py": "toaster.languages.python.PythonParser"
+#         ".java": "tostr.languages.java.JavaParser",
+#         ".cs": "tostr.languages.csharp.CSharpParser",
+#         ".py": "tostr.languages.python.PythonParser"
 #     }
     
 #     @classmethod
@@ -34,7 +34,7 @@ class StructBuilderProvider:
 #             found_ext = path.suffix
 #         else:
 #             # Look for supported files, but ignore common noise directories
-#             ignore_list = {"venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".toaster"}
+#             ignore_list = {"venv", ".venv", "env", ".env", "build", "dist", "__pycache__", ".tostr"}
 #             found_ext = None
 #             for file in path.rglob("*"):
 #                 if file.suffix in cls.parser_map:
@@ -57,21 +57,21 @@ class StructBuilderProvider:
 # class StructProvider:
 #     struct_map = {
 #         ".java": {
-#             "module": "toaster.languages.java.models",
+#             "module": "tostr.languages.java.models",
 #             "file": "JavaFile",
 #             "class": "JavaClass",
 #             "method": "JavaMethod",
 #             "field": "JavaField",
 #         },
 #         ".cs": {
-#             "module": "toaster.languages.csharp.models",
+#             "module": "tostr.languages.csharp.models",
 #             "file": "CSharpFile",
 #             "class": "CSharpClass",
 #             "method": "CSharpMethod",
 #             "field": "CSharpField",
 #         },
 #         ".py": {
-#             "module": "toaster.languages.python.models",
+#             "module": "tostr.languages.python.models",
 #             "file": "PythonFile",
 #             "class": "PythonClass",
 #             "method": "PythonMethod",

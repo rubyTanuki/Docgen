@@ -3,10 +3,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from tree_sitter import Parser
-from toaster.languages.java.language import JAVA_LANGUAGE
-from toaster.core.registry import Registry
-from toaster.core.models import BaseClass, BaseMethod
-from toaster.languages.java.builder import JavaMethodBuilder
+from tostr.languages.java.language import JAVA_LANGUAGE
+from tostr.core.registry import Registry
+from tostr.core.models import BaseClass, BaseMethod
+from tostr.languages.java.builder import JavaMethodBuilder
 
 @pytest.fixture(scope="session")
 def java_parser():
@@ -24,8 +24,8 @@ def mock_parent_class():
     """Mocks the BaseClass parent needed for UID generation."""
     mock_cls = MagicMock(spec=BaseClass)
     # The UID of a class uses #
-    mock_cls.uid = "src/main/java/com/toaster/Mathf.java#Mathf"
-    mock_cls.path = Path("src/main/java/com/toaster/Mathf.java")
+    mock_cls.uid = "src/main/java/com/tostr/Mathf.java#Mathf"
+    mock_cls.path = Path("src/main/java/com/tostr/Mathf.java")
     # Make sure isinstance(parent, BaseFile) returns False
     mock_cls.__class__ = BaseClass 
     return mock_cls
@@ -78,7 +78,7 @@ def test_java_method_builder_extracts_complex_method(java_parser, mock_registry,
     assert method_obj.arity == 2, f"Expected arity 2, got {method_obj.arity}"
     
     # UID Test (Crucial for method overloading support)
-    expected_uid = "src/main/java/com/toaster/Mathf.java#Mathf.processData(int, String)"
+    expected_uid = "src/main/java/com/tostr/Mathf.java#Mathf.processData(int, String)"
     assert method_obj.uid == expected_uid, f"Expected {expected_uid}, got {method_obj.uid}"
 
 
@@ -91,5 +91,5 @@ def test_java_method_builder_extracts_complex_method(java_parser, mock_registry,
     assert "void ping()" in simple_obj.signature
     
     # Check empty parameter UID
-    expected_simple_uid = "src/main/java/com/toaster/Mathf.java#Mathf.ping()"
+    expected_simple_uid = "src/main/java/com/tostr/Mathf.java#Mathf.ping()"
     assert simple_obj.uid == expected_simple_uid, f"Expected {expected_simple_uid}, got {simple_obj.uid}"

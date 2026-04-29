@@ -8,22 +8,22 @@ from typing import Annotated
 from loguru import logger
 from threading import Thread
 
-from toaster.llm import GeminiClient
-from toaster.core import Registry, toast, Verbosity
-from toaster.exceptions import ToasterError
+from tostr.llm import GeminiClient
+from tostr.core import Registry, tost, Verbosity
+from tostr.exceptions import ToasterError
 
-from toaster.commands import init_async, inspect_async, skeleton_async, watch_async, clean_db
+from tostr.commands import init_async, inspect_async, skeleton_async, watch_async, clean_db
 
-from toaster.mcp import mcp
+from tostr.mcp import mcp
 
-from toaster.core.logger import configure_cli_logging
+from tostr.core.logger import configure_cli_logging
 
 import multiprocessing
 
 
 # Initialize the Typer app
 app = typer.Typer(
-    name="toaster",
+    name="tostr",
     help="AST scraper for LLM RAG context generation.",
     add_completion=False # Optional: Turns off the auto-generated completion install command for cleaner help menus
 )
@@ -227,7 +227,7 @@ def skeleton(
     ] = False
     
 ):
-    """Output the .toast skeleton format for all files matching a specific subpath."""
+    """Output the .tost skeleton format for all files matching a specific subpath."""
     configure_cli_logging(debug)
     
     start_time = time.perf_counter()
