@@ -16,7 +16,7 @@ from tostr.commands import init_async, inspect_async, skeleton_async, watch_asyn
 
 from tostr.mcp import mcp
 
-from tostr.core.logger import configure_cli_logging
+from tostr.core.utils.logger import configure_cli_logging
 
 import multiprocessing
 

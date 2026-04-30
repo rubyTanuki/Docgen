@@ -3,7 +3,7 @@ from typing import List, Dict, Optional, TYPE_CHECKING
 from pathlib import Path
 from tostr.core.models import BaseFile, BaseClass, BaseMethod, BaseField
 from tostr.core.db import SQLiteCache
-from tostr.core.builder import BaseBuilder
+from tostr.core.builders import BaseBuilder
 
 import json
 from loguru import logger
@@ -147,7 +147,7 @@ class Registry:
             logger.debug(f"Cache miss for UID {uid}, but no DB provided or caching disabled, returning None")
             return None
         
-        from tostr.core.builder import BaseBuilder
+        from tostr.core.builders import BaseBuilder
         import json
         
         with self.db.get_connection() as conn:

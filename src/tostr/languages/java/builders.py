@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from tostr.core.registry import Registry
 from tostr.languages.java.language import JAVA_LANGUAGE
-from tostr.core.builder import BaseBuilder, BaseFileBuilder, BaseClassBuilder, BaseMethodBuilder, BaseFieldBuilder
+from tostr.core.builders import BaseBuilder, BaseFileBuilder, BaseClassBuilder, BaseMethodBuilder, BaseFieldBuilder
 from tostr.languages.java.queries import DEPENDENCY_QUERY
 from tostr.core.models import *
 
