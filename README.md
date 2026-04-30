@@ -9,7 +9,7 @@ Pre-compiling Agentic AI Code Context
 <!-- usage gif goes here -->
 
 <p align="center">
-Tostr is a CLI and MCP agent context engine which greatly reduces token costs and context bloat for agentic LLM coding assistants by pre-computing an llm-described AST in the .toast format
+Tostr is a CLI and MCP agent context engine which greatly reduces token costs and context bloat for agentic LLM coding assistants by pre-computing an llm-described AST in the .tost format
 </p>
 
 # Features
