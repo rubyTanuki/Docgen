@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from tostr.core.registry import Registry
-from tostr.languages.java.builder import JavaFileBuilder
+from tostr.languages.java.builders import JavaFileBuilder
 
 @pytest.fixture
 def mock_registry():

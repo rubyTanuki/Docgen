@@ -6,7 +6,7 @@ from tree_sitter import Parser
 from tostr.languages.java.language import JAVA_LANGUAGE
 from tostr.core.registry import Registry
 from tostr.core.models import BaseFile, BaseClass, BaseMethod, BaseField
-from tostr.languages.java.builder import JavaClassBuilder
+from tostr.languages.java.builders import JavaClassBuilder
 
 @pytest.fixture(scope="session")
 def java_parser():

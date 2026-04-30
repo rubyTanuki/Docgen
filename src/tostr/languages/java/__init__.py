@@ -1,1 +1,1 @@
-from .builder import JavaBuilder, JavaFileBuilder, JavaClassBuilder, JavaMethodBuilder, JavaFieldBuilder, JavaEnumBuilder
+from .builders import JavaBuilder, JavaFileBuilder, JavaClassBuilder, JavaMethodBuilder, JavaFieldBuilder, JavaEnumBuilder
