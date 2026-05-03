@@ -152,6 +152,8 @@ class JavaClassBuilder(BaseClassBuilder):
                     child_instance = class_builder.from_node(child, parent=instance)
                 elif child.type == "enum_declaration":
                     child_instance = enum_builder.from_node(child, parent=instance)
+                elif child.type == "constructor_declaration":
+                    child_instance = method_builder.from_node(child, parent=instance)
                 elif child.type == "method_declaration":
                     child_instance = method_builder.from_node(child, parent=instance)
                 elif child.type == "field_declaration":

@@ -9,7 +9,7 @@ from watchfiles import awatch, Change
 from loguru import logger
 
 from tostr.llm import GeminiClient
-from tostr.core import Registry, tost, Verbosity, BaseParser, SQLiteCache
+from tostr.core import Registry, tost, Verbosity, BaseParser, SQLiteCache, BaseCodeStruct
 
 from tostr.exceptions import APIKeyError, StructNotFoundError, ResolveError, DatabaseNotFoundError, TargetFileNotFoundError
 
@@ -64,9 +64,11 @@ async def inspect_async(struct_id:str, project_path: Path, include_body: bool = 
     
     logger.debug(f"{struct_obj.uid}'s children: {[str(child) for child in struct_obj.all_children]}")
     
-    
-    return tost.dump(struct_obj, verbosity=Verbosity.VERBOSE, include_body=include_body, pretty=pretty)
-    
+    tost_string = tost.dump(struct_obj, verbosity=Verbosity.VERBOSE, include_body=include_body, pretty=pretty)
+    if isinstance(struct_obj, BaseCodeStruct):
+        tost_string = f"{str(struct_obj.path)}\n{tost_string}"
+    return tost_string
+
 async def skeleton_async(subpath: str, project_path: Path, pretty: bool = True):
     _verify_db_exists(project_path)
     

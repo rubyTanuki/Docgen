@@ -363,7 +363,12 @@ class BaseClass(BaseCodeStruct):
                 logger.warning(f"⚠️ Missing description for {self.uid} in LLM response")
                 return
             
-            returned_methods = {child['uid']: child for child in response_obj.get("methods", [])}
+            try:
+                returned_methods = {child['uid']: child for child in response_obj.get("methods", [])}
+            except KeyError:
+                logger.warning(f"⚠️ Missing methods for {self.uid} in LLM response or failed to index by 'uid'")
+                logger.debug(f"LLM response for {self.uid}: {response_obj}")
+                return
             
             for child_set in self.children.values():
                 for child in child_set:
